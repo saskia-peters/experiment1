@@ -1,0 +1,27 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Excel files (optional - remove if you want to commit sample files)
+*.xlsx
+*.xls
+
+# Generated PDF reports
+*.pdf
+
+# Go workspace files
+go.work
