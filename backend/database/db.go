@@ -122,5 +122,20 @@ func InitDatabase() (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to clear group_station_scores table: %w", err)
 	}
 
+	// Create indexes for better query performance
+	indexes := []string{
+		"CREATE INDEX IF NOT EXISTS idx_gruppe_group_id ON gruppe(group_id)",
+		"CREATE INDEX IF NOT EXISTS idx_gruppe_teilnehmer_id ON gruppe(teilnehmer_id)",
+		"CREATE INDEX IF NOT EXISTS idx_rel_group_id ON rel_tn_grp(group_id)",
+		"CREATE INDEX IF NOT EXISTS idx_scores_group_id ON group_station_scores(group_id)",
+		"CREATE INDEX IF NOT EXISTS idx_scores_station_id ON group_station_scores(station_id)",
+	}
+
+	for _, indexSQL := range indexes {
+		if _, err := db.Exec(indexSQL); err != nil {
+			return nil, fmt.Errorf("failed to create index: %w", err)
+		}
+	}
+
 	return db, nil
 }

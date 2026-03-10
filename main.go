@@ -18,17 +18,13 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-var (
-	currentDB       *sql.DB
-	currentFilePath string
-)
-
 //go:embed all:frontend
 var assets embed.FS
 
 // App struct
 type App struct {
 	ctx context.Context
+	db  *sql.DB
 }
 
 // NewApp creates a new App application struct
@@ -39,6 +35,13 @@ func NewApp() *App {
 // startup is called when the app starts
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+// shutdown is called when the app is closing
+func (a *App) shutdown(ctx context.Context) {
+	if a.db != nil {
+		a.db.Close()
+	}
 }
 
 func main() {
@@ -53,7 +56,8 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		OnStartup: app.startup,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
 		Bind: []interface{}{
 			app,
 		},
@@ -69,9 +73,9 @@ func (a *App) CheckDB() map[string]interface{} {
 	hasData := false
 	count := 0
 
-	if currentDB != nil {
+	if a.db != nil {
 		var rowCount int
-		err := currentDB.QueryRow("SELECT COUNT(*) FROM teilnehmer").Scan(&rowCount)
+		err := a.db.QueryRow("SELECT COUNT(*) FROM teilnehmer").Scan(&rowCount)
 		if err == nil && rowCount > 0 {
 			hasData = true
 			count = rowCount
@@ -122,8 +126,9 @@ func (a *App) LoadFile() map[string]interface{} {
 	}
 
 	// Close previous database if any
-	if currentDB != nil {
-		currentDB.Close()
+	if a.db != nil {
+		a.db.Close()
+		a.db = nil
 	}
 
 	// Remove old database file to start fresh
@@ -137,10 +142,10 @@ func (a *App) LoadFile() map[string]interface{} {
 			"message": fmt.Sprintf("Failed to initialize database: %v", err),
 		}
 	}
-	currentDB = db
+	a.db = db
 
 	// Insert data into database
-	if err := database.InsertData(currentDB, rows); err != nil {
+	if err := database.InsertData(a.db, rows); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to insert data: %v", err),
@@ -156,7 +161,7 @@ func (a *App) LoadFile() map[string]interface{} {
 		}
 	}
 
-	if err := database.InsertStations(currentDB, stationRows); err != nil {
+	if err := database.InsertStations(a.db, stationRows); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to insert stations: %v", err),
@@ -164,7 +169,7 @@ func (a *App) LoadFile() map[string]interface{} {
 	}
 
 	// Create balanced groups
-	if err := services.CreateBalancedGroups(currentDB); err != nil {
+	if err := services.CreateBalancedGroups(a.db); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to create groups: %v", err),
@@ -182,7 +187,7 @@ func (a *App) LoadFile() map[string]interface{} {
 
 // ShowGroups retrieves and returns groups from the database
 func (a *App) ShowGroups() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
@@ -190,7 +195,7 @@ func (a *App) ShowGroups() map[string]interface{} {
 	}
 
 	// Retrieve groups from database
-	groups, err := database.GetGroupsForReport(currentDB)
+	groups, err := database.GetGroupsForReport(a.db)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -214,7 +219,7 @@ func (a *App) ShowGroups() map[string]interface{} {
 
 // ShowStations retrieves and returns stations with group scores from the database
 func (a *App) ShowStations() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
@@ -222,7 +227,7 @@ func (a *App) ShowStations() map[string]interface{} {
 	}
 
 	// Retrieve stations from database
-	stations, err := database.GetStationsForReport(currentDB)
+	stations, err := database.GetStationsForReport(a.db)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -246,14 +251,14 @@ func (a *App) ShowStations() map[string]interface{} {
 
 // GetAllGroups retrieves all group IDs from the database
 func (a *App) GetAllGroups() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
 		}
 	}
 
-	groupIDs, err := database.GetAllGroupIDs(currentDB)
+	groupIDs, err := database.GetAllGroupIDs(a.db)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -269,14 +274,14 @@ func (a *App) GetAllGroups() map[string]interface{} {
 
 // AssignScore assigns a score to a group at a station
 func (a *App) AssignScore(groupID int, stationID int, score int) map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
 		}
 	}
 
-	err := database.AssignGroupStationScore(currentDB, groupID, stationID, score)
+	err := database.AssignGroupStationScore(a.db, groupID, stationID, score)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -292,14 +297,14 @@ func (a *App) AssignScore(groupID int, stationID int, score int) map[string]inte
 
 // GetGroupEvaluations retrieves all groups with their total scores ranked from high to low
 func (a *App) GetGroupEvaluations() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
 		}
 	}
 
-	evaluations, err := database.GetGroupEvaluations(currentDB)
+	evaluations, err := database.GetGroupEvaluations(a.db)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -322,14 +327,14 @@ func (a *App) GetGroupEvaluations() map[string]interface{} {
 
 // GetOrtsverbandEvaluations retrieves all ortsverbands with their total scores ranked from high to low
 func (a *App) GetOrtsverbandEvaluations() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
 		}
 	}
 
-	evaluations, err := database.GetOrtsverbandEvaluations(currentDB)
+	evaluations, err := database.GetOrtsverbandEvaluations(a.db)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -352,7 +357,7 @@ func (a *App) GetOrtsverbandEvaluations() map[string]interface{} {
 
 // GeneratePDF generates a PDF report
 func (a *App) GeneratePDF() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
@@ -360,7 +365,7 @@ func (a *App) GeneratePDF() map[string]interface{} {
 	}
 
 	// Generate PDF report
-	if err := io.GeneratePDFReport(currentDB); err != nil {
+	if err := io.GeneratePDFReport(a.db); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to generate PDF report: %v", err),
@@ -379,7 +384,7 @@ func (a *App) GeneratePDF() map[string]interface{} {
 
 // GenerateGroupEvaluationPDF generates a PDF report for group rankings
 func (a *App) GenerateGroupEvaluationPDF() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
@@ -387,7 +392,7 @@ func (a *App) GenerateGroupEvaluationPDF() map[string]interface{} {
 	}
 
 	// Generate PDF report
-	if err := io.GenerateGroupEvaluationPDF(currentDB); err != nil {
+	if err := io.GenerateGroupEvaluationPDF(a.db); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to generate PDF report: %v", err),
@@ -406,7 +411,7 @@ func (a *App) GenerateGroupEvaluationPDF() map[string]interface{} {
 
 // GenerateOrtsverbandEvaluationPDF generates a PDF report for ortsverband rankings
 func (a *App) GenerateOrtsverbandEvaluationPDF() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
@@ -414,7 +419,7 @@ func (a *App) GenerateOrtsverbandEvaluationPDF() map[string]interface{} {
 	}
 
 	// Generate PDF report
-	if err := io.GenerateOrtsverbandEvaluationPDF(currentDB); err != nil {
+	if err := io.GenerateOrtsverbandEvaluationPDF(a.db); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to generate PDF report: %v", err),
@@ -433,7 +438,7 @@ func (a *App) GenerateOrtsverbandEvaluationPDF() map[string]interface{} {
 
 // GenerateParticipantCertificates generates participant certificates PDF
 func (a *App) GenerateParticipantCertificates() map[string]interface{} {
-	if currentDB == nil {
+	if a.db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Please load an Excel file first",
@@ -441,7 +446,7 @@ func (a *App) GenerateParticipantCertificates() map[string]interface{} {
 	}
 
 	// Generate PDF report
-	if err := io.GenerateParticipantCertificates(currentDB); err != nil {
+	if err := io.GenerateParticipantCertificates(a.db); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Failed to generate PDF certificates: %v", err),
