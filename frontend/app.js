@@ -854,14 +854,11 @@ async function handleGenerateGroupEvaluationPDF() {
         
         if (result.status === 'error') {
             setStatus('ERROR: ' + result.message, 'error');
-            alert('Failed to generate PDF: ' + result.message);
         } else {
             setStatus('✔ ' + result.message + ': ' + result.file, 'success');
-            alert('PDF generated successfully!\n\nFile: ' + result.file + '\nLocation: ' + result.path);
         }
     } catch (err) {
         setStatus('ERROR: ' + err, 'error');
-        alert('Error generating PDF: ' + err);
     }
 }
 
@@ -873,14 +870,11 @@ async function handleGenerateOrtsverbandEvaluationPDF() {
         
         if (result.status === 'error') {
             setStatus('ERROR: ' + result.message, 'error');
-            alert('Failed to generate PDF: ' + result.message);
         } else {
             setStatus('✔ ' + result.message + ': ' + result.file, 'success');
-            alert('PDF generated successfully!\n\nFile: ' + result.file + '\nLocation: ' + result.path);
         }
     } catch (err) {
         setStatus('ERROR: ' + err, 'error');
-        alert('Error generating PDF: ' + err);
     }
 }
 
@@ -892,14 +886,11 @@ async function handleGenerateCertificates() {
         
         if (result.status === 'error') {
             setStatus('ERROR: ' + result.message, 'error');
-            alert('Failed to generate certificates: ' + result.message);
         } else {
             setStatus('✔ ' + result.message + ': ' + result.file, 'success');
-            alert('Certificates PDF generated successfully!\n\nFile: ' + result.file + '\nLocation: ' + result.path);
         }
     } catch (err) {
         setStatus('ERROR: ' + err, 'error');
-        alert('Error generating certificates: ' + err);
     }
 }
 

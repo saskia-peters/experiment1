@@ -47,7 +47,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "JJugendolympiade Verwaltung",
+		Title:  "Jugendolympiade Verwaltung",
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
@@ -71,7 +71,7 @@ func (a *App) CheckDB() map[string]interface{} {
 
 	if currentDB != nil {
 		var rowCount int
-		err := currentDB.QueryRow("SELECT COUNT(*) FROM " + models.TableName).Scan(&rowCount)
+		err := currentDB.QueryRow("SELECT COUNT(*) FROM teilnehmer").Scan(&rowCount)
 		if err == nil && rowCount > 0 {
 			hasData = true
 			count = rowCount
@@ -373,7 +373,7 @@ func (a *App) GeneratePDF() map[string]interface{} {
 		"status":  "success",
 		"message": "PDF report generated successfully",
 		"file":    "groups_report.pdf",
-		"path":    absPath + string(os.PathSeparator) + "groups_report.pdf",
+		"path":    absPath + string(os.PathSeparator) + "pdfdocs" + string(os.PathSeparator) + "groups_report.pdf",
 	}
 }
 
@@ -400,7 +400,7 @@ func (a *App) GenerateGroupEvaluationPDF() map[string]interface{} {
 		"status":  "success",
 		"message": "Group evaluation PDF generated successfully",
 		"file":    "group_evaluations.pdf",
-		"path":    absPath + string(os.PathSeparator) + "group_evaluations.pdf",
+		"path":    absPath + string(os.PathSeparator) + "pdfdocs" + string(os.PathSeparator) + "group_evaluations.pdf",
 	}
 }
 
@@ -427,7 +427,7 @@ func (a *App) GenerateOrtsverbandEvaluationPDF() map[string]interface{} {
 		"status":  "success",
 		"message": "Ortsverband evaluation PDF generated successfully",
 		"file":    "ortsverband_evaluations.pdf",
-		"path":    absPath + string(os.PathSeparator) + "ortsverband_evaluations.pdf",
+		"path":    absPath + string(os.PathSeparator) + "pdfdocs" + string(os.PathSeparator) + "ortsverband_evaluations.pdf",
 	}
 }
 
@@ -454,6 +454,6 @@ func (a *App) GenerateParticipantCertificates() map[string]interface{} {
 		"status":  "success",
 		"message": "Participant certificates PDF generated successfully",
 		"file":    "participant_certificates.pdf",
-		"path":    absPath + string(os.PathSeparator) + "participant_certificates.pdf",
+		"path":    absPath + string(os.PathSeparator) + "pdfdocs" + string(os.PathSeparator) + "participant_certificates.pdf",
 	}
 }

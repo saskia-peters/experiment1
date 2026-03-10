@@ -4,14 +4,28 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"experiment1/backend/database"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
+const pdfOutputDir = "pdfdocs"
+
+// ensurePDFDirectory creates the pdfdocs directory if it doesn't exist
+func ensurePDFDirectory() error {
+	if err := os.MkdirAll(pdfOutputDir, 0755); err != nil {
+		return fmt.Errorf("failed to create PDF output directory: %w", err)
+	}
+	return nil
+}
+
 // GeneratePDFReport creates a PDF report with one group per page
 func GeneratePDFReport(db *sql.DB) error {
+	if err := ensurePDFDirectory(); err != nil {
+		return err
+	}
 	// Get all groups with their participants
 	groups, err := database.GetGroupsForReport(db)
 	if err != nil {
@@ -124,7 +138,7 @@ func GeneratePDFReport(db *sql.DB) error {
 	}
 
 	// Save PDF
-	err = pdf.OutputFileAndClose("groups_report.pdf")
+	err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "groups_report.pdf"))
 	if err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
@@ -134,6 +148,9 @@ func GeneratePDFReport(db *sql.DB) error {
 
 // GenerateGroupEvaluationPDF creates a PDF report with group rankings and scores
 func GenerateGroupEvaluationPDF(db *sql.DB) error {
+	if err := ensurePDFDirectory(); err != nil {
+		return err
+	}
 	// Get group evaluations
 	evaluations, err := database.GetGroupEvaluations(db)
 	if err != nil {
@@ -225,7 +242,7 @@ func GenerateGroupEvaluationPDF(db *sql.DB) error {
 	}
 
 	// Save PDF
-	err = pdf.OutputFileAndClose("group_evaluations.pdf")
+	err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "group_evaluations.pdf"))
 	if err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
@@ -235,6 +252,10 @@ func GenerateGroupEvaluationPDF(db *sql.DB) error {
 
 // GenerateOrtsverbandEvaluationPDF creates a PDF report with ortsverband rankings and average scores
 func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
+	if err := ensurePDFDirectory(); err != nil {
+		return err
+	}
+
 	// Get ortsverband evaluations
 	evaluations, err := database.GetOrtsverbandEvaluations(db)
 	if err != nil {
@@ -320,7 +341,7 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 	}
 
 	// Save PDF
-	err = pdf.OutputFileAndClose("ortsverband_evaluations.pdf")
+	err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "ortsverband_evaluations.pdf"))
 	if err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
@@ -331,6 +352,10 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 // GenerateParticipantCertificates creates a PDF with one page per participant
 // If certificate_template.png or certificate_template.jpg exists, it will be used as a background
 func GenerateParticipantCertificates(db *sql.DB) error {
+	if err := ensurePDFDirectory(); err != nil {
+		return err
+	}
+
 	// Get all groups with their participants
 	groups, err := database.GetGroupsForReport(db)
 	if err != nil {
@@ -367,6 +392,12 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 	pdf.SetMargins(15, 15, 15)
 	pdf.SetAutoPageBreak(true, 15)
 
+	// Define content boundaries: 23px = 5mm, 680px = 147.83mm
+	// All content must be positioned between these x-coordinates
+	const contentLeft = 5.0                         // mm (23px)
+	const contentRight = 147.83                     // mm (680px)
+	const contentWidth = contentRight - contentLeft // 142.83mm
+
 	// Get current year
 	currentYear := 2026 // You can use time.Now().Year() if needed
 
@@ -383,34 +414,40 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 				pdf.Image(templateFile, 0, 0, 210, 297, false, "", 0, "")
 
 				// Overlay dynamic content at specific positions
-				// Adjust these Y positions based on your template design
+				// All content constrained between contentLeft (5mm) and contentRight (147.83mm)
 
-				// Position: Year - Top center
-				pdf.SetXY(0, 35)
-				pdf.SetFont("Arial", "B", 20)
+				// Position: Jugendolympiade heading - Top center within boundaries
+				pdf.SetXY(contentLeft, 45)
+				pdf.SetFont("Arial", "B", 28)
 				pdf.SetTextColor(102, 126, 234)
-				pdf.CellFormat(210, 10, fmt.Sprintf("%d", currentYear), "", 0, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 12, "Jugendolympiade", "", 0, "C", false, 0, "")
 
-				// Position: Participant Name - Center
-				pdf.SetXY(0, 85)
+				// Position: Year - 4cm below original position
+				pdf.SetXY(contentLeft, 75)
+				pdf.SetFont("Arial", "B", 24)
+				pdf.SetTextColor(102, 126, 234)
+				pdf.CellFormat(contentWidth, 10, fmt.Sprintf("%d", currentYear), "", 0, "C", false, 0, "")
+
+				// Position: Participant Name - Center within boundaries
+				pdf.SetXY(contentLeft, 85)
 				pdf.SetFont("Arial", "B", 28)
 				pdf.SetTextColor(0, 0, 0)
-				pdf.CellFormat(210, 10, participant.Name, "", 0, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 10, participant.Name, "", 0, "C", false, 0, "")
 
 				// Position: Ortsverband
-				pdf.SetXY(0, 105)
+				pdf.SetXY(contentLeft, 105)
 				pdf.SetFont("Arial", "", 14)
 				pdf.SetTextColor(80, 80, 80)
-				pdf.CellFormat(210, 8, participant.Ortsverband, "", 0, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 8, fmt.Sprintf("Ortsverband %s", participant.Ortsverband), "", 0, "C", false, 0, "")
 
 				// Position: Group number
-				pdf.SetXY(0, 125)
+				pdf.SetXY(contentLeft, 125)
 				pdf.SetFont("Arial", "B", 16)
 				pdf.SetTextColor(0, 0, 0)
-				pdf.CellFormat(210, 10, fmt.Sprintf("Gruppe %d", group.GroupID), "", 0, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 10, fmt.Sprintf("Gruppe %d", group.GroupID), "", 0, "C", false, 0, "")
 
 				// Position: Rank
-				pdf.SetXY(0, 140)
+				pdf.SetXY(contentLeft, 140)
 				pdf.SetFont("Arial", "", 14)
 				pdf.SetTextColor(102, 126, 234)
 				rankText := fmt.Sprintf("Platz %d", rank)
@@ -421,22 +458,24 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 				} else if rank == 3 {
 					rankText = "3. Platz"
 				}
-				pdf.CellFormat(210, 8, rankText, "", 0, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 8, rankText, "", 0, "C", false, 0, "")
 
 				// Position: Group members table (starting position)
-				pdf.SetXY(15, 165)
+				pdf.SetXY(contentLeft, 165)
 				pdf.SetFont("Arial", "B", 12)
 				pdf.SetTextColor(0, 0, 0)
 				pdf.CellFormat(0, 8, "Gruppenmitglieder:", "", 1, "L", false, 0, "")
 
-				// Table header
-				pdf.SetXY(15, 175)
+				// Table header - positioned at contentLeft
+				pdf.SetXY(contentLeft, 175)
 				pdf.SetFont("Arial", "B", 10)
 				pdf.SetFillColor(200, 200, 200)
 				pdf.SetTextColor(0, 0, 0)
 
-				colWidths := []float64{70, 60, 25, 25}
-				headers := []string{"Name", "Ortsverband", "Alter", "Geschl."}
+				// Table columns within content boundaries
+				// Total available width: 142.83mm, split evenly
+				colWidths := []float64{contentWidth / 2, contentWidth / 2}
+				headers := []string{"Name", "Ortsverband"}
 
 				for i, header := range headers {
 					pdf.CellFormat(colWidths[i], 8, header, "1", 0, "C", true, 0, "")
@@ -452,39 +491,47 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 
 					pdf.CellFormat(colWidths[0], 7, member.Name, "1", 0, "L", fill, 0, "")
 					pdf.CellFormat(colWidths[1], 7, member.Ortsverband, "1", 0, "L", fill, 0, "")
-					pdf.CellFormat(colWidths[2], 7, fmt.Sprintf("%d", member.Alter), "1", 0, "C", fill, 0, "")
-					pdf.CellFormat(colWidths[3], 7, member.Geschlecht, "1", 0, "C", fill, 0, "")
 					pdf.Ln(-1)
 				}
 
 			} else {
 				// Programmatic approach (no template)
+				// All content constrained between contentLeft and contentRight
+
 				// Main title
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "B", 28)
 				pdf.SetTextColor(102, 126, 234)
-				pdf.CellFormat(0, 20, "Jugendolympiade", "", 1, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 20, "Jugendolympiade", "", 1, "C", false, 0, "")
 
-				pdf.SetFont("Arial", "B", 20)
-				pdf.CellFormat(0, 12, fmt.Sprintf("%d", currentYear), "", 1, "C", false, 0, "")
+				// Move year 4cm (40mm) lower
+				pdf.Ln(40)
+				pdf.SetX(contentLeft)
+				pdf.SetFont("Arial", "B", 24)
+				pdf.CellFormat(contentWidth, 12, fmt.Sprintf("%d", currentYear), "", 1, "C", false, 0, "")
 				pdf.Ln(10)
 
 				// Participant name (large)
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "B", 24)
 				pdf.SetTextColor(0, 0, 0)
-				pdf.CellFormat(0, 15, participant.Name, "", 1, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 15, participant.Name, "", 1, "C", false, 0, "")
 				pdf.Ln(5)
 
 				// Ortsverband
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "", 14)
 				pdf.SetTextColor(80, 80, 80)
-				pdf.CellFormat(0, 8, fmt.Sprintf("Ortsverband: %s", participant.Ortsverband), "", 1, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 8, fmt.Sprintf("Ortsverband: %s", participant.Ortsverband), "", 1, "C", false, 0, "")
 				pdf.Ln(8)
 
 				// Group and rank
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "B", 16)
 				pdf.SetTextColor(0, 0, 0)
-				pdf.CellFormat(0, 10, fmt.Sprintf("Gruppe %d", group.GroupID), "", 1, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 10, fmt.Sprintf("Gruppe %d", group.GroupID), "", 1, "C", false, 0, "")
 
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "", 14)
 				pdf.SetTextColor(102, 126, 234)
 				rankText := fmt.Sprintf("Platz %d", rank)
@@ -495,22 +542,25 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 				} else if rank == 3 {
 					rankText = "3. Platz"
 				}
-				pdf.CellFormat(0, 8, rankText, "", 1, "C", false, 0, "")
+				pdf.CellFormat(contentWidth, 8, rankText, "", 1, "C", false, 0, "")
 				pdf.Ln(12)
 
 				// Group members section
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "B", 14)
 				pdf.SetTextColor(0, 0, 0)
 				pdf.CellFormat(0, 10, "Gruppenmitglieder:", "", 1, "L", false, 0, "")
 				pdf.Ln(3)
 
-				// Table header
+				// Table header - positioned at contentLeft
+				pdf.SetX(contentLeft)
 				pdf.SetFont("Arial", "B", 10)
 				pdf.SetFillColor(200, 200, 200)
 				pdf.SetTextColor(0, 0, 0)
 
-				colWidths := []float64{70, 60, 25, 25}
-				headers := []string{"Name", "Ortsverband", "Alter", "Geschl."}
+				// Table columns within content boundaries
+				colWidths := []float64{contentWidth / 2, contentWidth / 2}
+				headers := []string{"Name", "Ortsverband"}
 
 				for i, header := range headers {
 					pdf.CellFormat(colWidths[i], 8, header, "1", 0, "C", true, 0, "")
@@ -526,8 +576,6 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 
 					pdf.CellFormat(colWidths[0], 7, member.Name, "1", 0, "L", fill, 0, "")
 					pdf.CellFormat(colWidths[1], 7, member.Ortsverband, "1", 0, "L", fill, 0, "")
-					pdf.CellFormat(colWidths[2], 7, fmt.Sprintf("%d", member.Alter), "1", 0, "C", fill, 0, "")
-					pdf.CellFormat(colWidths[3], 7, member.Geschlecht, "1", 0, "C", fill, 0, "")
 					pdf.Ln(-1)
 				}
 			}
@@ -535,7 +583,7 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 	}
 
 	// Save PDF
-	err = pdf.OutputFileAndClose("participant_certificates.pdf")
+	err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "participant_certificates.pdf"))
 	if err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}

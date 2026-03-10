@@ -23,7 +23,7 @@ func InsertData(db *sql.DB, rows [][]string) error {
 	defer tx.Rollback()
 
 	// Prepare insert statement
-	stmt, err := tx.Prepare("INSERT INTO " + models.TableName + " (teilnehmer_id, name, ortsverband, age, geschlecht) VALUES (?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO teilnehmer (teilnehmer_id, name, ortsverband, age, geschlecht) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %w", err)
 	}

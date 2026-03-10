@@ -24,7 +24,7 @@ func InitDatabase() (*sql.DB, error) {
 
 	// Create teilnehmer table
 	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS ` + models.TableName + ` (
+	CREATE TABLE IF NOT EXISTS teilnehmer (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		teilnehmer_id INTEGER,
 		name TEXT,
@@ -97,7 +97,7 @@ func InitDatabase() (*sql.DB, error) {
 	}
 
 	// Clear existing data
-	_, err = db.Exec("DELETE FROM " + models.TableName)
+	_, err = db.Exec("DELETE FROM teilnehmer")
 	if err != nil {
 		return nil, fmt.Errorf("failed to clear table: %w", err)
 	}
