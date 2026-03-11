@@ -6,6 +6,10 @@ export function AssignScore(arg1, arg2, arg3) {
   return window['go']['main']['App']['AssignScore'](arg1, arg2, arg3);
 }
 
+export function BackupDatabase() {
+  return window['go']['main']['App']['BackupDatabase']();
+}
+
 export function CheckDB() {
   return window['go']['main']['App']['CheckDB']();
 }

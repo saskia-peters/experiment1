@@ -17,6 +17,7 @@ type Teilnehmer struct {
 	Ortsverband  string
 	Alter        int
 	Geschlecht   string
+	PreGroup     string
 }
 
 // Group represents a group of participants

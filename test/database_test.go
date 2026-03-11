@@ -26,7 +26,8 @@ func setupTestDB(t *testing.T) *sql.DB {
 			name TEXT,
 			ortsverband TEXT,
 			age INTEGER,
-			geschlecht TEXT
+			geschlecht TEXT,
+			pregroup TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS gruppe (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -161,10 +162,10 @@ func TestInsertData(t *testing.T) {
 
 	// Prepare test data (header + 3 participants)
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
-		{"Tom Meyer", "München", "22", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
+		{"Tom Meyer", "München", "22", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -205,7 +206,7 @@ func TestInsertData_EmptyRows(t *testing.T) {
 	defer teardownTestDB(t, db)
 
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 	}
 
 	// InsertData doesn't error on empty rows  - it just skips them
@@ -274,9 +275,9 @@ func TestGetAllTeilnehmers(t *testing.T) {
 
 	// Insert test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -325,11 +326,11 @@ func TestSaveGroups(t *testing.T) {
 
 	// Insert participants first
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
-		{"Tom Meyer", "München", "22", "M"},
-		{"Lisa Weber", "Köln", "24", "W"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
+		{"Tom Meyer", "München", "22", "M", ""},
+		{"Lisa Weber", "Köln", "24", "W", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -391,10 +392,10 @@ func TestGetGroupsForReport(t *testing.T) {
 
 	// Insert participants
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
-		{"Tom Meyer", "München", "22", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
+		{"Tom Meyer", "München", "22", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -452,9 +453,9 @@ func TestGetAllGroupIDs(t *testing.T) {
 
 	// Insert participants and groups
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -506,8 +507,8 @@ func TestGetStationsForReport(t *testing.T) {
 
 	// Insert participants and groups
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	err = database.InsertData(db, rows)

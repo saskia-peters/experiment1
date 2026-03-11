@@ -14,8 +14,8 @@ func TestAssignGroupStationScore_NewScore(t *testing.T) {
 
 	// Insert test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -67,8 +67,8 @@ func TestAssignGroupStationScore_UpdateScore(t *testing.T) {
 
 	// Insert test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -137,8 +137,8 @@ func TestAssignGroupStationScore_MultipleStations(t *testing.T) {
 
 	// Insert test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -202,10 +202,10 @@ func TestAssignGroupStationScore_MultipleGroups(t *testing.T) {
 
 	// Insert test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
-		{"Tom Meyer", "München", "22", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
+		{"Tom Meyer", "München", "22", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -269,8 +269,8 @@ func TestAssignGroupStationScore_ZeroScore(t *testing.T) {
 
 	// Insert minimal test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -322,10 +322,10 @@ func TestGetGroupEvaluations(t *testing.T) {
 
 	// Insert test data
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
-		{"Tom Meyer", "München", "22", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
+		{"Tom Meyer", "München", "22", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)
@@ -407,12 +407,12 @@ func TestGetOrtsverbandEvaluations(t *testing.T) {
 
 	// Insert test data with multiple ortsverbands
 	rows := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Berlin", "30", "W"},
-		{"Tom Meyer", "Hamburg", "22", "M"},
-		{"Lisa Weber", "Hamburg", "24", "W"},
-		{"John Doe", "München", "28", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Berlin", "30", "W", ""},
+		{"Tom Meyer", "Hamburg", "22", "M", ""},
+		{"Lisa Weber", "Hamburg", "24", "W", ""},
+		{"John Doe", "München", "28", "M", ""},
 	}
 
 	err := database.InsertData(db, rows)

@@ -23,40 +23,40 @@ func TestValidateHeaders(t *testing.T) {
 	}{
 		{
 			name:        "Valid headers - exact match",
-			headers:     []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
-			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
+			headers:     []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 			shouldError: false,
 		},
 		{
 			name:        "Valid headers - case insensitive",
-			headers:     []string{"name", "ORTSVERBAND", "Alter", "geschlecht"},
-			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
+			headers:     []string{"name", "ORTSVERBAND", "Alter", "geschlecht", "pregroup"},
+			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 			shouldError: false,
 		},
 		{
 			name:        "Valid headers - with whitespace",
-			headers:     []string{"  Name  ", "Ortsverband", "Alter  ", "Geschlecht"},
-			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
+			headers:     []string{"  Name  ", "Ortsverband", "Alter  ", "Geschlecht", "PreGroup"},
+			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 			shouldError: false,
 		},
 		{
 			name:        "Invalid headers - insufficient columns",
 			headers:     []string{"Name", "Ortsverband"},
-			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
+			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 			shouldError: true,
 			errorMsg:    "insufficient columns",
 		},
 		{
 			name:        "Invalid headers - wrong column name",
-			headers:     []string{"Name", "Location", "Alter", "Geschlecht"},
-			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
+			headers:     []string{"Name", "Location", "Alter", "Geschlecht", "PreGroup"},
+			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 			shouldError: true,
 			errorMsg:    "invalid header",
 		},
 		{
 			name:        "Valid headers - extra columns",
-			headers:     []string{"Name", "Ortsverband", "Alter", "Geschlecht", "Extra"},
-			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht"},
+			headers:     []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup", "Extra"},
+			expected:    []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 			shouldError: false,
 		},
 	}
@@ -196,10 +196,10 @@ func createTestExcelFile(t *testing.T, filename string, sheetName string, data [
 // TestReadXLSXFile_ValidFile tests reading a valid Excel file
 func TestReadXLSXFile_ValidFile(t *testing.T) {
 	data := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"Anna Schmidt", "Hamburg", "30", "W"},
-		{"Tom Meyer", "München", "22", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
+		{"Tom Meyer", "München", "22", "M", ""},
 	}
 
 	filepath := createTestExcelFile(t, "valid_test.xlsx", models.SheetName, data)
@@ -245,7 +245,7 @@ func TestReadXLSXFile_EmptySheet(t *testing.T) {
 // TestReadXLSXFile_OnlyHeader tests reading a file with only header row
 func TestReadXLSXFile_OnlyHeader(t *testing.T) {
 	data := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 	}
 
 	filepath := createTestExcelFile(t, "header_only_test.xlsx", models.SheetName, data)
@@ -264,8 +264,8 @@ func TestReadXLSXFile_OnlyHeader(t *testing.T) {
 // TestReadXLSXFile_InvalidHeaders tests reading a file with invalid headers
 func TestReadXLSXFile_InvalidHeaders(t *testing.T) {
 	data := [][]string{
-		{"Name", "Location", "Age", "Gender"}, // Wrong headers
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Location", "Age", "Gender", "PreGroup"}, // Wrong headers (Location instead of Ortsverband, Age/Gender instead of Alter/Geschlecht)
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	filepath := createTestExcelFile(t, "invalid_headers_test.xlsx", models.SheetName, data)
@@ -284,8 +284,8 @@ func TestReadXLSXFile_InvalidHeaders(t *testing.T) {
 // TestReadXLSXFile_InvalidAge tests reading a file with invalid age values
 func TestReadXLSXFile_InvalidAge(t *testing.T) {
 	data := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "twenty", "M"}, // Invalid age
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "twenty", "M", ""}, // Invalid age
 	}
 
 	filepath := createTestExcelFile(t, "invalid_age_test.xlsx", models.SheetName, data)
@@ -304,7 +304,7 @@ func TestReadXLSXFile_InvalidAge(t *testing.T) {
 // TestReadXLSXFile_InsufficientColumns tests reading a file with insufficient columns
 func TestReadXLSXFile_InsufficientColumns(t *testing.T) {
 	data := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
 		{"Max Mustermann", "Berlin"}, // Only 2 columns
 	}
 
@@ -324,10 +324,10 @@ func TestReadXLSXFile_InsufficientColumns(t *testing.T) {
 // TestReadXLSXFile_EmptyRows tests reading a file with empty rows (should be skipped)
 func TestReadXLSXFile_EmptyRows(t *testing.T) {
 	data := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
-		{"  ", "  ", "  ", "  "}, // Row with whitespace - should be skipped gracefully
-		{"Anna Schmidt", "Hamburg", "30", "W"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
+		{"  ", "  ", "  ", "  ", ""}, // Row with whitespace - should be skipped gracefully
+		{"Anna Schmidt", "Hamburg", "30", "W", ""},
 	}
 
 	filepath := createTestExcelFile(t, "empty_rows_test.xlsx", models.SheetName, data)
@@ -366,8 +366,8 @@ func TestReadStationsFromXLSX_ValidFile(t *testing.T) {
 
 	// Create Teilnehmer sheet (required)
 	teilnehmerData := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 	index1, _ := f.NewSheet(models.SheetName)
 	for rowIdx, row := range teilnehmerData {
@@ -417,8 +417,8 @@ func TestReadStationsFromXLSX_ValidFile(t *testing.T) {
 // TestReadStationsFromXLSX_NoStationsSheet tests handling missing stations sheet
 func TestReadStationsFromXLSX_NoStationsSheet(t *testing.T) {
 	data := [][]string{
-		{"Name", "Ortsverband", "Alter", "Geschlecht"},
-		{"Max Mustermann", "Berlin", "25", "M"},
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Max Mustermann", "Berlin", "25", "M", ""},
 	}
 
 	filepath := createTestExcelFile(t, "no_stations_test.xlsx", models.SheetName, data)
@@ -432,5 +432,88 @@ func TestReadStationsFromXLSX_NoStationsSheet(t *testing.T) {
 	// Should return empty slice when no stations sheet exists
 	if len(rows) != 0 {
 		t.Errorf("Expected 0 rows for missing stations sheet, got %d", len(rows))
+	}
+}
+
+// TestReadXLSXFile_ValidPreGroup tests reading a file with valid PreGroup values
+func TestReadXLSXFile_ValidPreGroup(t *testing.T) {
+	data := [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "20", "W", "TeamA"},
+		{"Bob", "Hamburg", "22", "M", "Team123"},
+		{"Carol", "München", "21", "W", "ABC123def456GHI789"},
+	}
+
+	filepath := createTestExcelFile(t, "valid_pregroup_test.xlsx", models.SheetName, data)
+	defer os.Remove(filepath)
+
+	rows, err := io.ReadXLSXFile(filepath)
+	if err != nil {
+		t.Fatalf("Expected no error for valid PreGroup, got: %v", err)
+	}
+
+	if len(rows) != 4 {
+		t.Errorf("Expected 4 rows, got %d", len(rows))
+	}
+}
+
+// TestReadXLSXFile_InvalidPreGroupSpecialChars tests reading a file with invalid PreGroup containing special characters
+func TestReadXLSXFile_InvalidPreGroupSpecialChars(t *testing.T) {
+	data := [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "20", "W", "Team-A"}, // Invalid: contains hyphen
+	}
+
+	filepath := createTestExcelFile(t, "invalid_pregroup_chars_test.xlsx", models.SheetName, data)
+	defer os.Remove(filepath)
+
+	_, err := io.ReadXLSXFile(filepath)
+	if err == nil {
+		t.Fatal("Expected error for PreGroup with special characters, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "invalid PreGroup") {
+		t.Errorf("Expected error about invalid PreGroup, got: %v", err)
+	}
+}
+
+// TestReadXLSXFile_InvalidPreGroupTooLong tests reading a file with PreGroup exceeding 20 characters
+func TestReadXLSXFile_InvalidPreGroupTooLong(t *testing.T) {
+	data := [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "20", "W", "ThisPreGroupIsTooLongToBeValid"}, // 30 characters
+	}
+
+	filepath := createTestExcelFile(t, "invalid_pregroup_length_test.xlsx", models.SheetName, data)
+	defer os.Remove(filepath)
+
+	_, err := io.ReadXLSXFile(filepath)
+	if err == nil {
+		t.Fatal("Expected error for PreGroup too long, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "too long") {
+		t.Errorf("Expected error about PreGroup being too long, got: %v", err)
+	}
+}
+
+// TestReadXLSXFile_EmptyPreGroup tests reading a file with empty PreGroup values (should be valid)
+func TestReadXLSXFile_EmptyPreGroup(t *testing.T) {
+	data := [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "20", "W", ""},
+		{"Bob", "Hamburg", "22", "M", "  "}, // Just whitespace
+	}
+
+	filepath := createTestExcelFile(t, "empty_pregroup_test.xlsx", models.SheetName, data)
+	defer os.Remove(filepath)
+
+	rows, err := io.ReadXLSXFile(filepath)
+	if err != nil {
+		t.Fatalf("Expected no error for empty PreGroup, got: %v", err)
+	}
+
+	if len(rows) != 3 {
+		t.Errorf("Expected 3 rows, got %d", len(rows))
 	}
 }

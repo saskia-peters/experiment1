@@ -4,7 +4,9 @@ import (
 	"math"
 	"testing"
 
+	"experiment1/backend/database"
 	"experiment1/backend/models"
+	"experiment1/backend/services"
 )
 
 // mockDistributeIntoGroups mimics the distribution logic for testing without DB
@@ -277,5 +279,140 @@ func TestDistribution_GroupIDsSequential(t *testing.T) {
 		if group.GroupID != expectedID {
 			t.Errorf("Group %d: Expected GroupID %d, got %d", i, expectedID, group.GroupID)
 		}
+	}
+}
+
+// TestDistribution_PreGroupsStayTogether tests that participants with the same PreGroup value are grouped together
+func TestDistribution_PreGroupsStayTogether(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	// Insert participants with PreGroup values
+	rows := [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "20", "W", "TeamA"},
+		{"Bob", "Hamburg", "22", "M", "TeamA"},
+		{"Carol", "München", "21", "W", "TeamA"},
+		{"Dave", "Köln", "23", "M", "TeamB"},
+		{"Eve", "Berlin", "24", "W", "TeamB"},
+		{"Frank", "Hamburg", "25", "M", ""}, // No PreGroup
+		{"Grace", "München", "26", "W", ""}, // No PreGroup
+		{"Henry", "Köln", "27", "M", ""},    // No PreGroup
+		{"Ivy", "Berlin", "28", "W", ""},    // No PreGroup
+		{"Jack", "Hamburg", "29", "M", ""},  // No PreGroup
+	}
+
+	err := database.InsertData(db, rows)
+	if err != nil {
+		t.Fatalf("Failed to insert test data: %v", err)
+	}
+
+	// Run the distribution algorithm
+	err = services.CreateBalancedGroups(db)
+	if err != nil {
+		t.Fatalf("Failed to create balanced groups: %v", err)
+	}
+
+	// Retrieve groups
+	groups, err := database.GetGroupsForReport(db)
+	if err != nil {
+		t.Fatalf("Failed to get groups: %v", err)
+	}
+
+	// Find which group TeamA members are in
+	teamAGroupID := -1
+	teamAMembers := []string{"Alice", "Bob", "Carol"}
+	for _, group := range groups {
+		for _, teilnehmer := range group.Teilnehmers {
+			if teilnehmer.Name == "Alice" || teilnehmer.Name == "Bob" || teilnehmer.Name == "Carol" {
+				if teamAGroupID == -1 {
+					teamAGroupID = group.GroupID
+				} else if teamAGroupID != group.GroupID {
+					t.Fatalf("TeamA members are in different groups: expected all in group %d, but found %s in group %d",
+						teamAGroupID, teilnehmer.Name, group.GroupID)
+				}
+			}
+		}
+	}
+
+	// Verify all TeamA members are found and in the same group
+	if teamAGroupID == -1 {
+		t.Fatal("TeamA members not found in any group")
+	}
+
+	// Count TeamA members in the correct group
+	teamACount := 0
+	for _, group := range groups {
+		if group.GroupID == teamAGroupID {
+			for _, teilnehmer := range group.Teilnehmers {
+				for _, name := range teamAMembers {
+					if teilnehmer.Name == name {
+						teamACount++
+					}
+				}
+			}
+		}
+	}
+
+	if teamACount != 3 {
+		t.Errorf("Expected 3 TeamA members in group %d, got %d", teamAGroupID, teamACount)
+	}
+
+	// Find which group TeamB members are in
+	teamBGroupID := -1
+	teamBMembers := []string{"Dave", "Eve"}
+	for _, group := range groups {
+		for _, teilnehmer := range group.Teilnehmers {
+			if teilnehmer.Name == "Dave" || teilnehmer.Name == "Eve" {
+				if teamBGroupID == -1 {
+					teamBGroupID = group.GroupID
+				} else if teamBGroupID != group.GroupID {
+					t.Fatalf("TeamB members are in different groups: expected all in group %d, but found %s in group %d",
+						teamBGroupID, teilnehmer.Name, group.GroupID)
+				}
+			}
+		}
+	}
+
+	// Verify all TeamB members are found and in the same group
+	if teamBGroupID == -1 {
+		t.Fatal("TeamB members not found in any group")
+	}
+
+	// Count TeamB members in the correct group
+	teamBCount := 0
+	for _, group := range groups {
+		if group.GroupID == teamBGroupID {
+			for _, teilnehmer := range group.Teilnehmers {
+				for _, name := range teamBMembers {
+					if teilnehmer.Name == name {
+						teamBCount++
+					}
+				}
+			}
+		}
+	}
+
+	if teamBCount != 2 {
+		t.Errorf("Expected 2 TeamB members in group %d, got %d", teamBGroupID, teamBCount)
+	}
+
+	// Verify TeamA and TeamB are in different groups
+	if teamAGroupID == teamBGroupID {
+		t.Errorf("TeamA and TeamB should be in different groups, but both are in group %d", teamAGroupID)
+	}
+
+	// Verify participants without PreGroup are distributed
+	unassignedCount := 0
+	for _, group := range groups {
+		for _, teilnehmer := range group.Teilnehmers {
+			if teilnehmer.Name == "Frank" || teilnehmer.Name == "Grace" || teilnehmer.Name == "Henry" || teilnehmer.Name == "Ivy" || teilnehmer.Name == "Jack" {
+				unassignedCount++
+			}
+		}
+	}
+
+	if unassignedCount != 5 {
+		t.Errorf("Expected 5 unassigned participants to be distributed, got %d", unassignedCount)
 	}
 }

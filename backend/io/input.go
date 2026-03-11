@@ -30,14 +30,33 @@ func validateHeaders(headers []string, expected []string) error {
 
 // validateParticipantRow validates a single participant data row
 func validateParticipantRow(row []string, rowNum int) error {
+	// Accept rows with at least 4 columns (PreGroup is optional and may be missing)
 	if len(row) < 4 {
-		return fmt.Errorf("row %d: insufficient columns (expected 4: Name, Ortsverband, Alter, Geschlecht)", rowNum)
+		return fmt.Errorf("row %d: insufficient columns (expected at least 4: Name, Ortsverband, Alter, Geschlecht; PreGroup is optional)", rowNum)
 	}
 
 	name := strings.TrimSpace(row[0])
 	ortsverband := strings.TrimSpace(row[1])
 	alterStr := strings.TrimSpace(row[2])
 	geschlecht := strings.TrimSpace(row[3])
+
+	// Validate PreGroup if present (alphanumeric, max 20 chars)
+	var pregroup string
+	if len(row) > 4 {
+		pregroup = strings.TrimSpace(row[4])
+		if pregroup != "" {
+			// Check if alphanumeric only
+			for _, r := range pregroup {
+				if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')) {
+					return fmt.Errorf("row %d (%s): invalid PreGroup '%s' - must contain only letters and numbers", rowNum, name, pregroup)
+				}
+			}
+			// Check length
+			if len(pregroup) > 20 {
+				return fmt.Errorf("row %d (%s): PreGroup '%s' too long - maximum 20 characters", rowNum, name, pregroup)
+			}
+		}
+	}
 
 	// Validate name (required)
 	if name == "" {
@@ -112,7 +131,7 @@ func ReadXLSXFile(filePath string) ([][]string, error) {
 	}
 
 	// Validate header row
-	expectedHeaders := []string{"Name", "Ortsverband", "Alter", "Geschlecht"}
+	expectedHeaders := []string{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}
 	if err := validateHeaders(rows[0], expectedHeaders); err != nil {
 		return nil, fmt.Errorf("invalid sheet structure: %w", err)
 	}

@@ -71,17 +71,17 @@ function renderGroupEvaluations(evaluations) {
     contentArea.style.cssText = 'padding: 20px;';
     
     let html = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
-    html += '<h2 style="margin: 0; color: #333;">🏆 Group Rankings - Total Scores</h2>';
+    html += '<h2 style="margin: 0; color: #333;">🏆 Gruppenrangliste - Gesamtergebnis</h2>';
     html += '<button onclick="handleGenerateGroupEvaluationPDF()" style="padding: 10px 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📄 Generate PDF</button>';
     html += '</div>';
     
     // Evaluation table
     html += '<table class="group-table">';
     html += '<thead><tr>';
-    html += '<th style="width: 100px;">Rank</th>';
-    html += '<th style="width: 120px;">Group</th>';
-    html += '<th>Stations Visited</th>';
-    html += '<th>Total Score</th>';
+    html += '<th style="width: 100px;">Rang</th>';
+    html += '<th style="width: 120px;">Gruppe</th>';
+    html += '<th>Stationen</th>';
+    html += '<th>Gesamtergebnis</th>';
     html += '</tr></thead><tbody>';
     
     evaluations.forEach((evalItem, index) => {
@@ -89,7 +89,7 @@ function renderGroupEvaluations(evaluations) {
         const rowStyle = index < 3 ? 'background: #fff3cd;' : '';
         html += '<tr style="' + rowStyle + '">';
         html += '<td style="text-align: center; font-size: 20px;">' + rankEmoji + '</td>';
-        html += '<td style="font-weight: bold; font-size: 16px;">Group ' + evalItem.GroupID + '</td>';
+        html += '<td style="font-weight: bold; font-size: 16px;">Gruppe ' + evalItem.GroupID + '</td>';
         html += '<td style="text-align: center;">' + evalItem.StationCount + '</td>';
         html += '<td style="font-weight: bold; font-size: 18px; color: #667eea;">' + evalItem.TotalScore + '</td>';
         html += '</tr>';
@@ -103,7 +103,7 @@ function renderGroupEvaluations(evaluations) {
     html += '<div class="stats-grid">';
     
     html += '<div class="stat-item">';
-    html += '<strong>Total Groups</strong>';
+    html += '<strong>Gruppen gesamt</strong>';
     html += '<span>' + evaluations.length + '</span>';
     html += '</div>';
     
@@ -111,21 +111,21 @@ function renderGroupEvaluations(evaluations) {
     const totalScore = evaluations.reduce((sum, e) => sum + e.TotalScore, 0);
     const overallAvg = (totalScore / evaluations.length).toFixed(1);
     html += '<div class="stat-item">';
-    html += '<strong>Overall Average Score</strong>';
+    html += '<strong>Durchschnittsergebnis</strong>';
     html += '<span>' + overallAvg + '</span>';
     html += '</div>';
     
     // Highest score
     html += '<div class="stat-item">';
-    html += '<strong>Highest Score</strong>';
-    html += '<span>' + evaluations[0].TotalScore + ' (Group ' + evaluations[0].GroupID + ')</span>';
+    html += '<strong>Höchstes Ergebnis</strong>';
+    html += '<span>' + evaluations[0].TotalScore + ' (Gruppe ' + evaluations[0].GroupID + ')</span>';
     html += '</div>';
     
     // Lowest score
     const lastEval = evaluations[evaluations.length - 1];
     html += '<div class="stat-item">';
-    html += '<strong>Lowest Score</strong>';
-    html += '<span>' + lastEval.TotalScore + ' (Group ' + lastEval.GroupID + ')</span>';
+    html += '<strong>Niedrigstes Ergebnis</strong>';
+    html += '<span>' + lastEval.TotalScore + ' (Gruppe ' + lastEval.GroupID + ')</span>';
     html += '</div>';
     
     html += '</div></div>';
@@ -149,18 +149,18 @@ function renderOrtsverbandEvaluations(evaluations) {
     contentArea.style.cssText = 'padding: 20px;';
     
     let html = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
-    html += '<h2 style="margin: 0; color: #333;">🏆 Ortsverband Rankings - Average Scores</h2>';
+    html += '<h2 style="margin: 0; color: #333;">🏆 Ortsverband Rangliste - Durchschnittsergebnisse</h2>';
     html += '<button onclick="handleGenerateOrtsverbandEvaluationPDF()" style="padding: 10px 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📄 Generate PDF</button>';
     html += '</div>';
     
     // Evaluation table
     html += '<table class="group-table">';
     html += '<thead><tr>';
-    html += '<th style="width: 100px;">Rank</th>';
+    html += '<th style="width: 100px;">Rang</th>';
     html += '<th>Ortsverband</th>';
-    html += '<th>Participants</th>';
-    html += '<th>Total Score</th>';
-    html += '<th>Average Score</th>';
+    html += '<th>Teilnehmer</th>';
+    html += '<th>Gesamtergebnis</th>';
+    html += '<th>Durchschnitt</th>';
     html += '</tr></thead><tbody>';
     
     evaluations.forEach((evalItem, index) => {
@@ -189,14 +189,14 @@ function renderOrtsverbandEvaluations(evaluations) {
     
     // Highest average score
     html += '<div class="stat-item">';
-    html += '<strong>Highest Average Score</strong>';
+    html += '<strong>Höchstes Durchschnittsergebnis</strong>';
     html += '<span>' + evaluations[0].AverageScore.toFixed(1) + ' (' + escapeHtml(evaluations[0].Ortsverband) + ')</span>';
     html += '</div>';
     
     // Lowest average score
     const lastEval = evaluations[evaluations.length - 1];
     html += '<div class="stat-item">';
-    html += '<strong>Lowest Average Score</strong>';
+    html += '<strong>Niedrigstes Durchschnittsergebnis</strong>';
     html += '<span>' + lastEval.AverageScore.toFixed(1) + ' (' + escapeHtml(lastEval.Ortsverband) + ')</span>';
     html += '</div>';
     

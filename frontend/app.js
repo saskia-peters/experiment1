@@ -1,5 +1,5 @@
 // Main application orchestrator - imports and wires up all modules
-import { openFileDialog } from './file-handler.js';
+import { openFileDialog, handleBackupDatabase } from './file-handler.js';
 import { handleShowGroups } from './groups.js';
 import { handleShowStations, showStationDetails } from './stations.js';
 import { handleGroupEvaluation, handleOrtsverbandEvaluation } from './evaluations.js';
@@ -13,6 +13,7 @@ import { handleGlobalAssignScore, handleAssignScore } from './scores.js';
 
 // Expose functions to window object for onclick handlers
 window.openFileDialog = openFileDialog;
+window.handleBackupDatabase = handleBackupDatabase;
 window.handleShowGroups = handleShowGroups;
 window.handleShowStations = handleShowStations;
 window.handleEvaluation = handleGroupEvaluation;

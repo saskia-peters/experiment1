@@ -44,10 +44,31 @@ func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
 		return nil
 	}
 
-	// Calculate number of groups needed
-	numGroups := int(math.Ceil(float64(len(teilnehmers)) / float64(models.MaxGroupSize)))
+	// Step 1: Separate participants with and without PreGroup
+	preGroupMap := make(map[string][]models.Teilnehmer)
+	var unassignedParticipants []models.Teilnehmer
 
-	// Initialize groups
+	for _, t := range teilnehmers {
+		if t.PreGroup != "" {
+			preGroupMap[t.PreGroup] = append(preGroupMap[t.PreGroup], t)
+		} else {
+			unassignedParticipants = append(unassignedParticipants, t)
+		}
+	}
+
+	// Step 2: Calculate number of groups needed
+	// Count pre-formed groups
+	numPreGroups := len(preGroupMap)
+	// Calculate how many additional groups needed for unassigned participants
+	numAdditionalGroups := int(math.Ceil(float64(len(unassignedParticipants)) / float64(models.MaxGroupSize)))
+	numGroups := numPreGroups + numAdditionalGroups
+
+	// Ensure we have at least one group
+	if numGroups == 0 {
+		numGroups = 1
+	}
+
+	// Step 3: Initialize groups
 	groups := make([]models.Group, numGroups)
 	for i := range groups {
 		groups[i] = models.Group{
@@ -58,20 +79,30 @@ func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
 		}
 	}
 
-	// Sort participants for better distribution
+	// Step 4: Assign pre-grouped participants to the first groups
+	groupIdx := 0
+	for _, preGroupMembers := range preGroupMap {
+		// Add all members of this pre-group to the current group
+		for _, t := range preGroupMembers {
+			addTeilnehmerToGroup(&groups[groupIdx], t)
+		}
+		groupIdx++
+	}
+
+	// Step 5: Sort unassigned participants for better distribution
 	// First by Ortsverband, then by Geschlecht, then by Alter
-	sort.Slice(teilnehmers, func(i, j int) bool {
-		if teilnehmers[i].Ortsverband != teilnehmers[j].Ortsverband {
-			return teilnehmers[i].Ortsverband < teilnehmers[j].Ortsverband
+	sort.Slice(unassignedParticipants, func(i, j int) bool {
+		if unassignedParticipants[i].Ortsverband != unassignedParticipants[j].Ortsverband {
+			return unassignedParticipants[i].Ortsverband < unassignedParticipants[j].Ortsverband
 		}
-		if teilnehmers[i].Geschlecht != teilnehmers[j].Geschlecht {
-			return teilnehmers[i].Geschlecht < teilnehmers[j].Geschlecht
+		if unassignedParticipants[i].Geschlecht != unassignedParticipants[j].Geschlecht {
+			return unassignedParticipants[i].Geschlecht < unassignedParticipants[j].Geschlecht
 		}
-		return teilnehmers[i].Alter < teilnehmers[j].Alter
+		return unassignedParticipants[i].Alter < unassignedParticipants[j].Alter
 	})
 
-	// Distribute participants using round-robin with diversity scoring
-	for _, teilnehmer := range teilnehmers {
+	// Step 6: Distribute unassigned participants using round-robin with diversity scoring
+	for _, teilnehmer := range unassignedParticipants {
 		bestGroupIdx := findBestGroup(groups, teilnehmer)
 		addTeilnehmerToGroup(&groups[bestGroupIdx], teilnehmer)
 	}

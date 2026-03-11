@@ -3,6 +3,8 @@
 
 export function AssignScore(arg1:number,arg2:number,arg3:number):Promise<Record<string, any>>;
 
+export function BackupDatabase():Promise<Record<string, any>>;
+
 export function CheckDB():Promise<Record<string, any>>;
 
 export function GenerateGroupEvaluationPDF():Promise<Record<string, any>>;

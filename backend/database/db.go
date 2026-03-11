@@ -30,7 +30,8 @@ func InitDatabase() (*sql.DB, error) {
 		name TEXT,
 		ortsverband TEXT,
 		age INTEGER,
-		geschlecht TEXT
+		geschlecht TEXT,
+		pregroup TEXT
 	);`
 
 	_, err = db.Exec(createTableSQL)

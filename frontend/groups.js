@@ -44,7 +44,7 @@ function renderGroupTabs(groups) {
         // Create tab button
         const button = document.createElement('button');
         button.className = 'tab-button' + (index === 0 ? ' active' : '');
-        button.textContent = 'Group ' + group.GroupID;
+        button.textContent = 'Gruppe ' + group.GroupID;
         button.onclick = () => switchTab(index, tabButtons, tabContents);
         tabButtons.appendChild(button);
         
@@ -57,7 +57,7 @@ function renderGroupTabs(groups) {
 }
 
 function formatGroupContent(group) {
-    let html = '<h2 style="margin-bottom: 15px; color: #333;">Group ' + group.GroupID + '</h2>';
+    let html = '<h2 style="margin-bottom: 15px; color: #333;">Gruppe ' + group.GroupID + '</h2>';
     
     // Participants table
     html += '<table class="group-table">';
@@ -85,7 +85,7 @@ function formatGroupContent(group) {
     
     // Statistics panel
     html += '<div class="stats-panel">';
-    html += '<h3>📊 Group Statistics</h3>';
+    html += '<h3>📊 Gruppenstatistik</h3>';
     html += '<div class="stats-grid">';
     
     // Total participants

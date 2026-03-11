@@ -15,6 +15,7 @@
 *.db
 *.sqlite
 *.sqlite3
+dbbackups/
 
 # Excel files (optional - remove if you want to commit sample files)
 *.xlsx

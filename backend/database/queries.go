@@ -8,7 +8,7 @@ import (
 
 // GetAllTeilnehmers reads all participants from the database
 func GetAllTeilnehmers(db *sql.DB) ([]models.Teilnehmer, error) {
-	rows, err := db.Query("SELECT id, teilnehmer_id, name, ortsverband, age, geschlecht FROM teilnehmer ORDER BY id")
+	rows, err := db.Query("SELECT id, teilnehmer_id, name, ortsverband, age, geschlecht, pregroup FROM teilnehmer ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -18,7 +18,7 @@ func GetAllTeilnehmers(db *sql.DB) ([]models.Teilnehmer, error) {
 	for rows.Next() {
 		var t models.Teilnehmer
 		var alter sql.NullInt64
-		err := rows.Scan(&t.ID, &t.TeilnehmerID, &t.Name, &t.Ortsverband, &alter, &t.Geschlecht)
+		err := rows.Scan(&t.ID, &t.TeilnehmerID, &t.Name, &t.Ortsverband, &alter, &t.Geschlecht, &t.PreGroup)
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +35,7 @@ func GetAllTeilnehmers(db *sql.DB) ([]models.Teilnehmer, error) {
 func GetGroupsForReport(db *sql.DB) ([]models.Group, error) {
 	// Single query to get all groups and participants with JOIN
 	query := `
-		SELECT r.group_id, t.id, t.teilnehmer_id, t.name, t.ortsverband, t.age, t.geschlecht
+		SELECT r.group_id, t.id, t.teilnehmer_id, t.name, t.ortsverband, t.age, t.geschlecht, t.pregroup
 		FROM rel_tn_grp r
 		INNER JOIN teilnehmer t ON t.teilnehmer_id = r.teilnehmer_id
 		ORDER BY r.group_id, t.name
@@ -56,7 +56,7 @@ func GetGroupsForReport(db *sql.DB) ([]models.Group, error) {
 		var t models.Teilnehmer
 		var alter sql.NullInt64
 
-		err := rows.Scan(&groupID, &t.ID, &t.TeilnehmerID, &t.Name, &t.Ortsverband, &alter, &t.Geschlecht)
+		err := rows.Scan(&groupID, &t.ID, &t.TeilnehmerID, &t.Name, &t.Ortsverband, &alter, &t.Geschlecht, &t.PreGroup)
 		if err != nil {
 			return nil, err
 		}

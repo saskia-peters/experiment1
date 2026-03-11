@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	iolib "io"
 	"os"
+	"path/filepath"
+	"time"
 
 	"experiment1/backend/database"
 	"experiment1/backend/io"
@@ -460,5 +463,77 @@ func (a *App) GenerateParticipantCertificates() map[string]interface{} {
 		"message": "Participant certificates PDF generated successfully",
 		"file":    "participant_certificates.pdf",
 		"path":    absPath + string(os.PathSeparator) + "pdfdocs" + string(os.PathSeparator) + "participant_certificates.pdf",
+	}
+}
+
+// BackupDatabase creates a timestamped backup of the database
+func (a *App) BackupDatabase() map[string]interface{} {
+	if a.db == nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": "No database to backup. Please load an Excel file first",
+		}
+	}
+
+	// Create backup directory if it doesn't exist
+	backupDir := "dbbackups"
+	if err := os.MkdirAll(backupDir, 0755); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to create backup directory: %v", err),
+		}
+	}
+
+	// Create timestamp for backup filename
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	backupFilename := fmt.Sprintf("data_backup_%s.db", timestamp)
+	backupPath := filepath.Join(backupDir, backupFilename)
+
+	// Copy database file
+	sourceFile, err := os.Open(models.DbFile)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to open database file: %v", err),
+		}
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(backupPath)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to create backup file: %v", err),
+		}
+	}
+	defer destFile.Close()
+
+	// Copy the file contents
+	bytesWritten, err := iolib.Copy(destFile, sourceFile)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to copy database: %v", err),
+		}
+	}
+
+	// Ensure all data is written to disk
+	if err := destFile.Sync(); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to sync backup file: %v", err),
+		}
+	}
+
+	absPath, _ := os.Getwd()
+	fullPath := filepath.Join(absPath, backupPath)
+
+	return map[string]interface{}{
+		"status":    "success",
+		"message":   fmt.Sprintf("Database backed up successfully (%d bytes)", bytesWritten),
+		"file":      backupFilename,
+		"path":      fullPath,
+		"size":      bytesWritten,
+		"timestamp": timestamp,
 	}
 }
