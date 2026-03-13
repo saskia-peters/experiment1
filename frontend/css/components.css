@@ -1,0 +1,125 @@
+/* Reusable Component Styles */
+
+/* Utility classes for display control */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* Empty state messages */
+.empty-message {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+/* Content padding utility */
+.content-padded {
+    padding: 20px;
+}
+
+/* Header styles for sections */
+.section-header {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.section-header-large {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+/* Flex utilities */
+.flex-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.flex-space-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flex-end {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Text alignment utilities */
+.text-center {
+    text-align: center;
+}
+
+.text-bold {
+    font-weight: bold;
+}
+
+/* Font size utilities */
+.text-sm {
+    font-size: 13px;
+}
+
+.text-md {
+    font-size: 14px;
+}
+
+.text-lg {
+    font-size: 16px;
+}
+
+.text-xl {
+    font-size: 18px;
+}
+
+.text-2xl {
+    font-size: 20px;
+}
+
+/* Color utilities */
+.text-primary {
+    color: #667eea;
+}
+
+.text-muted {
+    color: #666;
+}
+
+.text-dark {
+    color: #333;
+}
+
+/* Spacing utilities */
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mt-15 {
+    margin-top: 15px;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-15 {
+    margin-bottom: 15px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* Background utilities */
+.bg-highlight {
+    background: #fff3cd;
+}
+
+.bg-success {
+    background: #d4edda;
+}

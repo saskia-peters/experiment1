@@ -1,0 +1,15 @@
+/* Groups Display Styles */
+
+/* Group content area */
+.group-content {
+    padding: 20px;
+}
+
+.group-title {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Participant table styles are in main styles.css (group-table) */
+
+/* Statistics specific to groups are shared with evaluations */

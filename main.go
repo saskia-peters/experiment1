@@ -19,6 +19,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	_ "modernc.org/sqlite"
 )
 
 //go:embed all:frontend
@@ -535,5 +537,139 @@ func (a *App) BackupDatabase() map[string]interface{} {
 		"path":      fullPath,
 		"size":      bytesWritten,
 		"timestamp": timestamp,
+	}
+}
+
+// ListBackups returns a list of available database backups
+func (a *App) ListBackups() map[string]interface{} {
+	backupDir := "dbbackups"
+
+	// Check if backup directory exists
+	if _, err := os.Stat(backupDir); os.IsNotExist(err) {
+		return map[string]interface{}{
+			"status":  "success",
+			"backups": []map[string]interface{}{},
+			"count":   0,
+		}
+	}
+
+	// Read backup directory
+	files, err := os.ReadDir(backupDir)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to read backup directory: %v", err),
+		}
+	}
+
+	// Collect backup files
+	backups := []map[string]interface{}{}
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		// Only include .db files
+		if filepath.Ext(file.Name()) != ".db" {
+			continue
+		}
+
+		info, err := file.Info()
+		if err != nil {
+			continue
+		}
+
+		backups = append(backups, map[string]interface{}{
+			"name":     file.Name(),
+			"size":     info.Size(),
+			"modified": info.ModTime().Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"backups": backups,
+		"count":   len(backups),
+	}
+}
+
+// RestoreDatabase restores the database from a backup file
+func (a *App) RestoreDatabase(backupFilename string) map[string]interface{} {
+	backupDir := "dbbackups"
+	backupPath := filepath.Join(backupDir, backupFilename)
+
+	// Validate backup file exists
+	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": "Backup file does not exist",
+		}
+	}
+
+	// Close current database connection if open
+	if a.db != nil {
+		a.db.Close()
+		a.db = nil
+	}
+
+	// Remove current database file
+	if err := os.Remove(models.DbFile); err != nil && !os.IsNotExist(err) {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to remove current database: %v", err),
+		}
+	}
+
+	// Copy backup file to database location
+	sourceFile, err := os.Open(backupPath)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to open backup file: %v", err),
+		}
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(models.DbFile)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to create database file: %v", err),
+		}
+	}
+	defer destFile.Close()
+
+	// Copy the file contents
+	bytesWritten, err := iolib.Copy(destFile, sourceFile)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to restore database: %v", err),
+		}
+	}
+
+	// Ensure all data is written to disk
+	if err := destFile.Sync(); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to sync database file: %v", err),
+		}
+	}
+
+	// Reopen the database
+	db, err := sql.Open("sqlite", models.DbFile)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Failed to open restored database: %v", err),
+		}
+	}
+	a.db = db
+
+	return map[string]interface{}{
+		"status":  "success",
+		"message": fmt.Sprintf("Database restored successfully from %s (%d bytes)", backupFilename, bytesWritten),
+		"file":    backupFilename,
+		"size":    bytesWritten,
 	}
 }

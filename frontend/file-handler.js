@@ -62,3 +62,123 @@ export async function handleBackupDatabase() {
         setStatus('ERROR: ' + err, 'error');
     }
 }
+
+export async function handleRestoreDatabase() {
+    setStatus('Loading available backups...', 'info');
+    
+    try {
+        // Get list of backups
+        const listResult = await window.go.main.App.ListBackups();
+        
+        if (listResult.status === 'error') {
+            setStatus('ERROR: ' + listResult.message, 'error');
+            alert('Failed to load backups: ' + listResult.message);
+            return;
+        }
+        
+        if (listResult.count === 0) {
+            setStatus('No backups available', 'info');
+            alert('No database backups found. Please create a backup first.');
+            return;
+        }
+        
+        // Sort backups by modified date (newest first)
+        const backups = listResult.backups.sort((a, b) => {
+            // Parse dates and compare (newer dates should come first)
+            return new Date(b.modified) - new Date(a.modified);
+        });
+        
+        let dialogHTML = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;" id="restore-dialog">';
+        dialogHTML += '<div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">';
+        dialogHTML += '<h2 style="margin: 0 0 20px 0; color: #333;">🔄 Restore Database</h2>';
+        dialogHTML += '<p style="margin-bottom: 20px; color: #666;">Select a backup to restore. <strong>Warning:</strong> This will replace your current database!</p>';
+        
+        dialogHTML += '<div style="margin-bottom: 20px;">';
+        backups.forEach((backup, index) => {
+            const sizeKB = (backup.size / 1024).toFixed(2);
+            dialogHTML += '<div style="border: 2px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s;" ';
+            dialogHTML += 'onmouseover="this.style.borderColor=\'#667eea\'; this.style.background=\'#f0f8ff\';" ';
+            dialogHTML += 'onmouseout="this.style.borderColor=\'#ddd\'; this.style.background=\'white\';" ';
+            dialogHTML += 'onclick="window.confirmRestore(\'' + backup.name + '\')">';
+            dialogHTML += '<div style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">' + backup.name + '</div>';
+            dialogHTML += '<div style="font-size: 12px; color: #666;">';
+            dialogHTML += '<span>📅 ' + backup.modified + '</span>';
+            dialogHTML += '<span style="margin-left: 15px;">💾 ' + sizeKB + ' KB</span>';
+            dialogHTML += '</div>';
+            dialogHTML += '</div>';
+        });
+        dialogHTML += '</div>';
+        
+        dialogHTML += '<div style="text-align: right;">';
+        dialogHTML += '<button onclick="window.closeRestoreDialog()" style="padding: 10px 20px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>';
+        dialogHTML += '</div>';
+        
+        dialogHTML += '</div></div>';
+        
+        // Add dialog to page
+        const dialogElement = document.createElement('div');
+        dialogElement.innerHTML = dialogHTML;
+        document.body.appendChild(dialogElement);
+        
+        setStatus('Select a backup to restore', 'info');
+        
+    } catch (err) {
+        setStatus('ERROR: ' + err, 'error');
+        alert('Error: ' + err);
+    }
+}
+
+// Helper function to close restore dialog
+window.closeRestoreDialog = function() {
+    const dialog = document.getElementById('restore-dialog');
+    if (dialog && dialog.parentElement) {
+        dialog.parentElement.remove();
+    }
+    setStatus('Restore cancelled', 'info');
+};
+
+// Helper function to confirm and perform restore
+window.confirmRestore = async function(backupFilename) {
+    const confirmed = confirm(
+        '⚠️ WARNING: This will replace your current database with the backup!\n\n' +
+        'Backup: ' + backupFilename + '\n\n' +
+        'Are you sure you want to continue?'
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    // Close dialog
+    window.closeRestoreDialog();
+    
+    setStatus('Restoring database from backup...', 'info');
+    
+    try {
+        const result = await window.go.main.App.RestoreDatabase(backupFilename);
+        
+        if (result.status === 'error') {
+            setStatus('ERROR: ' + result.message, 'error');
+            alert('Failed to restore database: ' + result.message);
+        } else {
+            setStatus('✅ ' + result.message, 'success');
+            alert('Database restored successfully!\n\nThe application will now refresh.');
+            
+            // Enable all buttons since we now have data
+            btnShow.disabled = false;
+            btnStations.disabled = false;
+            btnEvaluation.disabled = false;
+            btnOrtsverband.disabled = false;
+            btnPDF.disabled = false;
+            btnCertificates.disabled = false;
+            
+            // Refresh the view
+            output.style.display = 'block';
+            tabs.style.display = 'none';
+            output.textContent = '✔ Database restored successfully from backup!\n\nYou can now use all features.';
+        }
+    } catch (err) {
+        setStatus('ERROR: ' + err, 'error');
+        alert('Error restoring database: ' + err);
+    }
+};

@@ -1,0 +1,84 @@
+/* Evaluations Display Styles */
+
+/* Content area */
+.evaluation-content {
+    padding: 20px;
+}
+
+/* Header section with title and PDF button */
+.evaluation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.evaluation-title {
+    margin: 0;
+    color: #333;
+}
+
+.btn-pdf-generate {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-pdf-generate:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+/* Table column widths */
+.evaluation-table th.col-rank {
+    width: 100px;
+}
+
+.evaluation-table th.col-group {
+    width: 120px;
+}
+
+/* Ranking styles */
+.rank-cell {
+    text-align: center;
+    font-size: 20px;
+}
+
+.group-cell {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.station-count-cell {
+    text-align: center;
+}
+
+.total-score-cell {
+    font-weight: bold;
+    font-size: 18px;
+    color: #667eea;
+}
+
+.average-score-cell {
+    font-weight: bold;
+    font-size: 18px;
+    color: #667eea;
+}
+
+.ortsverband-cell {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Top 3 podium highlight */
+.podium-row {
+    background: #fff3cd;
+}
+
+/* Statistics panel - defined in main styles.css, keeping for reference */

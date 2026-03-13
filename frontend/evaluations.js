@@ -62,36 +62,36 @@ function renderGroupEvaluations(evaluations) {
     tabContents.innerHTML = '';
     
     if (!evaluations || evaluations.length === 0) {
-        tabContents.innerHTML = '<div style="padding: 20px;">No evaluations found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">No evaluations found.</div>';
         return;
     }
     
     // Create single content area for all evaluations
     const contentArea = document.createElement('div');
-    contentArea.style.cssText = 'padding: 20px;';
+    contentArea.className = 'evaluation-content';
     
-    let html = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
-    html += '<h2 style="margin: 0; color: #333;">🏆 Gruppenrangliste - Gesamtergebnis</h2>';
-    html += '<button onclick="handleGenerateGroupEvaluationPDF()" style="padding: 10px 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📄 Generate PDF</button>';
+    let html = '<div class="evaluation-header">';
+    html += '<h2 class="evaluation-title">🏆 Gruppenrangliste - Gesamtergebnis</h2>';
+    html += '<button onclick="handleGenerateGroupEvaluationPDF()" class="btn-pdf-generate">📄 Generate PDF</button>';
     html += '</div>';
     
     // Evaluation table
-    html += '<table class="group-table">';
+    html += '<table class="group-table evaluation-table">';
     html += '<thead><tr>';
-    html += '<th style="width: 100px;">Rang</th>';
-    html += '<th style="width: 120px;">Gruppe</th>';
+    html += '<th class="col-rank">Rang</th>';
+    html += '<th class="col-group">Gruppe</th>';
     html += '<th>Stationen</th>';
     html += '<th>Gesamtergebnis</th>';
     html += '</tr></thead><tbody>';
     
     evaluations.forEach((evalItem, index) => {
         const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
-        const rowStyle = index < 3 ? 'background: #fff3cd;' : '';
-        html += '<tr style="' + rowStyle + '">';
-        html += '<td style="text-align: center; font-size: 20px;">' + rankEmoji + '</td>';
-        html += '<td style="font-weight: bold; font-size: 16px;">Gruppe ' + evalItem.GroupID + '</td>';
-        html += '<td style="text-align: center;">' + evalItem.StationCount + '</td>';
-        html += '<td style="font-weight: bold; font-size: 18px; color: #667eea;">' + evalItem.TotalScore + '</td>';
+        const rowClass = index < 3 ? 'podium-row' : '';
+        html += '<tr class="' + rowClass + '">';
+        html += '<td class="rank-cell">' + rankEmoji + '</td>';
+        html += '<td class="group-cell">Gruppe ' + evalItem.GroupID + '</td>';
+        html += '<td class="station-count-cell">' + evalItem.StationCount + '</td>';
+        html += '<td class="total-score-cell">' + evalItem.TotalScore + '</td>';
         html += '</tr>';
     });
     
@@ -140,23 +140,23 @@ function renderOrtsverbandEvaluations(evaluations) {
     tabContents.innerHTML = '';
     
     if (!evaluations || evaluations.length === 0) {
-        tabContents.innerHTML = '<div style="padding: 20px;">No evaluations found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">No evaluations found.</div>';
         return;
     }
     
     // Create single content area for all evaluations
     const contentArea = document.createElement('div');
-    contentArea.style.cssText = 'padding: 20px;';
+    contentArea.className = 'evaluation-content';
     
-    let html = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
-    html += '<h2 style="margin: 0; color: #333;">🏆 Ortsverband Rangliste - Durchschnittsergebnisse</h2>';
-    html += '<button onclick="handleGenerateOrtsverbandEvaluationPDF()" style="padding: 10px 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📄 Generate PDF</button>';
+    let html = '<div class="evaluation-header">';
+    html += '<h2 class="evaluation-title">🏆 Ortsverband Rangliste - Durchschnittsergebnisse</h2>';
+    html += '<button onclick="handleGenerateOrtsverbandEvaluationPDF()" class="btn-pdf-generate">📄 Generate PDF</button>';
     html += '</div>';
     
     // Evaluation table
-    html += '<table class="group-table">';
+    html += '<table class="group-table evaluation-table">';
     html += '<thead><tr>';
-    html += '<th style="width: 100px;">Rang</th>';
+    html += '<th class="col-rank">Rang</th>';
     html += '<th>Ortsverband</th>';
     html += '<th>Teilnehmer</th>';
     html += '<th>Gesamtergebnis</th>';
@@ -165,13 +165,13 @@ function renderOrtsverbandEvaluations(evaluations) {
     
     evaluations.forEach((evalItem, index) => {
         const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
-        const rowStyle = index < 3 ? 'background: #fff3cd;' : '';
-        html += '<tr style="' + rowStyle + '">';
-        html += '<td style="text-align: center; font-size: 20px;">' + rankEmoji + '</td>';
-        html += '<td style="font-weight: bold; font-size: 16px;">' + escapeHtml(evalItem.Ortsverband) + '</td>';
-        html += '<td style="text-align: center;">' + evalItem.ParticipantCount + '</td>';
-        html += '<td style="text-align: center;">' + evalItem.TotalScore + '</td>';
-        html += '<td style="font-weight: bold; font-size: 18px; color: #667eea;">' + evalItem.AverageScore.toFixed(1) + '</td>';
+        const rowClass = index < 3 ? 'podium-row' : '';
+        html += '<tr class="' + rowClass + '">';
+        html += '<td class="rank-cell">' + rankEmoji + '</td>';
+        html += '<td class="ortsverband-cell">' + escapeHtml(evalItem.Ortsverband) + '</td>';
+        html += '<td class="text-center">' + evalItem.ParticipantCount + '</td>';
+        html += '<td class="text-center">' + evalItem.TotalScore + '</td>';
+        html += '<td class="average-score-cell">' + evalItem.AverageScore.toFixed(1) + '</td>';
         html += '</tr>';
     });
     

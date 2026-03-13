@@ -21,7 +21,11 @@ export function GetGroupEvaluations():Promise<Record<string, any>>;
 
 export function GetOrtsverbandEvaluations():Promise<Record<string, any>>;
 
+export function ListBackups():Promise<Record<string, any>>;
+
 export function LoadFile():Promise<Record<string, any>>;
+
+export function RestoreDatabase(arg1:string):Promise<Record<string, any>>;
 
 export function ShowGroups():Promise<Record<string, any>>;
 

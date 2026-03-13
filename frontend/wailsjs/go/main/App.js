@@ -42,8 +42,16 @@ export function GetOrtsverbandEvaluations() {
   return window['go']['main']['App']['GetOrtsverbandEvaluations']();
 }
 
+export function ListBackups() {
+  return window['go']['main']['App']['ListBackups']();
+}
+
 export function LoadFile() {
   return window['go']['main']['App']['LoadFile']();
+}
+
+export function RestoreDatabase(arg1) {
+  return window['go']['main']['App']['RestoreDatabase'](arg1);
 }
 
 export function ShowGroups() {

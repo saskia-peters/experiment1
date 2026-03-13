@@ -1,0 +1,140 @@
+/* Stations / Results Entry Styles */
+
+/* Main results entry container */
+.results-entry-container {
+    padding: 20px;
+}
+
+/* Group selector section */
+.group-selector-panel {
+    background: #f0f8ff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #4facfe;
+    margin-bottom: 20px;
+}
+
+.group-selector-panel h2 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.group-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.group-selector-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+}
+
+.group-selector {
+    padding: 10px;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+    font-size: 16px;
+    min-width: 200px;
+}
+
+/* Results table container */
+#results-table-container {
+    display: none;
+}
+
+#results-table-container.visible {
+    display: block;
+}
+
+.results-table-header {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.results-table {
+    margin-bottom: 20px;
+}
+
+.results-table th.col-station {
+    width: 300px;
+}
+
+.results-table th.col-score {
+    width: 200px;
+}
+
+.results-table th.col-action {
+    width: 150px;
+}
+
+.results-table td.station-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Score input field */
+.score-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 2px solid #ddd;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+.btn-save-score {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    width: 100%;
+}
+
+.btn-save-score:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.save-all-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.btn-save-all {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-save-all:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
+}
+
+/* Row highlight on save */
+.row-saved {
+    background: #d4edda !important;
+    transition: background 0.3s;
+}
+
+/* Empty state messages */
+.empty-state {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}

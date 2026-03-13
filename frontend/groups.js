@@ -35,7 +35,7 @@ function renderGroupTabs(groups) {
     tabContents.innerHTML = '';
     
     if (!groups || groups.length === 0) {
-        tabContents.innerHTML = '<div style="padding: 20px;">No groups found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">No groups found.</div>';
         return;
     }
     
@@ -57,7 +57,10 @@ function renderGroupTabs(groups) {
 }
 
 function formatGroupContent(group) {
-    let html = '<h2 style="margin-bottom: 15px; color: #333;">Gruppe ' + group.GroupID + '</h2>';
+    let html = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">';
+    html += '<h2 class="group-title" style="margin: 0;">Gruppe ' + group.GroupID + '</h2>';
+    html += '<button onclick="window.handleShowStationsForGroup(' + group.GroupID + ')" class="btn-stations">📝 Ergebniseingabe</button>';
+    html += '</div>';
     
     // Participants table
     html += '<table class="group-table">';
