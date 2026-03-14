@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"experiment1/backend/database"
+	"THW-JugendOlympiade/backend/database"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -77,9 +77,9 @@ func GenerateGroupEvaluationPDF(db *sql.DB) error {
 	theme.Font(pdf, "", theme.SizeBody)
 	pdf.CellFormat(0, 6, fmt.Sprintf("Gesamtanzahl Gruppen: %d", len(evaluations)), "", 1, "L", false, 0, "")
 	if len(evaluations) > 0 {
-		pdf.CellFormat(0, 6, fmt.Sprintf("Höchster Score: %d (Gruppe %d)", evaluations[0].TotalScore, evaluations[0].GroupID), "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 6, enc(fmt.Sprintf("Höchster Score: %d (Gruppe %d)", evaluations[0].TotalScore, evaluations[0].GroupID)), "", 1, "L", false, 0, "")
 		last := evaluations[len(evaluations)-1]
-		pdf.CellFormat(0, 6, fmt.Sprintf("Niedrigster Score: %d (Gruppe %d)", last.TotalScore, last.GroupID), "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 6, enc(fmt.Sprintf("Niedrigster Score: %d (Gruppe %d)", last.TotalScore, last.GroupID)), "", 1, "L", false, 0, "")
 		total := 0
 		for _, e := range evaluations {
 			total += e.TotalScore
@@ -87,7 +87,7 @@ func GenerateGroupEvaluationPDF(db *sql.DB) error {
 		pdf.CellFormat(0, 6, fmt.Sprintf("Durchschnittlicher Score: %.1f", float64(total)/float64(len(evaluations))), "", 1, "L", false, 0, "")
 	}
 
-	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "group_evaluations.pdf")); err != nil {
+	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Auswertung_nach_Gruppe.pdf")); err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
 	return nil
@@ -129,7 +129,7 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 
 	colWidths := []float64{20, 60, 30, 35, 35}
 	for i, header := range []string{"Platz", "Ortsverband", "Teiln.", "Gesamt", "Ø Score"} {
-		pdf.CellFormat(colWidths[i], 10, header, "1", 0, "C", true, 0, "")
+		pdf.CellFormat(colWidths[i], 10, enc(header), "1", 0, "C", true, 0, "")
 	}
 	pdf.Ln(-1)
 
@@ -145,7 +145,7 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 			theme.Font(pdf, "", theme.SizeBody)
 		}
 		pdf.CellFormat(colWidths[0], 9, fmt.Sprintf("%d", i+1), "1", 0, "C", fill, 0, "")
-		pdf.CellFormat(colWidths[1], 9, eval.Ortsverband, "1", 0, "L", fill, 0, "")
+		pdf.CellFormat(colWidths[1], 9, enc(eval.Ortsverband), "1", 0, "L", fill, 0, "")
 		pdf.CellFormat(colWidths[2], 9, fmt.Sprintf("%d", eval.ParticipantCount), "1", 0, "C", fill, 0, "")
 		pdf.CellFormat(colWidths[3], 9, fmt.Sprintf("%d", eval.TotalScore), "1", 0, "C", fill, 0, "")
 		pdf.CellFormat(colWidths[4], 9, fmt.Sprintf("%.1f", eval.AverageScore), "1", 0, "C", fill, 0, "")
@@ -159,19 +159,19 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 	pdf.CellFormat(0, 8, "Zusammenfassung", "", 1, "L", false, 0, "")
 	pdf.Ln(3)
 	theme.Font(pdf, "", theme.SizeBody)
-	pdf.CellFormat(0, 6, fmt.Sprintf("Gesamtanzahl Ortsverbände: %d", len(evaluations)), "", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 6, enc(fmt.Sprintf("Gesamtanzahl Ortsverbände: %d", len(evaluations))), "", 1, "L", false, 0, "")
 	if len(evaluations) > 0 {
-		pdf.CellFormat(0, 6, fmt.Sprintf("Höchster Ø-Score: %.1f (%s)", evaluations[0].AverageScore, evaluations[0].Ortsverband), "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 6, enc(fmt.Sprintf("Höchster Ø-Score: %.1f (%s)", evaluations[0].AverageScore, evaluations[0].Ortsverband)), "", 1, "L", false, 0, "")
 		last := evaluations[len(evaluations)-1]
-		pdf.CellFormat(0, 6, fmt.Sprintf("Niedrigster Ø-Score: %.1f (%s)", last.AverageScore, last.Ortsverband), "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 6, enc(fmt.Sprintf("Niedrigster Ø-Score: %.1f (%s)", last.AverageScore, last.Ortsverband)), "", 1, "L", false, 0, "")
 		totalAvg := 0.0
 		for _, e := range evaluations {
 			totalAvg += e.AverageScore
 		}
-		pdf.CellFormat(0, 6, fmt.Sprintf("Durchschnittlicher Ø-Score: %.1f", totalAvg/float64(len(evaluations))), "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 6, enc(fmt.Sprintf("Durchschnittlicher Ø-Score: %.1f", totalAvg/float64(len(evaluations)))), "", 1, "L", false, 0, "")
 	}
 
-	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "ortsverband_evaluations.pdf")); err != nil {
+	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Auswertung_nach_Ortsverband.pdf")); err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
 	return nil

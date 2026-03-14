@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/models"
 )
 
 // GetAllTeilnehmers reads all participants from the database

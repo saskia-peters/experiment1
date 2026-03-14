@@ -7,22 +7,22 @@ A cross-platform desktop application for managing youth Olympics events. Built w
 
 ## Features
 
-### Ì≥ä Participant Management
+### ÔøΩÔøΩÔøΩ Participant Management
 - **Excel Import**: Import participant data from XLSX files with automatic validation
 - **Smart Groups**: Automatically creates balanced groups with at most 8 participants
 - **Database Storage**: All data stored securely in SQLite database
 
-### ÌæØ Station Scoring
+### ÔøΩÔøΩÔøΩ Station Scoring
 - **Track Performance**: Record scores for each group at different stations
 - **Import Stations**: Load station data from Excel files
 - **Real-time Updates**: Scores are saved automatically
 
-### Ì≥à Evaluations
+### ÔøΩÔøΩÔøΩ Evaluations
 - **Group Rankings**: View rankings by group with total scores
 - **Ortsverband Rankings**: Compare locations/districts by average scores
 - **Statistics**: Participant counts, score distributions, and averages
 
-### Ì≥Ñ PDF Generation
+### ÔøΩÔøΩÔøΩ PDF Generation
 All PDFs are automatically saved to the \`pdfdocs/\` directory:
 - **Groups Report**: One page per group with participant lists and statistics
 - **Group Evaluations**: Rankings by group with scores
@@ -32,7 +32,7 @@ All PDFs are automatically saved to the \`pdfdocs/\` directory:
   - Shows participant details, group assignment, and ranking
   - Lists all group members
 
-### Ì∂•Ô∏è Desktop Application
+### ÔøΩÔøΩÔøΩÔ∏è Desktop Application
 - **Cross-Platform**: Runs on Windows, macOS, and Linux
 - **Modern GUI**: Clean, intuitive interface
 - **Fast Performance**: Native Go backend
@@ -42,9 +42,9 @@ All PDFs are automatically saved to the \`pdfdocs/\` directory:
 
 ### Download
 Download the latest release for your platform:
-- **Windows**: \`experiment1.exe\`
-- **macOS**: \`experiment1.app\`
-- **Linux**: \`experiment1\`
+- **Windows**: \`THW-JugendOlympiade.exe\`
+- **macOS**: \`THW-JugendOlympiade.app\`
+- **Linux**: \`THW-JugendOlympiade\`
 
 ### First Launch
 1. Double-click the executable to launch
@@ -194,7 +194,7 @@ After using the application, you'll find:
 - Go to System Preferences ‚Üí Security & Privacy ‚Üí Allow the app
 
 **Application won't start (Linux)**
-- Make the file executable: \`chmod +x experiment1\`
+- Make the file executable: `chmod +x THW-JugendOlympiade`
 - Install required libraries: \`sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-37\`
 
 ### Getting Help

@@ -4,9 +4,9 @@ import (
 	"math"
 	"testing"
 
-	"experiment1/backend/database"
-	"experiment1/backend/models"
-	"experiment1/backend/services"
+	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
+	"THW-JugendOlympiade/backend/services"
 )
 
 // mockDistributeIntoGroups mimics the distribution logic for testing without DB

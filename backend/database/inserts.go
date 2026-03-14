@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/models"
 )
 
 // trimSpace removes leading, trailing, and internal excessive whitespace

@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/models"
 )
 
 // TestMaxGroupSizeConstant tests the MaxGroupSize constant

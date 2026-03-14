@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"experiment1/backend/database"
-	"experiment1/backend/io"
-	"experiment1/backend/models"
-	"experiment1/backend/services"
+	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/io"
+	"THW-JugendOlympiade/backend/models"
+	"THW-JugendOlympiade/backend/services"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"

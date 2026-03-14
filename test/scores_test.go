@@ -3,8 +3,8 @@ package test
 import (
 	"testing"
 
-	"experiment1/backend/database"
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
 )
 
 // TestAssignGroupStationScore_NewScore tests assigning a new score

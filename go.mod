@@ -1,4 +1,4 @@
-module experiment1
+module THW-JugendOlympiade
 
 go 1.25.0
 
@@ -6,6 +6,7 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/wailsapp/wails/v2 v2.11.0
 	github.com/xuri/excelize/v2 v2.9.0
+	golang.org/x/text v0.22.0
 	modernc.org/sqlite v1.46.1
 )
 
@@ -47,7 +48,6 @@ require (
 	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
 	modernc.org/libc v1.67.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

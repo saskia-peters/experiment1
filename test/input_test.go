@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"experiment1/backend/io"
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/io"
+	"THW-JugendOlympiade/backend/models"
 
 	"github.com/xuri/excelize/v2"
 )

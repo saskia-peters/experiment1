@@ -6,8 +6,8 @@ import (
 	"math"
 	"sort"
 
-	"experiment1/backend/database"
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
 )
 
 // CreateBalancedGroups creates groups with balanced distribution

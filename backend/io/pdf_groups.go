@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"experiment1/backend/database"
+	"THW-JugendOlympiade/backend/database"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -61,10 +61,10 @@ func GeneratePDFReport(db *sql.DB) error {
 
 		for i, t := range group.Teilnehmers {
 			fill := i%2 == 0
-			pdf.CellFormat(colWidths[0], 9, t.Name, "1", 0, "L", fill, 0, "")
-			pdf.CellFormat(colWidths[1], 9, t.Ortsverband, "1", 0, "L", fill, 0, "")
+			pdf.CellFormat(colWidths[0], 9, enc(t.Name), "1", 0, "L", fill, 0, "")
+			pdf.CellFormat(colWidths[1], 9, enc(t.Ortsverband), "1", 0, "L", fill, 0, "")
 			pdf.CellFormat(colWidths[2], 9, fmt.Sprintf("%d", t.Alter), "1", 0, "C", fill, 0, "")
-			pdf.CellFormat(colWidths[3], 9, t.Geschlecht, "1", 0, "C", fill, 0, "")
+			pdf.CellFormat(colWidths[3], 9, enc(t.Geschlecht), "1", 0, "C", fill, 0, "")
 			pdf.Ln(-1)
 		}
 
@@ -97,7 +97,7 @@ func GeneratePDFReport(db *sql.DB) error {
 			ovStr += fmt.Sprintf("%s (%d)", ov, count)
 			first = false
 		}
-		pdf.CellFormat(0, 5, ovStr, "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 5, enc(ovStr), "", 1, "L", false, 0, "")
 
 		gStr := "Geschlecht: "
 		first = true
@@ -108,14 +108,14 @@ func GeneratePDFReport(db *sql.DB) error {
 			gStr += fmt.Sprintf("%s (%d)", g, count)
 			first = false
 		}
-		pdf.CellFormat(0, 5, gStr, "", 1, "L", false, 0, "")
+		pdf.CellFormat(0, 5, enc(gStr), "", 1, "L", false, 0, "")
 
 		if alterCount > 0 {
 			pdf.CellFormat(0, 5, fmt.Sprintf("Durchschnittsalter: %.1f Jahre", float64(alterSum)/float64(alterCount)), "", 1, "L", false, 0, "")
 		}
 	}
 
-	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "groups_report.pdf")); err != nil {
+	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Gruppeneinteilung.pdf")); err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
 	return nil

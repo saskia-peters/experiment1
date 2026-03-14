@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/models"
 )
 
 // GetGroupEvaluations retrieves all groups with their total scores, ranked from high to low

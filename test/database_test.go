@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"experiment1/backend/database"
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
 
 	_ "modernc.org/sqlite"
 )

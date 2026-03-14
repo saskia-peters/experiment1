@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"experiment1/backend/database"
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -72,7 +72,7 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 		}
 	}
 
-	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "participant_certificates.pdf")); err != nil {
+	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Urkunden_Teilnehmende.pdf")); err != nil {
 		return fmt.Errorf("failed to save PDF: %w", err)
 	}
 	return nil
@@ -104,13 +104,13 @@ func certRenderTemplate(pdf *gofpdf.Fpdf, theme PDFTheme, p models.Teilnehmer, g
 	pdf.SetXY(left, 95)
 	theme.Font(pdf, "B", theme.SizeCertName)
 	theme.TextColor(pdf, theme.ColorText)
-	pdf.CellFormat(width, 10, p.Name, "", 0, "C", false, 0, "")
+	pdf.CellFormat(width, 10, enc(p.Name), "", 0, "C", false, 0, "")
 
 	// Ortsverband
 	pdf.SetXY(left, 105)
 	theme.Font(pdf, "", theme.SizeCertOrtsverband)
 	theme.TextColor(pdf, theme.ColorSubtext)
-	pdf.CellFormat(width, 8, fmt.Sprintf("Ortsverband %s", p.Ortsverband), "", 0, "C", false, 0, "")
+	pdf.CellFormat(width, 8, enc(fmt.Sprintf("Ortsverband %s", p.Ortsverband)), "", 0, "C", false, 0, "")
 
 	// Group
 	pdf.SetXY(left, 125)
@@ -154,14 +154,14 @@ func certRenderProgrammatic(pdf *gofpdf.Fpdf, theme PDFTheme, p models.Teilnehme
 	pdf.SetX(left)
 	theme.Font(pdf, "B", theme.SizeCertName)
 	theme.TextColor(pdf, theme.ColorText)
-	pdf.CellFormat(width, 15, p.Name, "", 1, "C", false, 0, "")
+	pdf.CellFormat(width, 15, enc(p.Name), "", 1, "C", false, 0, "")
 	pdf.Ln(5)
 
 	// Ortsverband
 	pdf.SetX(left)
 	theme.Font(pdf, "", theme.SizeCertOrtsverband)
 	theme.TextColor(pdf, theme.ColorSubtext)
-	pdf.CellFormat(width, 8, fmt.Sprintf("Ortsverband: %s", p.Ortsverband), "", 1, "C", false, 0, "")
+	pdf.CellFormat(width, 8, enc(fmt.Sprintf("Ortsverband: %s", p.Ortsverband)), "", 1, "C", false, 0, "")
 	pdf.Ln(8)
 
 	// Group
@@ -214,8 +214,8 @@ func certMembersTable(pdf *gofpdf.Fpdf, theme PDFTheme, members []models.Teilneh
 	for i, m := range members {
 		fill := i%2 == 0
 		pdf.SetX(left)
-		pdf.CellFormat(colWidths[0], 7, m.Name, "1", 0, "L", fill, 0, "")
-		pdf.CellFormat(colWidths[1], 7, m.Ortsverband, "1", 0, "L", fill, 0, "")
+		pdf.CellFormat(colWidths[0], 7, enc(m.Name), "1", 0, "L", fill, 0, "")
+		pdf.CellFormat(colWidths[1], 7, enc(m.Ortsverband), "1", 0, "L", fill, 0, "")
 		pdf.Ln(-1)
 	}
 }

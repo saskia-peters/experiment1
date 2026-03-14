@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/models"
 
 	_ "modernc.org/sqlite"
 )

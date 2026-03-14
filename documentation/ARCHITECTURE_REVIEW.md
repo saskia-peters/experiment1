@@ -736,7 +736,7 @@ Test execution succeeds but coverage report shows `[no statements]`.
 $ cd test && go test -cover
 PASS
 coverage: [no statements]
-ok      experiment1/test        0.584s
+ok      THW-JugendOlympiade/test        0.584s
 ```
 
 **Possible Causes:**
@@ -770,7 +770,7 @@ package io_test  // Change package to match tested code
 
 import (
     "testing"
-    "experiment1/backend/io"
+    "THW-JugendOlympiade/backend/io"
 )
 
 func TestReadXLSXFile(t *testing.T) {

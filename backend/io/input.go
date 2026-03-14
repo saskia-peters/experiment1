@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"experiment1/backend/models"
+	"THW-JugendOlympiade/backend/models"
 
 	"github.com/xuri/excelize/v2"
 )

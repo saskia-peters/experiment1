@@ -47,7 +47,7 @@ Key dependencies automatically installed:
 ## Project Structure
 
 ```
-experiment1/
+THW-JugendOlympiade/
 ├── backend/                  # Go backend code
 │   ├── database/            # Database layer
 │   │   ├── db.go           # DB initialization and connection
@@ -397,7 +397,7 @@ package test
 
 import (
     "testing"
-    "experiment1/backend/services"
+    "THW-JugendOlympiade/backend/services"
 )
 
 func TestNewFeature(t *testing.T) {
@@ -579,7 +579,7 @@ gcc --version  # Verify installation
 
 ```bash
 git clone <repository-url>
-cd experiment1
+cd THW-JugendOlympiade
 go mod download
 ```
 
@@ -631,9 +631,9 @@ go test -v -run TestValidateHeaders
 
 ```bash
 wails build
-./build/bin/experiment1.exe  # Windows
-./build/bin/experiment1.app  # macOS
-./build/bin/experiment1      # Linux
+./build/bin/THW-JugendOlympiade.exe  # Windows
+./build/bin/THW-JugendOlympiade.app  # macOS
+./build/bin/THW-JugendOlympiade      # Linux
 ```
 
 ## Building
@@ -643,7 +643,7 @@ wails build
 **Windows:**
 ```bash
 wails build
-# Output: build/bin/experiment1.exe
+# Output: build/bin/THW-JugendOlympiade.exe
 ```
 
 **Windows (No Console):**
@@ -655,14 +655,14 @@ wails build -ldflags "-H windowsgui"
 **macOS (Universal Binary):**
 ```bash
 wails build -platform darwin/universal
-# Output: build/bin/experiment1.app
+# Output: build/bin/THW-JugendOlympiade.app
 # Supports Intel and Apple Silicon
 ```
 
 **Linux:**
 ```bash
 wails build -platform linux/amd64
-# Output: build/bin/experiment1
+# Output: build/bin/THW-JugendOlympiade
 ```
 
 ### Cross-Compilation
@@ -711,8 +711,8 @@ See `wails build --help` for all options.
 **wails.json:**
 ```json
 {
-  "name": "experiment1",
-  "outputfilename": "experiment1",
+  "name": "THW-JugendOlympiade",
+  "outputfilename": "THW-JugendOlympiade",
   "frontend:install": "",
   "frontend:build": "",
   "info": {
@@ -791,7 +791,7 @@ See [dev_utils/README.md](dev_utils/README.md) for details.
 1. **Fork and Clone**
    ```bash
    git clone <your-fork-url>
-   cd experiment1
+   cd THW-JugendOlympiade
    ```
 
 2. **Create Feature Branch**
