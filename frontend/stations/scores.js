@@ -24,7 +24,7 @@ export function checkForExistingScore() {
         if (currentStation && currentStation.GroupScores) {
             const existingScore = currentStation.GroupScores.find(gs => gs.GroupID === groupID);
             if (existingScore) {
-                warningText.textContent = `Group ${groupID} already has a score of ${existingScore.Score} for ${currentStation.StationName}. Saving will overwrite this score.`;
+                warningText.textContent = `Gruppe ${groupID} hat bereits ein Ergebnis von ${existingScore.Score} für ${currentStation.StationName}. Beim Speichern wird dieses Ergebnis überschrieben.`;
                 warningDiv.style.display = 'block';
                 return;
             }
@@ -45,17 +45,17 @@ export async function handleGlobalAssignScore() {
     const stationID = parseInt(stationInput.getAttribute('data-station-id'));
     
     if (!groupID || isNaN(groupID)) {
-        alert('Please select a group');
+        alert('Bitte eine Gruppe auswählen');
         return;
     }
     
     if (!score || isNaN(score)) {
-        alert('Please select a score');
+        alert('Bitte ein Ergebnis auswählen');
         return;
     }
     
     if (!stationID || isNaN(stationID)) {
-        alert('Please select a station');
+        alert('Bitte eine Station auswählen');
         return;
     }
     
@@ -66,13 +66,13 @@ export async function handleGlobalAssignScore() {
             const existingScore = currentStation.GroupScores.find(gs => gs.GroupID === groupID);
             if (existingScore) {
                 const confirmed = confirm(
-                    `⚠️ WARNING: Group ${groupID} already has a score for ${currentStation.StationName}!\n\n` +
-                    `Current Score: ${existingScore.Score}\n` +
-                    `New Score: ${score}\n\n` +
-                    `Do you want to OVERWRITE the existing score?`
+                    `⚠️ WARNUNG: Gruppe ${groupID} hat bereits ein Ergebnis für ${currentStation.StationName}!\n\n` +
+                    `Aktuelles Ergebnis: ${existingScore.Score}\n` +
+                    `Neues Ergebnis: ${score}\n\n` +
+                    `Möchten Sie das vorhandene Ergebnis ÜBERSCHREIBEN?`
                 );
                 if (!confirmed) {
-                    setStatus('Score assignment cancelled', 'info');
+                    setStatus('Ergebniszuweisung abgebrochen', 'info');
                     return;
                 }
             }
@@ -80,12 +80,12 @@ export async function handleGlobalAssignScore() {
     }
     
     try {
-        setStatus('Saving score...', 'info');
+        setStatus('Ergebnis wird gespeichert...', 'info');
         const result = await window.go.main.App.AssignScore(groupID, stationID, score);
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
-            alert('Failed to save score: ' + result.message);
+            setStatus('FEHLER: ' + result.message, 'error');
+            alert('Fehler beim Speichern: ' + result.message);
         } else {
             setStatus('✔ ' + result.message, 'success');
             // Clear the form
@@ -120,8 +120,8 @@ export async function handleGlobalAssignScore() {
             }
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
-        alert('Error saving score: ' + err);
+        setStatus('FEHLER: ' + err, 'error');
+        alert('Fehler beim Speichern: ' + err);
     }
 }
 
@@ -133,22 +133,22 @@ export async function handleAssignScore(stationID) {
     const score = parseInt(scoreInput.value);
     
     if (!groupID || isNaN(groupID)) {
-        alert('Please select a group');
+        alert('Bitte eine Gruppe auswählen');
         return;
     }
     
     if (isNaN(score) || score < 0) {
-        alert('Please enter a valid score (0 or higher)');
+        alert('Bitte ein gültiges Ergebnis eingeben (0 oder höher)');
         return;
     }
     
     try {
-        setStatus('Saving score...', 'info');
+        setStatus('Ergebnis wird gespeichert...', 'info');
         const result = await window.go.main.App.AssignScore(groupID, stationID, score);
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
-            alert('Failed to save score: ' + result.message);
+            setStatus('FEHLER: ' + result.message, 'error');
+            alert('Fehler beim Speichern: ' + result.message);
         } else {
             setStatus('✔ ' + result.message, 'success');
             // Clear the form

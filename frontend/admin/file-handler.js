@@ -7,7 +7,7 @@ export async function openFileDialog() {
         const result = await window.go.main.App.CheckDB();
         
         if (result.hasData) {
-            const confirmed = confirm(`The database contains ${result.count} participants. Do you want to discard this data and load a new file?`);
+            const confirmed = confirm(`Die Datenbank enthält ${result.count} Teilnehmer. Möchten Sie diese Daten verwerfen und eine neue Datei laden?`);
             if (!confirmed) {
                 return;
             }
@@ -17,10 +17,10 @@ export async function openFileDialog() {
         const uploadResult = await window.go.main.App.LoadFile();
         
         if (uploadResult.status === 'error') {
-            setStatus('ERROR: ' + uploadResult.message, 'error');
+            setStatus('FEHLER: ' + uploadResult.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = 'Failed to load file. Please check the error message above.';
+            output.textContent = 'Datei konnte nicht geladen werden. Bitte prüfen Sie die Fehlermeldung.';
         } else {
             setStatus(uploadResult.message, 'success');
             btnShow.disabled = false;
@@ -31,7 +31,7 @@ export async function openFileDialog() {
             btnCertificates.disabled = false;
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = `✔ Successfully loaded ${uploadResult.count} participants and created balanced groups!\n\nNext steps:\n• Click "Show Groups" to view the groups\n• Click "Auswertung nach Gruppen" for group evaluation\n• Click "Auswertung nach Ortsverband" for location-based evaluation\n• Click "Generate PDF" to export groups to PDF\n• Click "Teilnehmer-Zertifikate" to generate participant certificates`;
+            output.textContent = `✔ ${uploadResult.count} Teilnehmer geladen und ausgewogene Gruppen erstellt!\n\nNächste Schritte:\n• Klicken Sie auf "Gruppen" um die Gruppen anzuzeigen\n• Klicken Sie auf "Auswertung nach Gruppen" für die Gruppenauswertung\n• Klicken Sie auf "Auswertung nach Ortsverband" für die ortsverbandsbasierte Auswertung\n• Klicken Sie auf "Gruppen-PDF erstellen" um die Gruppen als PDF zu exportieren\n• Klicken Sie auf "Teilnehmer-Zertifikate" um Zertifikate zu erstellen`;
             
             // Collapse Admin and expand other categories
             const adminDropdown = document.querySelector('.button-section:nth-child(1) .category-dropdown');
@@ -42,43 +42,43 @@ export async function openFileDialog() {
             if (ausgabeDropdown) ausgabeDropdown.setAttribute('open', 'open');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
-        output.textContent = 'Error: ' + err;
+        setStatus('FEHLER: ' + err, 'error');
+        output.textContent = 'Fehler: ' + err;
     }
 }
 
 export async function handleBackupDatabase() {
-    setStatus('Creating database backup...', 'info');
+    setStatus('Datenbank-Backup wird erstellt...', 'info');
     
     try {
         const result = await window.go.main.App.BackupDatabase();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
         } else {
             setStatus('✅ ' + result.message, 'success');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
     }
 }
 
 export async function handleRestoreDatabase() {
-    setStatus('Loading available backups...', 'info');
+    setStatus('Verfügbare Backups werden geladen...', 'info');
     
     try {
         // Get list of backups
         const listResult = await window.go.main.App.ListBackups();
         
         if (listResult.status === 'error') {
-            setStatus('ERROR: ' + listResult.message, 'error');
-            alert('Failed to load backups: ' + listResult.message);
+            setStatus('FEHLER: ' + listResult.message, 'error');
+            alert('Backups konnten nicht geladen werden: ' + listResult.message);
             return;
         }
         
         if (listResult.count === 0) {
-            setStatus('No backups available', 'info');
-            alert('No database backups found. Please create a backup first.');
+            setStatus('Keine Backups verfügbar', 'info');
+            alert('Keine Datenbankbackups gefunden. Bitte zuerst ein Backup erstellen.');
             return;
         }
         
@@ -90,8 +90,8 @@ export async function handleRestoreDatabase() {
         
         let dialogHTML = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;" id="restore-dialog">';
         dialogHTML += '<div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">';
-        dialogHTML += '<h2 style="margin: 0 0 20px 0; color: #333;">🔄 Restore Database</h2>';
-        dialogHTML += '<p style="margin-bottom: 20px; color: #666;">Select a backup to restore. <strong>Warning:</strong> This will replace your current database!</p>';
+        dialogHTML += '<h2 style="margin: 0 0 20px 0; color: #333;">🔄 Datenbank wiederherstellen</h2>';
+        dialogHTML += '<p style="margin-bottom: 20px; color: #666;">Backup auswählen. <strong>Warnung:</strong> Dies ersetzt die aktuelle Datenbank!</p>';
         
         dialogHTML += '<div style="margin-bottom: 20px;">';
         backups.forEach((backup, index) => {
@@ -110,7 +110,7 @@ export async function handleRestoreDatabase() {
         dialogHTML += '</div>';
         
         dialogHTML += '<div style="text-align: right;">';
-        dialogHTML += '<button onclick="window.closeRestoreDialog()" style="padding: 10px 20px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>';
+        dialogHTML += '<button onclick="window.closeRestoreDialog()" style="padding: 10px 20px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Abbrechen</button>';
         dialogHTML += '</div>';
         
         dialogHTML += '</div></div>';
@@ -120,11 +120,11 @@ export async function handleRestoreDatabase() {
         dialogElement.innerHTML = dialogHTML;
         document.body.appendChild(dialogElement);
         
-        setStatus('Select a backup to restore', 'info');
+        setStatus('Backup zum Wiederherstellen auswählen', 'info');
         
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
-        alert('Error: ' + err);
+        setStatus('FEHLER: ' + err, 'error');
+        alert('Fehler: ' + err);
     }
 }
 
@@ -134,15 +134,15 @@ window.closeRestoreDialog = function() {
     if (dialog && dialog.parentElement) {
         dialog.parentElement.remove();
     }
-    setStatus('Restore cancelled', 'info');
+    setStatus('Wiederherstellung abgebrochen', 'info');
 };
 
 // Helper function to confirm and perform restore
 window.confirmRestore = async function(backupFilename) {
     const confirmed = confirm(
-        '⚠️ WARNING: This will replace your current database with the backup!\n\n' +
+        '⚠️ WARNUNG: Die aktuelle Datenbank wird durch das Backup ersetzt!\n\n' +
         'Backup: ' + backupFilename + '\n\n' +
-        'Are you sure you want to continue?'
+        'Möchten Sie wirklich fortfahren?'
     );
     
     if (!confirmed) {
@@ -152,17 +152,17 @@ window.confirmRestore = async function(backupFilename) {
     // Close dialog
     window.closeRestoreDialog();
     
-    setStatus('Restoring database from backup...', 'info');
+    setStatus('Datenbank wird aus Backup wiederhergestellt...', 'info');
     
     try {
         const result = await window.go.main.App.RestoreDatabase(backupFilename);
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
-            alert('Failed to restore database: ' + result.message);
+            setStatus('FEHLER: ' + result.message, 'error');
+            alert('Datenbank konnte nicht wiederhergestellt werden: ' + result.message);
         } else {
             setStatus('✅ ' + result.message, 'success');
-            alert('Database restored successfully!\n\nThe application will now refresh.');
+            alert('Datenbank erfolgreich wiederhergestellt!\n\nDie Anwendung wird jetzt aktualisiert.');
             
             // Enable all buttons since we now have data
             btnShow.disabled = false;
@@ -175,7 +175,7 @@ window.confirmRestore = async function(backupFilename) {
             // Refresh the view
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = '✔ Database restored successfully from backup!\n\nYou can now use all features.';
+            output.textContent = '✔ Datenbank erfolgreich aus Backup wiederhergestellt!\n\nAlle Funktionen stehen jetzt zur Verfügung.';
         }
     } catch (err) {
         setStatus('ERROR: ' + err, 'error');

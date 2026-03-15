@@ -13,7 +13,7 @@
     <div class="container">
         <div class="app-header">
             <h1>🎯 Jugendolympiade - Verwaltung</h1>
-            <div class="status" id="status">Ready. Please load an Excel file.</div>
+            <div class="status" id="status">Bereit. Bitte Excel-Datei laden.</div>
         </div>
         <div class="app-content">
             <div class="buttons">
@@ -22,8 +22,8 @@
                         <summary class="section-title">⚙️ Admin</summary>
                         <div class="button-group">
                             <button class="btn-load" onclick="openFileDialog()">Lade Excel Datei</button>
-                            <button class="btn-backup" onclick="handleBackupDatabase()">Backup Database</button>
-                            <button class="btn-restore" onclick="handleRestoreDatabase()">Restore Database</button>
+                            <button class="btn-backup" onclick="handleBackupDatabase()">Datenbank sichern</button>
+                            <button class="btn-restore" onclick="handleRestoreDatabase()">Datenbank wiederherstellen</button>
                         </div>
                     </details>
                 </div>
@@ -48,7 +48,7 @@
                     </details>
                 </div>
             </div>
-            <div class="output" id="output">Groups will be displayed here...</div>
+            <div class="output" id="output">Gruppen werden hier angezeigt...</div>
             <div class="tabs" id="tabs" style="display: none;">
                 <div class="tab-buttons" id="tabButtons"></div>
                 <div id="tabContents"></div>

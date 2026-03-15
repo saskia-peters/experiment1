@@ -38,7 +38,7 @@ export async function handleShowStations() {
 }
 
 export async function handleShowStationsForGroup(preselectedGroupID) {
-    setStatus('Loading data for results entry...', 'info');
+    setStatus('Daten für Ergebniseingabe werden geladen...', 'info');
     
     try {
         // Get both stations and groups
@@ -48,17 +48,17 @@ export async function handleShowStationsForGroup(preselectedGroupID) {
         ]);
         
         if (stationsResult.status === 'error') {
-            setStatus('ERROR: ' + stationsResult.message, 'error');
+            setStatus('FEHLER: ' + stationsResult.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = 'Error loading stations: ' + stationsResult.message;
+            output.textContent = 'Fehler beim Laden der Stationen: ' + stationsResult.message;
         } else if (groupsResult.status === 'error') {
-            setStatus('ERROR: ' + groupsResult.message, 'error');
+            setStatus('FEHLER: ' + groupsResult.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = 'Error loading groups: ' + groupsResult.message;
+            output.textContent = 'Fehler beim Laden der Gruppen: ' + groupsResult.message;
         } else {
-            setStatus('Ready for results entry', 'success');
+            setStatus('Bereit zur Ergebniseingabe', 'success');
             output.style.display = 'none';
             tabs.style.display = 'block';
             // Ensure complete cleanup before rendering
@@ -66,10 +66,10 @@ export async function handleShowStationsForGroup(preselectedGroupID) {
             renderGroupBasedEntry(stationsResult.stations, groupsResult.groups, preselectedGroupID);
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
         output.style.display = 'block';
         tabs.style.display = 'none';
-        output.textContent = 'Error: ' + err;
+        output.textContent = 'Fehler: ' + err;
     }
 }
 
@@ -79,12 +79,12 @@ function renderGroupBasedEntry(stations, groups, preselectedGroupID = null) {
     tabContents.innerHTML = '';
     
     if (!stations || stations.length === 0) {
-        tabContents.innerHTML = '<div class="empty-message">No stations found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">Keine Stationen gefunden.</div>';
         return;
     }
     
     if (!groups || groups.length === 0) {
-        tabContents.innerHTML = '<div class="empty-message">No groups found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">Keine Gruppen gefunden.</div>';
         return;
     }
     
@@ -210,7 +210,7 @@ window.saveStationScore = async function(groupID, stationID) {
         setStatus('Speichere Ergebnis...', 'info');
         const result = await window.go.main.App.AssignScore(groupID, stationID, score);
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
             alert('Fehler beim Speichern: ' + result.message);
         } else {
             setStatus('✔ Ergebnis gespeichert', 'success');
@@ -223,7 +223,7 @@ window.saveStationScore = async function(groupID, stationID) {
             }
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
         alert('Fehler: ' + err);
     }
 };
@@ -298,7 +298,7 @@ window.saveAllScores = async function(groupID) {
             setStatus('✔ Alle ' + saved + ' Ergebnisse gespeichert', 'success');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
         alert('Fehler: ' + err);
     }
 };
@@ -360,7 +360,7 @@ function showUnsavedWarning(groupSelector, stations) {
                 setStatus('✔ Alle ' + saved + ' Ergebnisse gespeichert', 'success');
             }
         } catch (err) {
-            setStatus('ERROR: ' + err, 'error');
+            setStatus('FEHLER: ' + err, 'error');
         }
         groupSelector.value = target;
         renderStationTable(target, stations);

@@ -3,18 +3,18 @@ import { setStatus, output, tabs, tabButtons, tabContents, clearAllTabs } from '
 import { escapeHtml } from '../shared/utils.js';
 
 export async function handleGroupEvaluation() {
-    setStatus('Loading group evaluations...', 'info');
+    setStatus('Gruppenauswertungen werden geladen...', 'info');
     
     try {
         const result = await window.go.main.App.GetGroupEvaluations();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = 'Error loading group evaluations: ' + result.message;
+            output.textContent = 'Fehler beim Laden der Gruppenauswertungen: ' + result.message;
         } else {
-            setStatus('Displaying evaluations for ' + result.count + ' groups', 'success');
+            setStatus('Auswertung für ' + result.evaluations.length + ' Gruppen wird angezeigt', 'success');
             output.style.display = 'none';
             tabs.style.display = 'block';
             // Ensure complete cleanup before rendering
@@ -22,26 +22,26 @@ export async function handleGroupEvaluation() {
             renderGroupEvaluations(result.evaluations);
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
         output.style.display = 'block';
         tabs.style.display = 'none';
-        output.textContent = 'Error: ' + err;
+        output.textContent = 'Fehler: ' + err;
     }
 }
 
 export async function handleOrtsverbandEvaluation() {
-    setStatus('Loading Ortsverband evaluations...', 'info');
+    setStatus('Ortsverband-Auswertungen werden geladen...', 'info');
     
     try {
         const result = await window.go.main.App.GetOrtsverbandEvaluations();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = 'Error loading Ortsverband evaluations: ' + result.message;
+            output.textContent = 'Fehler beim Laden der Ortsverband-Auswertungen: ' + result.message;
         } else {
-            setStatus('Displaying evaluations for ' + result.count + ' Ortsverbände', 'success');
+            setStatus('Auswertung für ' + result.evaluations.length + ' Ortsverbände wird angezeigt', 'success');
             output.style.display = 'none';
             tabs.style.display = 'block';
             // Ensure complete cleanup before rendering
@@ -49,10 +49,10 @@ export async function handleOrtsverbandEvaluation() {
             renderOrtsverbandEvaluations(result.evaluations);
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
         output.style.display = 'block';
         tabs.style.display = 'none';
-        output.textContent = 'Error: ' + err;
+        output.textContent = 'Fehler: ' + err;
     }
 }
 
@@ -62,7 +62,7 @@ function renderGroupEvaluations(evaluations) {
     tabContents.innerHTML = '';
     
     if (!evaluations || evaluations.length === 0) {
-        tabContents.innerHTML = '<div class="empty-message">No evaluations found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">Keine Auswertungen gefunden.</div>';
         return;
     }
     
@@ -72,7 +72,7 @@ function renderGroupEvaluations(evaluations) {
     
     let html = '<div class="evaluation-header">';
     html += '<h2 class="evaluation-title">🏆 Gruppenrangliste - Gesamtergebnis</h2>';
-    html += '<button onclick="handleGenerateGroupEvaluationPDF()" class="btn-pdf-generate">📄 Generate PDF</button>';
+    html += '<button onclick="handleGenerateGroupEvaluationPDF()" class="btn-pdf-generate">📄 PDF erstellen</button>';
     html += '</div>';
     
     // Evaluation table
@@ -99,7 +99,7 @@ function renderGroupEvaluations(evaluations) {
     
     // Statistics panel
     html += '<div class="stats-panel">';
-    html += '<h3>📊 Overall Statistics</h3>';
+    html += '<h3>📊 Gesamtstatistik</h3>';
     html += '<div class="stats-grid">';
     
     html += '<div class="stat-item">';
@@ -140,7 +140,7 @@ function renderOrtsverbandEvaluations(evaluations) {
     tabContents.innerHTML = '';
     
     if (!evaluations || evaluations.length === 0) {
-        tabContents.innerHTML = '<div class="empty-message">No evaluations found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">Keine Auswertungen gefunden.</div>';
         return;
     }
     
@@ -150,7 +150,7 @@ function renderOrtsverbandEvaluations(evaluations) {
     
     let html = '<div class="evaluation-header">';
     html += '<h2 class="evaluation-title">🏆 Ortsverband Rangliste - Durchschnittsergebnisse</h2>';
-    html += '<button onclick="handleGenerateOrtsverbandEvaluationPDF()" class="btn-pdf-generate">📄 Generate PDF</button>';
+    html += '<button onclick="handleGenerateOrtsverbandEvaluationPDF()" class="btn-pdf-generate">📄 PDF erstellen</button>';
     html += '</div>';
     
     // Evaluation table
@@ -179,11 +179,11 @@ function renderOrtsverbandEvaluations(evaluations) {
     
     // Statistics panel
     html += '<div class="stats-panel">';
-    html += '<h3>📊 Overall Statistics</h3>';
+    html += '<h3>📊 Gesamtstatistik</h3>';
     html += '<div class="stats-grid">';
     
     html += '<div class="stat-item">';
-    html += '<strong>Total Ortsverbände</strong>';
+    html += '<strong>Ortsverbände gesamt</strong>';
     html += '<span>' + evaluations.length + '</span>';
     html += '</div>';
     
@@ -205,7 +205,7 @@ function renderOrtsverbandEvaluations(evaluations) {
     const totalParticipants = evaluations.reduce((sum, e) => sum + e.ParticipantCount, 0);
     const overallAvg = totalParticipants > 0 ? (totalScore / totalParticipants).toFixed(1) : '0.0';
     html += '<div class="stat-item">';
-    html += '<strong>Overall Average Score</strong>';
+    html += '<strong>Gesamtdurchschnitt</strong>';
     html += '<span>' + overallAvg + '</span>';
     html += '</div>';
     

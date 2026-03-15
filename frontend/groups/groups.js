@@ -3,18 +3,18 @@ import { setStatus, output, tabs, tabButtons, tabContents, clearAllTabs } from '
 import { escapeHtml, switchTab } from '../shared/utils.js';
 
 export async function handleShowGroups() {
-    setStatus('Loading groups...', 'info');
+    setStatus('Gruppen werden geladen...', 'info');
     
     try {
         const result = await window.go.main.App.ShowGroups();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = 'Error loading groups: ' + result.message;
+            output.textContent = 'Fehler beim Laden der Gruppen: ' + result.message;
         } else {
-            setStatus('Displaying ' + result.count + ' balanced groups', 'success');
+            setStatus(result.count + ' ausgewogene Gruppen werden angezeigt', 'success');
             output.style.display = 'none';
             tabs.style.display = 'block';
             // Ensure complete cleanup before rendering
@@ -22,10 +22,10 @@ export async function handleShowGroups() {
             renderGroupTabs(result.groups);
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
         output.style.display = 'block';
         tabs.style.display = 'none';
-        output.textContent = 'Error: ' + err;
+        output.textContent = 'Fehler: ' + err;
     }
 }
 
@@ -35,7 +35,7 @@ function renderGroupTabs(groups) {
     tabContents.innerHTML = '';
     
     if (!groups || groups.length === 0) {
-        tabContents.innerHTML = '<div class="empty-message">No groups found.</div>';
+        tabContents.innerHTML = '<div class="empty-message">Keine Gruppen gefunden.</div>';
         return;
     }
     
@@ -81,7 +81,7 @@ function formatGroupContent(group) {
             html += '</tr>';
         });
     } else {
-        html += '<tr><td colspan="4">No participants</td></tr>';
+        html += '<tr><td colspan="4">Keine Teilnehmer</td></tr>';
     }
     
     html += '</tbody></table>';
@@ -93,7 +93,7 @@ function formatGroupContent(group) {
     
     // Total participants
     html += '<div class="stat-item">';
-    html += '<strong>Total Participants</strong>';
+    html += '<strong>Teilnehmer gesamt</strong>';
     html += '<span>' + (group.Teilnehmers ? group.Teilnehmers.length : 0) + '</span>';
     html += '</div>';
     
@@ -101,8 +101,8 @@ function formatGroupContent(group) {
     if (group.Teilnehmers && group.Teilnehmers.length > 0) {
         const avgAge = (group.AlterSum / group.Teilnehmers.length).toFixed(1);
         html += '<div class="stat-item">';
-        html += '<strong>Average Age</strong>';
-        html += '<span>' + avgAge + ' years</span>';
+        html += '<strong>Durchschnittsalter</strong>';
+        html += '<span>' + avgAge + ' Jahre</span>';
         html += '</div>';
     }
     

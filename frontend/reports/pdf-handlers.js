@@ -2,65 +2,65 @@
 import { setStatus } from '../shared/dom.js';
 
 export async function handleGeneratePDF() {
-    setStatus('Generating groups report PDF...', 'info');
+    setStatus('Gruppen-PDF wird erstellt...', 'info');
     
     try {
         const result = await window.go.main.App.GeneratePDF();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
         } else {
-            setStatus('✅ Groups report PDF generated successfully!', 'success');
+            setStatus('✅ Gruppen-PDF erfolgreich erstellt!', 'success');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
     }
 }
 
 export async function handleGenerateGroupEvaluationPDF() {
-    setStatus('Generating group evaluation PDF...', 'info');
+    setStatus('Auswertungs-PDF wird erstellt...', 'info');
     
     try {
         const result = await window.go.main.App.GenerateGroupEvaluationPDF();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
         } else {
-            setStatus('✅ Group evaluation PDF generated successfully!', 'success');
+            setStatus('✅ Auswertungs-PDF erfolgreich erstellt!', 'success');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
     }
 }
 
 export async function handleGenerateOrtsverbandEvaluationPDF() {
-    setStatus('Generating Ortsverband evaluation PDF...', 'info');
+    setStatus('Ortsverband-Auswertungs-PDF wird erstellt...', 'info');
     
     try {
         const result = await window.go.main.App.GenerateOrtsverbandEvaluationPDF();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
         } else {
-            setStatus('✅ Ortsverband evaluation PDF generated successfully!', 'success');
+            setStatus('✅ Ortsverband-Auswertungs-PDF erfolgreich erstellt!', 'success');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
     }
 }
 
 export async function handleGenerateCertificates() {
-    setStatus('Generating certificates...', 'info');
+    setStatus('Zertifikate werden erstellt...', 'info');
     
     try {
         const result = await window.go.main.App.GenerateParticipantCertificates();
         
         if (result.status === 'error') {
-            setStatus('ERROR: ' + result.message, 'error');
+            setStatus('FEHLER: ' + result.message, 'error');
         } else {
-            setStatus('✅ Certificates generated successfully!', 'success');
+            setStatus('✅ Zertifikate erfolgreich erstellt!', 'success');
         }
     } catch (err) {
-        setStatus('ERROR: ' + err, 'error');
+        setStatus('FEHLER: ' + err, 'error');
     }
 }
