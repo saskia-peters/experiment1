@@ -23,15 +23,19 @@ A cross-platform desktop application for managing youth Olympics events. Built w
 - **Ortsverband Rankings**: Compare locations/districts by average scores
 - **Statistics**: Participant counts, score distributions, and averages
 
-### ��� PDF Generation
+### 📄 PDF Generation
 All PDFs are automatically saved to the configured output directory (default: `pdfdocs/`):
 - **Groups Report**: One page per group with participant lists and statistics
 - **Group Evaluations**: Rankings by group with scores
 - **Ortsverband Evaluations**: Rankings by location
 - **Participant Certificates**: Individual certificates for all participants
-  - Supports custom certificate templates
+  - Supports custom certificate templates (`certificate_template.png`)
   - Shows participant details, group assignment, and ranking
   - Lists all group members
+- **Ortsverband Certificates**: One certificate per Ortsverband
+  - Best Ortsverband gets a special Siegerurkunde with `ov_winner_image.png`
+  - All others get an identical participation certificate (no ranking)
+  - Fully programmatic, centered A4 layout (no background image)
 
 ### ���️ Desktop Application
 - **Cross-Platform**: Runs on Windows, macOS, and Linux
@@ -66,7 +70,7 @@ Download the latest release for your platform:
 - First row is treated as header and skipped
 
 **Import:**
-1. Click "Lade Excel Datei"
+1. Click **"Excel einlesen"** (in the 📝 Daten section)
 2. Select your XLSX file
 3. Wait for confirmation message
 4. Click "Teilnehmer zu Gruppen" to create balanced groups
@@ -114,9 +118,16 @@ Station names are loaded automatically from the **second sheet** (`Stationen`) o
 - Click "Gruppen-PDF erstellen"
 - Generates detailed report in `pdfdocs/Gruppeneinteilung.pdf`
 
-**Certificates:**
-- Click "Teilnehmer-Zertifikate"
-- Generates certificates in `pdfdocs/Urkunden_Teilnehmende.pdf`
+**Participant Certificates:**
+- Click **"Urkunden Teilnehmende"**
+- Generates one certificate per participant in `pdfdocs/Urkunden_Teilnehmende.pdf`
+- Available only once at least one score has been saved
+
+**Ortsverband Certificates:**
+- Click **"Urkunden Ortsverbände"**
+- Generates one page per Ortsverband in `pdfdocs/Urkunden_Ortsverbaende.pdf`
+- The best-ranked Ortsverband receives a special Siegerurkunde with `ov_winner_image.png`; all others receive an identical participation certificate with no ranking
+- Available only once at least one score has been saved
 
 All PDFs are saved to the configured output directory (default: `pdfdocs/`).
 
@@ -163,6 +174,7 @@ After using the application, you'll find:
 - **Auswertung_nach_Gruppe.pdf**: Group rankings by total score
 - **Auswertung_nach_Ortsverband.pdf**: Location rankings by average score
 - **Urkunden_Teilnehmende.pdf**: Individual certificates for all participants
+- **Urkunden_Ortsverbaende.pdf**: One certificate per Ortsverband (winner gets Siegerurkunde)
 
 ## Troubleshooting
 

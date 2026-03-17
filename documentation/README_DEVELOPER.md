@@ -62,8 +62,9 @@ THW-JugendOlympiade/
 │   │   ├── input.go        # Excel import with validation
 │   │   ├── output.go       # Shared PDF helpers (enc(), directory setup)
 │   │   ├── pdf_groups.go   # Groups report PDF generation
-│   │   ├── pdf_evaluations.go # Evaluation PDFs (group + ortsverband)
-│   │   └── pdf_certificates.go # Participant certificates PDF
+│   │   ├── pdf_evaluations.go         # Evaluation PDFs (group + ortsverband)
+│   │   ├── pdf_cert_teilnehmende.go   # Participant certificates (one per person)
+│   │   └── pdf_cert_ortsverbaende.go  # Ortsverband certificates (Siegerurkunde + Urkunde)
 │   ├── models/             # Data models
 │   │   └── types.go        # Structs and type definitions
 │   └── services/           # Business logic

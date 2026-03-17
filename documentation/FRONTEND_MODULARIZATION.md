@@ -9,7 +9,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 1. **shared/dom.js**
    - **Purpose**: DOM element references and basic UI utilities
    - **Exports**: 
-     - DOM elements: `status`, `output`, `tabs`, `tabButtons`, `tabContents`, all 6 buttons (`btnDistribute`, `btnShow`, `btnStations`, `btnEvaluation`, `btnOrtsverband`, `btnPDF`, `btnCertificates`)
+     - DOM elements: `status`, `output`, `tabs`, `tabButtons`, `tabContents`, all 8 buttons (`btnDistribute`, `btnShow`, `btnStations`, `btnEvaluation`, `btnOrtsverband`, `btnPDF`, `btnCertificates`, `btnOVCertificates`)
      - Functions: `setStatus()`, `clearAllTabs()`
    - **Dependencies**: None
 
@@ -25,12 +25,12 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 3. **admin/file-handler.js**
    - **Purpose**: File loading, database backup and restore, group distribution
    - **Exports**: `openFileDialog()`, `handleBackupDatabase()`, `handleRestoreDatabase()`, `handleDistributeGroups()`
-   - **Functionality**: 
+   - **Functionality**:
      - CheckDB confirmation dialog before overwriting
-     - LoadFile call to backend; enables only the distribute button
-     - `handleDistributeGroups()`: calls `DistributeGroups()` backend method; enables all other buttons on success
+     - LoadFile call to backend; enables only `btnDistribute`
+     - `handleDistributeGroups()`: calls `DistributeGroups()` backend method; enables `btnShow`, `btnStations`, `btnPDF`; Auswertung + Urkunden buttons remain disabled until first score
      - Backup creation with status feedback
-     - Restore with backup-selection dialog (checks `HasScores()` to set distribute button state)
+     - Restore: checks `HasScores()` — Auswertung/Urkunden buttons enabled only if scores exist
    - **Dependencies**: shared/dom.js
 
 4. **admin/config-editor.js**
@@ -90,11 +90,12 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 
 8. **reports/pdf-handlers.js**
    - **Purpose**: PDF generation wrappers
-   - **Exports**: 
+   - **Exports**:
      - `handleGeneratePDF()` - Groups report PDF
      - `handleGenerateGroupEvaluationPDF()` - Group evaluation PDF
      - `handleGenerateOrtsverbandEvaluationPDF()` - Ortsverband evaluation PDF
-     - `handleGenerateCertificates()` - Participant certificates
+     - `handleGenerateCertificates()` - Participant certificates (`Urkunden_Teilnehmende.pdf`)
+     - `handleGenerateOVCertificates()` - Ortsverband certificates (`Urkunden_Ortsverbaende.pdf`)
    - **Dependencies**: shared/dom.js
 
 9. **app.js**
@@ -170,9 +171,11 @@ window.handleEditConfig = handleEditConfig;
 HTML onclick attributes work as before:
 
 ```html
-<button onclick="openFileDialog()">Lade Excel Datei</button>
+<!-- 📝 Daten section -->
+<button onclick="openFileDialog()">Excel einlesen</button>
 <button onclick="handleDistributeGroups()">Teilnehmer zu Gruppen</button>
 <button onclick="handleShowGroups()">Gruppen anzeigen</button>
+<!-- ⚙️ Admin section -->
 <button onclick="handleEditConfig()">Konfiguration bearbeiten</button>
 ```
 
