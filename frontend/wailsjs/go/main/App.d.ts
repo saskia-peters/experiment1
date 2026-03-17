@@ -7,6 +7,8 @@ export function BackupDatabase():Promise<Record<string, any>>;
 
 export function CheckDB():Promise<Record<string, any>>;
 
+export function DistributeGroups():Promise<Record<string, any>>;
+
 export function GenerateGroupEvaluationPDF():Promise<Record<string, any>>;
 
 export function GenerateOrtsverbandEvaluationPDF():Promise<Record<string, any>>;
@@ -17,15 +19,23 @@ export function GenerateParticipantCertificates():Promise<Record<string, any>>;
 
 export function GetAllGroups():Promise<Record<string, any>>;
 
+export function GetConfig():Promise<Record<string, any>>;
+
+export function GetConfigRaw():Promise<Record<string, any>>;
+
 export function GetGroupEvaluations():Promise<Record<string, any>>;
 
 export function GetOrtsverbandEvaluations():Promise<Record<string, any>>;
+
+export function HasScores():Promise<boolean>;
 
 export function ListBackups():Promise<Record<string, any>>;
 
 export function LoadFile():Promise<Record<string, any>>;
 
 export function RestoreDatabase(arg1:string):Promise<Record<string, any>>;
+
+export function SaveConfigRaw(arg1:string):Promise<Record<string, any>>;
 
 export function ShowGroups():Promise<Record<string, any>>;
 

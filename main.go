@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/io"
 	"THW-JugendOlympiade/backend/models"
@@ -30,6 +31,7 @@ var assets embed.FS
 type App struct {
 	ctx context.Context
 	db  *sql.DB
+	cfg config.Config
 }
 
 // NewApp creates a new App application struct
@@ -40,6 +42,12 @@ func NewApp() *App {
 // startup is called when the app starts
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	cfg, err := config.LoadOrCreate()
+	if err != nil {
+		fmt.Printf("Konfiguration konnte nicht geladen werden: %v\n", err)
+	}
+	a.cfg = cfg
+	io.SetPDFOutputDir(cfg.Ausgabe.PDFOrdner)
 }
 
 // shutdown is called when the app is closing
@@ -70,6 +78,41 @@ func main() {
 
 	if err != nil {
 		println("Error:", err.Error())
+	}
+}
+
+// GetConfig returns the user-facing configuration values needed by the frontend.
+func (a *App) GetConfig() map[string]interface{} {
+	return map[string]interface{}{
+		"scoreMin":     a.cfg.Ergebnisse.MinPunkte,
+		"scoreMax":     a.cfg.Ergebnisse.MaxPunkte,
+		"maxGroupSize": a.cfg.Gruppen.MaxGroesse,
+		"eventName":    a.cfg.Veranstaltung.Name,
+		"eventYear":    a.cfg.Veranstaltung.Jahr,
+	}
+}
+
+// GetConfigRaw returns the raw text content of config.toml for in-app editing.
+func (a *App) GetConfigRaw() map[string]interface{} {
+	content, err := config.ReadRaw()
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	return map[string]interface{}{"status": "ok", "content": content}
+}
+
+// SaveConfigRaw validates content as TOML, writes config.toml, and reloads the
+// in-memory config so changes take effect immediately (where possible).
+func (a *App) SaveConfigRaw(content string) map[string]interface{} {
+	cfg, err := config.ValidateAndSave(content)
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	a.cfg = cfg
+	io.SetPDFOutputDir(cfg.Ausgabe.PDFOrdner)
+	return map[string]interface{}{
+		"status":  "ok",
+		"message": "Konfiguration gespeichert. Einige Änderungen (z. B. Gruppen, Ergebnisse) werden erst nach einem Neustart der App wirksam.",
 	}
 }
 
@@ -173,20 +216,42 @@ func (a *App) LoadFile() map[string]interface{} {
 		}
 	}
 
-	// Create balanced groups
-	if err := services.CreateBalancedGroups(a.db); err != nil {
-		return map[string]interface{}{
-			"status":  "error",
-			"message": fmt.Sprintf("Failed to create groups: %v", err),
-		}
-	}
-
 	participantCount := len(rows) - 1
 
 	return map[string]interface{}{
 		"status":  "success",
-		"message": fmt.Sprintf("Successfully loaded %d participants and created balanced groups", participantCount),
+		"message": fmt.Sprintf("Successfully loaded %d participants", participantCount),
 		"count":   participantCount,
+	}
+}
+
+// HasScores returns whether any score has been saved to the database.
+func (a *App) HasScores() bool {
+	if a.db == nil {
+		return false
+	}
+	var count int
+	_ = a.db.QueryRow("SELECT COUNT(*) FROM group_station_scores WHERE score IS NOT NULL").Scan(&count)
+	return count > 0
+}
+
+// DistributeGroups creates balanced groups from the loaded participants.
+func (a *App) DistributeGroups() map[string]interface{} {
+	if a.db == nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": "Bitte zuerst eine Excel-Datei laden.",
+		}
+	}
+	if err := services.CreateBalancedGroups(a.db, a.cfg.Gruppen.MaxGroesse); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Gruppen konnten nicht erstellt werden: %v", err),
+		}
+	}
+	return map[string]interface{}{
+		"status":  "success",
+		"message": "Ausgewogene Gruppen wurden erstellt.",
 	}
 }
 

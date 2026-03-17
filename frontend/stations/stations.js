@@ -1,9 +1,11 @@
 // Station management and display - Group-based results entry
-import { setStatus, output, tabs, tabButtons, tabContents, clearAllTabs } from '../shared/dom.js';
+import { setStatus, output, tabs, tabButtons, tabContents, clearAllTabs, btnDistribute } from '../shared/dom.js';
 import { escapeHtml } from '../shared/utils.js';
 
-const SCORE_MIN = 100;
-const SCORE_MAX = 1200;
+// Score bounds are read from the backend config (window.appConfig) at runtime.
+// These fallbacks are used if the config has not loaded yet.
+function scoreMin() { return (window.appConfig && window.appConfig.scoreMin) || 100; }
+function scoreMax() { return (window.appConfig && window.appConfig.scoreMax) || 1200; }
 
 // Dirty-tracking state – reset each time a new group table is rendered
 let savedScoreMap = {};   // { stationID: number|'' } last persisted value per station
@@ -14,7 +16,7 @@ let pendingGroupID = null;
 function validateScore(value, stationName) {
     const score = parseInt(value, 10);
     if (isNaN(score)) return 'Bitte geben Sie ein gültiges Ergebnis ein' + (stationName ? ' für Station ' + stationName : '') + '.';
-    if (score < SCORE_MIN || score > SCORE_MAX) return 'Das Ergebnis bei ' + (stationName || 'dieser Station') + ' muss zwischen ' + SCORE_MIN + ' und ' + SCORE_MAX + ' liegen.';
+    if (score < scoreMin() || score > scoreMax()) return 'Das Ergebnis bei ' + (stationName || 'dieser Station') + ' muss zwischen ' + scoreMin() + ' und ' + scoreMax() + ' liegen.';
     return null;
 }
 
@@ -174,9 +176,9 @@ function renderStationTable(groupID, stations) {
         html += '<td>';
         html += '<input type="number" id="score-' + station.StationID + '" ';
         html += 'class="score-input" ';
-        html += 'min="100" max="1200" step="50" ';
+        html += 'min="' + scoreMin() + '" max="' + scoreMax() + '" step="50" ';
         html += 'value="' + existingScore + '" ';
-        html += 'placeholder="100-1200">';
+        html += 'placeholder="' + scoreMin() + '-' + scoreMax() + '">';
         html += '</td>';
         html += '<td>';
         html += '<button onclick="window.saveStationScore(' + groupID + ', ' + station.StationID + ')" ';
@@ -216,6 +218,7 @@ window.saveStationScore = async function(groupID, stationID) {
             setStatus('✔ Ergebnis gespeichert', 'success');
             savedScoreMap[stationID] = score;
             updateStationCache(stationID, groupID, score);
+            if (btnDistribute) btnDistribute.disabled = true;
             const row = document.getElementById('row-' + stationID);
             if (row) {
                 row.classList.add('row-saved');
@@ -259,6 +262,7 @@ async function doSaveAll(groupID) {
                 savedCount++;
                 savedScoreMap[scoreData.stationID] = scoreData.score;
                 updateStationCache(scoreData.stationID, groupID, scoreData.score);
+                if (btnDistribute) btnDistribute.disabled = true;
                 const row = document.getElementById('row-' + scoreData.stationID);
                 if (row) {
                     row.classList.add('row-saved');

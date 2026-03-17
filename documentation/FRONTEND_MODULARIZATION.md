@@ -9,7 +9,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 1. **shared/dom.js**
    - **Purpose**: DOM element references and basic UI utilities
    - **Exports**: 
-     - DOM elements: `status`, `output`, `tabs`, `tabButtons`, `tabContents`, all 5 buttons
+     - DOM elements: `status`, `output`, `tabs`, `tabButtons`, `tabContents`, all 6 buttons (`btnDistribute`, `btnShow`, `btnStations`, `btnEvaluation`, `btnOrtsverband`, `btnPDF`, `btnCertificates`)
      - Functions: `setStatus()`, `clearAllTabs()`
    - **Dependencies**: None
 
@@ -23,13 +23,25 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 ### Feature Modules
 
 3. **admin/file-handler.js**
-   - **Purpose**: File loading, database backup and restore
-   - **Exports**: `openFileDialog()`, `handleBackupDatabase()`, `handleRestoreDatabase()`
+   - **Purpose**: File loading, database backup and restore, group distribution
+   - **Exports**: `openFileDialog()`, `handleBackupDatabase()`, `handleRestoreDatabase()`, `handleDistributeGroups()`
    - **Functionality**: 
      - CheckDB confirmation dialog before overwriting
-     - LoadFile call to backend with button enablement
+     - LoadFile call to backend; enables only the distribute button
+     - `handleDistributeGroups()`: calls `DistributeGroups()` backend method; enables all other buttons on success
      - Backup creation with status feedback
-     - Restore with backup-selection dialog
+     - Restore with backup-selection dialog (checks `HasScores()` to set distribute button state)
+   - **Dependencies**: shared/dom.js
+
+4. **admin/config-editor.js**
+   - **Purpose**: In-app editor for `config.toml`
+   - **Exports**: `handleEditConfig()`
+   - **Functionality**:
+     - Loads raw TOML text via `GetConfigRaw()` backend method
+     - Opens a modal with a monospace textarea
+     - Validates TOML syntax server-side before saving (`SaveConfigRaw()`)
+     - Shows inline error if validation fails
+     - Refreshes `window.appConfig` after successful save
    - **Dependencies**: shared/dom.js
 
 4. **groups/groups.js**
@@ -89,6 +101,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
    - **Purpose**: Main orchestrator - imports all modules and wires up onclick handlers
    - **Functionality**: 
      - Imports all feature modules
+     - Loads `window.appConfig` from backend on startup via `GetConfig()`
      - Exposes functions to `window` object for HTML onclick attributes
    - **Dependencies**: All feature modules
 
@@ -103,7 +116,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 - ❌ Difficult to reuse code
 
 ### After (Modular ES6 Structure)
-- ✅ 9 focused modules averaging ~110 lines each
+- ✅ 10 focused modules averaging ~110 lines each
 - ✅ Clear separation of concerns (UI, data, logic)
 - ✅ Easy to navigate: dom → utils → features → orchestrator
 - ✅ Testable: Each module can be imported and tested independently
@@ -117,6 +130,8 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
 ```
 app.js (orchestrator)
 ├── admin/file-handler.js
+│   └── shared/dom.js
+├── admin/config-editor.js
 │   └── shared/dom.js
 ├── groups/groups.js
 │   ├── shared/dom.js
@@ -146,7 +161,9 @@ Functions are exposed to the global `window` object to support onclick handlers:
 
 ```javascript
 window.openFileDialog = openFileDialog;
+window.handleDistributeGroups = handleDistributeGroups;
 window.handleShowGroups = handleShowGroups;
+window.handleEditConfig = handleEditConfig;
 // ... etc
 ```
 
@@ -154,7 +171,9 @@ HTML onclick attributes work as before:
 
 ```html
 <button onclick="openFileDialog()">Lade Excel Datei</button>
-<button onclick="handleShowGroups()">Gruppen</button>
+<button onclick="handleDistributeGroups()">Teilnehmer zu Gruppen</button>
+<button onclick="handleShowGroups()">Gruppen anzeigen</button>
+<button onclick="handleEditConfig()">Konfiguration bearbeiten</button>
 ```
 
 ## File Sizes

@@ -51,25 +51,36 @@ Wird das Blatt weggelassen oder ist es leer, können Stationen später nicht ben
 1. Anwendung starten (Doppelklick auf `THW-JugendOlympiade.exe`).
 2. Im Abschnitt **⚙️ Admin** auf **„Lade Excel Datei"** klicken.
 3. Im Dateidialog die vorbereitete XLSX-Datei auswählen und öffnen.
-4. Die Anwendung liest alle Teilnehmenden ein, prüft die Dateistruktur und verteilt sie automatisch auf **ausgewogene Gruppen**.
+4. Die Anwendung liest alle Teilnehmenden ein und speichert sie in der Datenbank.
 
-Die automatische Gruppenverteilung berücksichtigt:
-- Maximale Gruppengröße von **8 Personen**
-- Personen mit demselben `PreGroup`-Code bleiben **zusammen**
-- Alle übrigen Teilnehmenden werden möglichst gemischt nach Ortsverband und Geschlecht verteilt
-
-Nach erfolgreichem Import erscheint eine grüne Statusmeldung. Die Schaltflächen im Abschnitt **📝 Daten** und **📊 Ausgabe** werden aktiv.
+Nach erfolgreichem Import erscheint eine grüne Statusmeldung. Im Abschnitt **📝 Daten** wird die Schaltfläche **„Teilnehmer zu Gruppen“** aktiv.
 
 > **Hinweis:** Ein erneuter Import ersetzt alle bestehenden Daten in der Datenbank.
 
 ---
 
-## Schritt 2: Gruppeneinteilung prüfen und als PDF erstellen
+## Schritt 2: Teilnehmer auf Gruppen verteilen
+
+1. Im Abschnitt **📝 Daten** auf **„Teilnehmer zu Gruppen“** klicken.
+2. Die Anwendung erstellt automatisch ausgewogene Gruppen.
+
+Die automatische Gruppenverteilung berücksichtigt:
+- Maximale Gruppengröße (konfigurierbar in `config.toml`, Standard: **8 Personen**)
+- Personen mit demselben `PreGroup`-Code bleiben **zusammen**
+- Alle übrigen Teilnehmenden werden möglichst gemischt nach Ortsverband und Geschlecht verteilt
+
+Nach der Verteilung werden alle übrigen Schaltflächen aktiv.
+
+> **Wichtig:** Sobald mindestens ein Ergebnis gespeichert wurde, ist diese Schaltfläche gesperrt. So wird verhindert, dass eine neue Verteilung bestehende Ergebnisdaten unnötig unbrauchbar macht. Wenn Sie die Gruppenverteilung vor der Ergebniseingabe anpassen möchten (z. B. andere Gruppengröße in `config.toml` eintragen), klicken Sie erneut auf **„Teilnehmer zu Gruppen“**.
+
+---
+
+## Schritt 3: Gruppeneinteilung prüfen und als PDF erstellen
 
 ### Gruppen im Programm ansehen
 
 1. Abschnitt **📝 Daten** öffnen.
-2. Auf **„Gruppen"** klicken.
+2. Auf **„Gruppen anzeigen“** klicken.
 3. Die Gruppen werden in Tabs dargestellt – ein Tab je Gruppe. Jede Gruppe zeigt Name, Ortsverband, Alter und Geschlecht aller Mitglieder.
 
 ### PDF erstellen
@@ -82,7 +93,7 @@ Die Datei **`Gruppeneinteilung.pdf`** wird im Ordner **`pdfdocs/`** neben der An
 
 ---
 
-## Schritt 3: Ergebnisse an den Stationen eingeben
+## Schritt 4: Ergebnisse an den Stationen eingeben
 
 Nachdem die Jugendolympiade stattgefunden hat, werden die erzielten Punktzahlen pro Gruppe und Station eingetragen.
 
@@ -90,7 +101,7 @@ Nachdem die Jugendolympiade stattgefunden hat, werden die erzielten Punktzahlen 
 2. Auf **„Ergebniseingabe"** klicken.
 3. Es wird eine Ansicht mit einem **Gruppen-Dropdown** angezeigt.
 4. Gruppe aus dem Dropdown auswählen.
-5. Für jede Station den erreichten **Punktestand** (100–1200) eingeben.
+5. Für jede Station den erreichten **Punktestand** (konfigurierbar, Standard: 100–1200) eingeben.
 6. Einzeln über **„Speichern“** pro Zeile oder gesammelt über **„💾 Alle Ergebnisse speichern“** speichern.
 7. Nächste Gruppe auswählen und wiederholen.
 
@@ -98,7 +109,7 @@ Nachdem die Jugendolympiade stattgefunden hat, werden die erzielten Punktzahlen 
 
 ---
 
-## Schritt 4: Auswertungen ansehen
+## Schritt 5: Auswertungen ansehen
 
 Sobald alle Ergebnisse eingetragen sind, können die Auswertungen in der Anwendung eingesehen werden.
 
@@ -119,7 +130,7 @@ Sobald alle Ergebnisse eingetragen sind, können die Auswertungen in der Anwendu
 
 ---
 
-## Schritt 5: Urkunden erstellen
+## Schritt 6: Urkunden erstellen
 
 1. Abschnitt **📊 Ausgabe** → **„Teilnehmer-Zertifikate"** klicken.
 2. Die Anwendung erzeugt für jede teilnehmende Person eine individuelle Urkunde.
@@ -151,3 +162,27 @@ Alle erzeugten PDFs werden im Unterordner **`pdfdocs/`** im Programmverzeichnis 
 
 - **Backup erstellen:** ⚙️ Admin → **„Datenbank sichern“** – speichert eine Sicherungskopie der Datenbank.
 - **Backup wiederherstellen:** ⚙️ Admin → **„Datenbank wiederherstellen“** – stellt einen früheren Stand wieder her. Achtung: alle aktuellen Daten werden dabei überschrieben.
+
+---
+
+## Konfiguration (`config.toml`)
+
+Beim ersten Start der Anwendung wird automatisch eine Datei `config.toml` im Programmverzeichnis erstellt. Diese Datei kann über **⚙️ Admin → „Konfiguration bearbeiten“** direkt in der Anwendung geändert werden oder mit einem Texteditor (z. B. Notepad) bearbeitet werden.
+
+```toml
+[veranstaltung]
+name = "THW-JugendOlympiade 2026"  # Name erscheint auf Urkunden und PDFs
+jahr = 2026
+
+[gruppen]
+max_groesse = 8  # Maximale Teilnehmer pro Gruppe
+
+[ergebnisse]
+min_punkte = 100   # Kleinstes erlaubtes Ergebnis pro Station
+max_punkte = 1200  # Größstes erlaubtes Ergebnis pro Station
+
+[ausgabe]
+pdf_ordner = "pdfdocs"  # Unterordner für erzeugte PDFs
+```
+
+> **Hinweis:** Änderungen an Gruppengröße und Punktegrenzen werden erst nach einem Neustart der Anwendung vollständig wirksam. Änderungen am PDF-Ausgabeordner werden sofort übernommen.

@@ -43,12 +43,15 @@ Key dependencies automatically installed:
 - `github.com/xuri/excelize/v2` - Excel processing
 - `github.com/jung-kurt/gofpdf` - PDF generation
 - `modernc.org/sqlite` - Pure Go SQLite driver
+- `github.com/BurntSushi/toml` - TOML config parsing
 
 ## Project Structure
 
 ```
 THW-JugendOlympiade/
 ├── backend/                  # Go backend code
+│   ├── config/              # Configuration management
+│   │   └── config.go        # TOML config struct, LoadOrCreate(), ReadRaw(), ValidateAndSave()
 │   ├── database/            # Database layer
 │   │   ├── db.go           # DB initialization and connection
 │   │   ├── queries.go      # Optimized read queries
@@ -67,9 +70,10 @@ THW-JugendOlympiade/
 │       └── distribution.go # Group distribution algorithm
 ├── frontend/               # Web frontend (vanilla ES6 modules)
 │   ├── index.html         # Main UI structure
-│   ├── app.js             # Orchestrator: imports modules, exposes to window
+│   ├── app.js             # Orchestrator: imports modules, loads config, exposes to window
 │   ├── admin/
-│   │   └── file-handler.js # File load, backup, restore
+│   │   ├── file-handler.js # File load, backup, restore, group distribution
+│   │   └── config-editor.js # In-app TOML config editor modal
 │   ├── groups/
 │   │   ├── groups.js       # Group display with tabs and statistics
 │   │   └── groups.css
@@ -104,6 +108,7 @@ THW-JugendOlympiade/
 │   ├── scores_test.go     # Score assignment tests
 │   └── README.md          # Test documentation
 ├── main.go                 # Application entry point & Wails setup
+├── config.toml             # Runtime configuration (auto-created on first launch)
 ├── wails.json             # Wails build configuration
 ├── go.mod                 # Go module definition
 ├── go.sum                 # Go module checksums
@@ -163,15 +168,13 @@ All public methods on `App` struct are automatically bound.
 
 ## Database Schema
 
-The application uses SQLite with five main tables:
+The application uses SQLite with four main tables:
 
 ### Entity-Relationship Diagram
 
 ```mermaid
 erDiagram
     teilnehmer ||--o{ gruppe : "has"
-    teilnehmer ||--o| rel_tn_grp : "assigned to"
-    gruppe ||--o{ rel_tn_grp : "contains"
     gruppe ||--o{ group_station_scores : "visits"
     stations ||--o{ group_station_scores : "scored by"
 
@@ -182,18 +185,13 @@ erDiagram
         TEXT ortsverband "Location/District"
         INTEGER age "Age"
         TEXT geschlecht "Gender"
+        TEXT pregroup "Optional pre-group code"
     }
 
     gruppe {
         INTEGER id PK "Auto-increment"
         INTEGER group_id "Group identifier"
-        INTEGER teilnehmer_id FK "References teilnehmer.id"
-    }
-
-    rel_tn_grp {
-        INTEGER id PK "Auto-increment"
-        INTEGER teilnehmer_id UK "References teilnehmer.teilnehmer_id"
-        INTEGER group_id FK "References gruppe.group_id"
+        INTEGER teilnehmer_id FK "References teilnehmer.teilnehmer_id"
     }
 
     stations {
@@ -229,35 +227,21 @@ CREATE TABLE teilnehmer (
 - `teilnehmer_id`: Sequential ID based on import order (1, 2, 3, ...)
 - `name`, `ortsverband`, `age`, `geschlecht`: Data from Excel import
 
-#### gruppe (Groups - Legacy)
-Maintained for backward compatibility. Duplicates data in `rel_tn_grp`.
+#### gruppe (Groups)
+Group-participant assignment table.
 
 ```sql
 CREATE TABLE gruppe (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    group_id INTEGER,
-    teilnehmer_id INTEGER,
-    FOREIGN KEY (teilnehmer_id) REFERENCES teilnehmer(id)
-);
-```
-
-**Known Issue**: Redundant with `rel_tn_grp`. Consider deprecating in future versions.
-
-#### rel_tn_grp (Participant-Group Relationships)
-Primary grouping table. Enforces one-group-per-participant constraint.
-
-```sql
-CREATE TABLE rel_tn_grp (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    teilnehmer_id INTEGER UNIQUE NOT NULL,
     group_id INTEGER NOT NULL,
-    FOREIGN KEY (teilnehmer_id) REFERENCES teilnehmer(teilnehmer_id),
-    FOREIGN KEY (group_id) REFERENCES gruppe(group_id)
+    teilnehmer_id INTEGER UNIQUE NOT NULL,
+    FOREIGN KEY (teilnehmer_id) REFERENCES teilnehmer(teilnehmer_id)
 );
 ```
 
-- UNIQUE constraint on `teilnehmer_id` prevents double-assignment
-- Used by distribution algorithm and queries
+- `group_id`: Logical group number (multiple rows share the same `group_id` for one group)
+- `teilnehmer_id`: UNIQUE — enforces one group per participant
+- Cleared and re-written each time `DistributeGroups()` is called
 
 #### stations (Activity Stations)
 List of stations/activities for scoring.
@@ -562,17 +546,7 @@ tx.Commit()
 
 ### Known Performance Issues
 
-1. **Global DB Connection**: `currentDB` is a global variable
-   - **Impact**: Not thread-safe, harder to test
-   - **Fix**: Move to App struct or use connection pool
-
-2. **Redundant Tables**: `gruppe` and `rel_tn_grp` duplicate data
-   - **Impact**: Double writes, potential inconsistency
-   - **Fix**: Deprecate `gruppe` table, migrate to `rel_tn_grp` only
-
-3. **No Database Indexes**: Foreign keys lack indexes
-   - **Impact**: Slower joins on large datasets
-   - **Fix**: Add indexes on `group_id`, `teilnehmer_id`, `station_id`
+1. **No Database Indexes on custom queries**: Base indexes exist (`idx_gruppe_group_id`, `idx_gruppe_teilnehmer_id`, `idx_scores_group_id`, `idx_scores_station_id`); add more if queries are extended.
 
 ## Development Setup
 
@@ -729,9 +703,29 @@ See `wails build --help` for all options.
 
 ## Configuration
 
-### Application Configuration
+### Runtime Configuration (`config.toml`)
 
-**wails.json:**
+A `config.toml` file is auto-created next to the executable on first launch. It is loaded by `backend/config/config.go` via `LoadOrCreate()` and stored in the `App.cfg` struct at startup.
+
+```toml
+[veranstaltung]
+name = "THW-JugendOlympiade 2026"  # Appears on PDFs and certificates
+jahr = 2026
+
+[gruppen]
+max_groesse = 8  # Maximum participants per group
+
+[ergebnisse]
+min_punkte = 100   # Minimum score per station
+max_punkte = 1200  # Maximum score per station
+
+[ausgabe]
+pdf_ordner = "pdfdocs"  # Output directory for generated PDFs
+```
+
+The in-app editor (Admin → "Konfiguration bearbeiten") calls `GetConfigRaw()` / `SaveConfigRaw()` to read and write this file with server-side TOML validation.
+
+### Application Configuration (`wails.json`)
 ```json
 {
   "name": "THW-JugendOlympiade",
@@ -756,30 +750,12 @@ See `wails build --help` for all options.
 
 ### Code Configuration
 
-**Database Settings** (`backend/database/db.go`):
+**Database filename** (`backend/models/types.go`):
 ```go
-const dbFile = "data.db"  // Database filename
+const DbFile = "data.db"
 ```
 
-**Group Distribution** (`backend/services/distribution.go`):
-```go
-const maxGroupSize = 8  // Max participants per group
-
-// Diversity penalty weights (in scoring function)
-ortsverbandPenalty := 10.0
-geschlechtPenalty := 5.0
-ageDifferencePenalty := 2.0
-sizePenalty := 3.0
-```
-
-**PDF Output** (`backend/io/output.go`):
-```go
-const pdfOutputDir = "pdfdocs"  // PDF output directory
-
-// Certificate content boundaries
-const contentLeft = 5.0        // mm (23px)
-const contentRight = 147.83    // mm (680px)
-```
+All other previously hardcoded values (group size, score bounds, PDF directory, event name) are now read from `config.toml` at runtime.
 
 ### Icons and Branding
 

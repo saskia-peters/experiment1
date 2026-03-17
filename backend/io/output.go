@@ -7,7 +7,14 @@ import (
 	"golang.org/x/text/encoding/charmap"
 )
 
-const pdfOutputDir = "pdfdocs"
+var pdfOutputDir = "pdfdocs"
+
+// SetPDFOutputDir overrides the directory where generated PDFs are saved.
+func SetPDFOutputDir(dir string) {
+	if dir != "" {
+		pdfOutputDir = dir
+	}
+}
 
 // ensurePDFDirectory creates the pdfdocs directory if it doesn't exist.
 func ensurePDFDirectory() error {

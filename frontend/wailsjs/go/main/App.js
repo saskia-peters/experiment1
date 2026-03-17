@@ -14,6 +14,10 @@ export function CheckDB() {
   return window['go']['main']['App']['CheckDB']();
 }
 
+export function DistributeGroups() {
+  return window['go']['main']['App']['DistributeGroups']();
+}
+
 export function GenerateGroupEvaluationPDF() {
   return window['go']['main']['App']['GenerateGroupEvaluationPDF']();
 }
@@ -34,12 +38,24 @@ export function GetAllGroups() {
   return window['go']['main']['App']['GetAllGroups']();
 }
 
+export function GetConfig() {
+  return window['go']['main']['App']['GetConfig']();
+}
+
+export function GetConfigRaw() {
+  return window['go']['main']['App']['GetConfigRaw']();
+}
+
 export function GetGroupEvaluations() {
   return window['go']['main']['App']['GetGroupEvaluations']();
 }
 
 export function GetOrtsverbandEvaluations() {
   return window['go']['main']['App']['GetOrtsverbandEvaluations']();
+}
+
+export function HasScores() {
+  return window['go']['main']['App']['HasScores']();
 }
 
 export function ListBackups() {
@@ -52,6 +68,10 @@ export function LoadFile() {
 
 export function RestoreDatabase(arg1) {
   return window['go']['main']['App']['RestoreDatabase'](arg1);
+}
+
+export function SaveConfigRaw(arg1) {
+  return window['go']['main']['App']['SaveConfigRaw'](arg1);
 }
 
 export function ShowGroups() {

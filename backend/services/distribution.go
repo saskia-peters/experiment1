@@ -10,8 +10,9 @@ import (
 	"THW-JugendOlympiade/backend/models"
 )
 
-// CreateBalancedGroups creates groups with balanced distribution
-func CreateBalancedGroups(db *sql.DB) error {
+// CreateBalancedGroups creates groups with balanced distribution.
+// maxGroupSize controls the maximum number of participants per group.
+func CreateBalancedGroups(db *sql.DB, maxGroupSize int) error {
 	// Read all participants from database
 	teilnehmers, err := database.GetAllTeilnehmers(db)
 	if err != nil {
@@ -23,7 +24,7 @@ func CreateBalancedGroups(db *sql.DB) error {
 	}
 
 	// Create balanced groups using the distribution algorithm
-	groups := distributeIntoGroups(teilnehmers)
+	groups := distributeIntoGroups(teilnehmers, maxGroupSize)
 
 	// Save groups to database
 	if err := database.SaveGroups(db, groups); err != nil {
@@ -39,7 +40,7 @@ func CreateBalancedGroups(db *sql.DB) error {
 }
 
 // distributeIntoGroups distributes participants into balanced groups
-func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
+func distributeIntoGroups(teilnehmers []models.Teilnehmer, maxGroupSize int) []models.Group {
 	if len(teilnehmers) == 0 {
 		return nil
 	}
@@ -60,7 +61,7 @@ func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
 	// Count pre-formed groups
 	numPreGroups := len(preGroupMap)
 	// Calculate how many additional groups needed for unassigned participants
-	numAdditionalGroups := int(math.Ceil(float64(len(unassignedParticipants)) / float64(models.MaxGroupSize)))
+	numAdditionalGroups := int(math.Ceil(float64(len(unassignedParticipants)) / float64(maxGroupSize)))
 	numGroups := numPreGroups + numAdditionalGroups
 
 	// Ensure we have at least one group
@@ -73,7 +74,7 @@ func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
 	for i := range groups {
 		groups[i] = models.Group{
 			GroupID:      i + 1,
-			Teilnehmers:  make([]models.Teilnehmer, 0, models.MaxGroupSize),
+			Teilnehmers:  make([]models.Teilnehmer, 0, maxGroupSize),
 			Ortsverbands: make(map[string]int),
 			Geschlechts:  make(map[string]int),
 		}
@@ -103,7 +104,7 @@ func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
 
 	// Step 6: Distribute unassigned participants using round-robin with diversity scoring
 	for _, teilnehmer := range unassignedParticipants {
-		bestGroupIdx := findBestGroup(groups, teilnehmer)
+		bestGroupIdx := findBestGroup(groups, teilnehmer, maxGroupSize)
 		addTeilnehmerToGroup(&groups[bestGroupIdx], teilnehmer)
 	}
 
@@ -111,13 +112,13 @@ func distributeIntoGroups(teilnehmers []models.Teilnehmer) []models.Group {
 }
 
 // findBestGroup finds the best group for a participant based on diversity
-func findBestGroup(groups []models.Group, teilnehmer models.Teilnehmer) int {
+func findBestGroup(groups []models.Group, teilnehmer models.Teilnehmer, maxGroupSize int) int {
 	bestIdx := 0
 	bestScore := math.MaxFloat64
 
 	for i, group := range groups {
 		// Skip if group is full
-		if len(group.Teilnehmers) >= models.MaxGroupSize {
+		if len(group.Teilnehmers) >= maxGroupSize {
 			continue
 		}
 

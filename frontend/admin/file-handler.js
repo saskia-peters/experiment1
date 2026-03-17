@@ -1,5 +1,5 @@
 // File loading and management
-import { setStatus, output, tabs, btnShow, btnStations, btnEvaluation, btnOrtsverband, btnPDF, btnCertificates } from '../shared/dom.js';
+import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnEvaluation, btnOrtsverband, btnPDF, btnCertificates } from '../shared/dom.js';
 
 export async function openFileDialog() {
     try {
@@ -23,23 +23,23 @@ export async function openFileDialog() {
             output.textContent = 'Datei konnte nicht geladen werden. Bitte prüfen Sie die Fehlermeldung.';
         } else {
             setStatus(uploadResult.message, 'success');
-            btnShow.disabled = false;
-            btnStations.disabled = false;
-            btnEvaluation.disabled = false;
-            btnOrtsverband.disabled = false;
-            btnPDF.disabled = false;
-            btnCertificates.disabled = false;
+            // Only the distribute button is enabled until groups are created
+            btnDistribute.disabled = false;
+            btnShow.disabled = true;
+            btnStations.disabled = true;
+            btnEvaluation.disabled = true;
+            btnOrtsverband.disabled = true;
+            btnPDF.disabled = true;
+            btnCertificates.disabled = true;
             output.style.display = 'block';
             tabs.style.display = 'none';
-            output.textContent = `✔ ${uploadResult.count} Teilnehmer geladen und ausgewogene Gruppen erstellt!\n\nNächste Schritte:\n• Klicken Sie auf "Gruppen" um die Gruppen anzuzeigen\n• Klicken Sie auf "Auswertung nach Gruppen" für die Gruppenauswertung\n• Klicken Sie auf "Auswertung nach Ortsverband" für die ortsverbandsbasierte Auswertung\n• Klicken Sie auf "Gruppen-PDF erstellen" um die Gruppen als PDF zu exportieren\n• Klicken Sie auf "Teilnehmer-Zertifikate" um Zertifikate zu erstellen`;
+            output.textContent = `✔ ${uploadResult.count} Teilnehmer geladen.\n\nNächster Schritt:\n• Klicken Sie auf "Teilnehmer zu Gruppen" um ausgewogene Gruppen zu erstellen`;
             
-            // Collapse Admin and expand other categories
+            // Collapse Admin and expand Daten
             const adminDropdown = document.querySelector('.button-section:nth-child(1) .category-dropdown');
             const datenDropdown = document.querySelector('.button-section:nth-child(2) .category-dropdown');
-            const ausgabeDropdown = document.querySelector('.button-section:nth-child(3) .category-dropdown');
             if (adminDropdown) adminDropdown.removeAttribute('open');
             if (datenDropdown) datenDropdown.setAttribute('open', 'open');
-            if (ausgabeDropdown) ausgabeDropdown.setAttribute('open', 'open');
         }
     } catch (err) {
         setStatus('FEHLER: ' + err, 'error');
@@ -171,6 +171,9 @@ window.confirmRestore = async function(backupFilename) {
             btnOrtsverband.disabled = false;
             btnPDF.disabled = false;
             btnCertificates.disabled = false;
+            // Only enable redistribution if no scores exist yet
+            const hasScores = await window.go.main.App.HasScores();
+            btnDistribute.disabled = hasScores;
             
             // Refresh the view
             output.style.display = 'block';
@@ -182,3 +185,29 @@ window.confirmRestore = async function(backupFilename) {
         alert('Error restoring database: ' + err);
     }
 };
+
+export async function handleDistributeGroups() {
+    setStatus('Gruppen werden erstellt...', 'info');
+    try {
+        const result = await window.go.main.App.DistributeGroups();
+        if (result.status === 'error') {
+            setStatus('FEHLER: ' + result.message, 'error');
+            return;
+        }
+        setStatus('✅ ' + result.message, 'success');
+        btnShow.disabled = false;
+        btnStations.disabled = false;
+        btnEvaluation.disabled = false;
+        btnOrtsverband.disabled = false;
+        btnPDF.disabled = false;
+        btnCertificates.disabled = false;
+        output.style.display = 'block';
+        tabs.style.display = 'none';
+        output.textContent = `✔ ${result.message}\n\nNächste Schritte:\n• Klicken Sie auf "Gruppen anzeigen" um die Gruppen anzuzeigen\n• Klicken Sie auf "Auswertung nach Gruppen" für die Gruppenauswertung\n• Klicken Sie auf "Auswertung nach Ortsverband" für die ortsverbandsbasierte Auswertung\n• Klicken Sie auf "Gruppen-PDF erstellen" um die Gruppen als PDF zu exportieren\n• Klicken Sie auf "Teilnehmer-Zertifikate" um Zertifikate zu erstellen`;
+
+        const ausgabeDropdown = document.querySelector('.button-section:nth-child(3) .category-dropdown');
+        if (ausgabeDropdown) ausgabeDropdown.setAttribute('open', 'open');
+    } catch (err) {
+        setStatus('FEHLER: ' + err, 'error');
+    }
+}

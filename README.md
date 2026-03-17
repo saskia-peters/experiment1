@@ -7,10 +7,11 @@ A cross-platform desktop application for managing youth Olympics events. Built w
 
 ## Features
 
-### ��� Participant Management
+### 🏆 Participant Management
 - **Excel Import**: Import participant data from XLSX files with automatic validation
-- **Smart Groups**: Automatically creates balanced groups with at most 8 participants
+- **Smart Groups**: Automatically creates balanced groups based on configurable maximum group size
 - **Database Storage**: All data stored securely in SQLite database
+- **Configuration**: Adjustable event settings via `config.toml` (group size, score bounds, event name)
 
 ### ��� Station Scoring
 - **Track Performance**: Record scores for each group at different stations
@@ -23,7 +24,7 @@ A cross-platform desktop application for managing youth Olympics events. Built w
 - **Statistics**: Participant counts, score distributions, and averages
 
 ### ��� PDF Generation
-All PDFs are automatically saved to the \`pdfdocs/\` directory:
+All PDFs are automatically saved to the configured output directory (default: `pdfdocs/`):
 - **Groups Report**: One page per group with participant lists and statistics
 - **Group Evaluations**: Rankings by group with scores
 - **Ortsverband Evaluations**: Rankings by location
@@ -65,19 +66,25 @@ Download the latest release for your platform:
 - First row is treated as header and skipped
 
 **Import:**
-1. Click "Load Excel File"
+1. Click "Lade Excel Datei"
 2. Select your XLSX file
 3. Wait for confirmation message
-4. Groups are automatically created
+4. Click "Teilnehmer zu Gruppen" to create balanced groups
 
-### 2. View Groups
+### 2. Distribute into Groups
 
-- Click "Gruppen" to view all created groups
+- Click "Teilnehmer zu Gruppen" to create balanced groups from the loaded data
+- This step is intentionally separate so you can adjust settings in `config.toml` before committing to a distribution
+- Once at least one score has been saved, this button is locked to protect data integrity
+
+### 3. View Groups
+
+- Click "Gruppen anzeigen" to view all created groups
 - Groups are automatically balanced by:
   - Location (Ortsverband)
   - Age (Alter)
   - Gender (Geschlecht)
-- Maximum 8 participants per group
+- Maximum participants per group is configurable (default: 8)
 
 ### 3. Add Stations
 
@@ -87,7 +94,7 @@ Station names are loaded automatically from the **second sheet** (`Stationen`) o
 
 1. Click "Ergebniseingabe" to open the results entry view
 2. Select a group from the dropdown
-3. Enter scores (100–1200) for each station
+3. Enter scores (configurable range, default 100–1200) for each station
 4. Click "Speichern" per row or "Alle Ergebnisse speichern" to save all at once
 5. Switch to the next group and repeat
 
@@ -111,7 +118,7 @@ Station names are loaded automatically from the **second sheet** (`Stationen`) o
 - Click "Teilnehmer-Zertifikate"
 - Generates certificates in `pdfdocs/Urkunden_Teilnehmende.pdf`
 
-All PDFs are saved to the \`pdfdocs/\` directory.
+All PDFs are saved to the configured output directory (default: `pdfdocs/`).
 
 ## Certificate Templates
 
@@ -151,7 +158,7 @@ After using the application, you'll find:
   - Station scores
   - Evaluations
 
-### PDFs (in pdfdocs/ directory)
+### PDFs (in configured output directory, default: pdfdocs/)
 - **Gruppeneinteilung.pdf**: Complete group listings with statistics
 - **Auswertung_nach_Gruppe.pdf**: Group rankings by total score
 - **Auswertung_nach_Ortsverband.pdf**: Location rankings by average score

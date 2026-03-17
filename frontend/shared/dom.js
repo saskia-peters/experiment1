@@ -5,6 +5,7 @@ export const tabs = document.getElementById('tabs');
 export const tabButtons = document.getElementById('tabButtons');
 export const tabContents = document.getElementById('tabContents');
 export const btnShow = document.getElementById('btnShow');
+export const btnDistribute = document.getElementById('btnDistribute');
 export const btnStations = document.getElementById('btnStations');
 export const btnEvaluation = document.getElementById('btnEvaluation');
 export const btnOrtsverband = document.getElementById('btnOrtsverband');
