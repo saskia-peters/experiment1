@@ -16,7 +16,7 @@ func (a *App) GenerateParticipantCertificates() map[string]interface{} {
 		}
 	}
 
-	if err := io.GenerateParticipantCertificates(a.db); err != nil {
+	if err := io.GenerateParticipantCertificates(a.db, a.cfg.Veranstaltung.Jahr); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Urkunden konnten nicht erstellt werden: %v", err),
@@ -43,7 +43,7 @@ func (a *App) GenerateOrtsverbandCertificates() map[string]interface{} {
 		}
 	}
 
-	if err := io.GenerateOrtsverbandCertificates(a.db); err != nil {
+	if err := io.GenerateOrtsverbandCertificates(a.db, a.cfg.Veranstaltung.Jahr); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Ortsverband-Urkunden konnten nicht erstellt werden: %v", err),

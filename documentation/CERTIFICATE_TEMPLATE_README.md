@@ -16,7 +16,7 @@ Create your certificate template using any design tool (Canva, Photoshop, PowerP
 
 Leave space for the dynamic content that will be overlaid:
 
-- **Year** (Top center, ~35mm from top): "2026" in large text
+- **Year** (Top center, ~35mm from top): the event year from `config.toml` (`veranstaltung.jahr`), in large text
 - **Participant Name** (Center, ~85mm from top): Large, prominent
 - **Ortsverband** (~105mm from top): Smaller text below name
 - **Group Number** (~125mm from top): "Gruppe X"
@@ -47,7 +47,7 @@ certificate_template.png
 
 If you need to adjust where the text appears on your template, you can modify the Y-coordinates in the code:
 
-File: `backend/io/pdf_certificates.go`  
+File: `backend/io/pdf_cert_teilnehmende.go`  
 Function: `GenerateParticipantCertificates`
 
 Look for lines like:

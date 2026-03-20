@@ -1,5 +1,5 @@
 // File loading and management
-import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnEvaluation, btnOrtsverband, btnPDF, btnCertificates, btnOVCertificates, sectionAusgabe, ausgabeDropdown, btnBackup } from '../shared/dom.js';
+import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnPDF, sectionAusgabe, ausgabeDropdown, btnBackup, setEvalButtonsEnabled } from '../shared/dom.js';
 
 export async function openFileDialog() {
     try {
@@ -27,11 +27,8 @@ export async function openFileDialog() {
             btnDistribute.disabled = false;
             btnShow.disabled = true;
             btnStations.disabled = true;
-            btnEvaluation.disabled = true;
-            btnOrtsverband.disabled = true;
+            setEvalButtonsEnabled(false);
             btnPDF.disabled = true;
-            btnCertificates.disabled = true;
-            btnOVCertificates.disabled = true;
             output.style.display = 'block';
             tabs.style.display = 'none';
             btnBackup.disabled = false;
@@ -194,10 +191,7 @@ window.confirmRestore = async function(backupFilename) {
             const hasScores = await window.go.main.App.HasScores();
             btnDistribute.disabled = hasScores;
             // Evaluation and certificates only available once scores exist
-            btnEvaluation.disabled = !hasScores;
-            btnOrtsverband.disabled = !hasScores;
-            btnCertificates.disabled = !hasScores;
-            btnOVCertificates.disabled = !hasScores;
+            setEvalButtonsEnabled(hasScores);
             
             // Refresh the view
             output.style.display = 'block';
@@ -225,10 +219,7 @@ export async function handleDistributeGroups() {
         btnStations.disabled = false;
         btnPDF.disabled = false;
         // Evaluation and certificates stay disabled until the first score is entered
-        btnEvaluation.disabled = true;
-        btnOrtsverband.disabled = true;
-        btnCertificates.disabled = true;
-        btnOVCertificates.disabled = true;
+        setEvalButtonsEnabled(false);
         output.style.display = 'block';
         tabs.style.display = 'none';
         output.textContent = `✔ ${result.message}\n\nNächste Schritte:\n• Klicken Sie auf "Gruppen anzeigen" um die Gruppen anzuzeigen\n• Klicken Sie auf "Ergebniseingabe" um Ergebnisse einzugeben\n• Klicken Sie auf "Gruppen-PDF erstellen" um die Gruppen als PDF zu exportieren\n• Auswertung und Urkunden sind verfügbar sobald das erste Ergebnis gespeichert wurde`;

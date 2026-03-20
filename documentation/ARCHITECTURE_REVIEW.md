@@ -26,7 +26,13 @@ The Jugendolympiade Verwaltung application is a **well-structured Wails desktop 
 - ✅ No connection lifecycle management — **RESOLVED**: `shutdown()` closes `a.db`
 - ✅ Hardcoded configuration values — **RESOLVED**: TOML config (`config.toml` / `backend/config/config.go`)
 
-**Recommendation**: Address the global state issue (P0) and add database indexes (P1) before deploying to production with >500 participants. Other improvements can be addressed incrementally.
+**Code Review Fixes (March 20, 2026):**
+- ✅ Hardcoded certificate year (`2026`) — **RESOLVED**: year read from `a.cfg.Veranstaltung.Jahr` with `time.Now().Year()` fallback
+- ✅ Data loss window in `LoadFile` — **RESOLVED**: rename-to-backup pattern; handles fresh start (no prior DB) and restores on init failure
+- ✅ Score not validated in backend — **RESOLVED**: `AssignScore` validates against `cfg.Ergebnisse.MinPunkte` / `MaxPunkte`
+- ✅ Duplicate button-state management — **RESOLVED**: `setEvalButtonsEnabled()` helper centralised in `shared/dom.js`
+
+**Recommendation**: All originally identified P0 and P1 issues are resolved. Remaining open items (P2/P3) are non-blocking improvements.
 
 ---
 
@@ -44,6 +50,10 @@ The Jugendolympiade Verwaltung application is a **well-structured Wails desktop 
 | 8 | Frontend DOM Manipulation | Low | Maintainability | Harder to maintain as UI grows | ⚠️ Open |
 | 9 | Certificate Layout Hardcoded | Low | Flexibility | Limited customization options | ⚠️ Open |
 | 10 | Test Coverage Reporting Issue | Medium | Quality Assurance | Cannot measure test effectiveness | ⚠️ Open |
+| 11 | Hardcoded Certificate Year | Low | Maintainability | Wrong year on certificates after config year | ✅ **RESOLVED** |
+| 12 | Data Loss Window in `LoadFile` | High | Reliability | DB deleted before replacement confirmed good | ✅ **RESOLVED** |
+| 13 | No Backend Score Validation | Medium | Data Integrity | Out-of-range scores accepted if frontend bypassed | ✅ **RESOLVED** |
+| 14 | Duplicate Button-State Management | Low | Maintainability | 4-line blocks repeated in 3 JS locations | ✅ **RESOLVED** |
 
 ---
 
@@ -491,6 +501,70 @@ func TestReadXLSXFile(t *testing.T) {
 
 ---
 
+### 11. Hardcoded Certificate Year ✅ RESOLVED (March 20, 2026)
+
+**Severity:** Low  
+**Files:** `backend/io/pdf_cert_teilnehmende.go`, `backend/io/pdf_cert_ortsverbaende.go`
+
+**Resolution:** Both certificate generators now accept an `eventYear int` parameter. The handler passes `a.cfg.Veranstaltung.Jahr`; a `time.Now().Year()` fallback is used when the config value is zero. The year is no longer hardcoded.
+
+---
+
+### 12. Data Loss Window in `LoadFile` ✅ RESOLVED (March 20, 2026)
+
+**Severity:** High  
+**Files:** `handlers_files.go`
+
+**Original Problem:** The old `data.db` was deleted with `os.Remove` before `InitDatabase()` succeeded, creating a window where both the old and new database could be absent on init failure.
+
+**Resolution:** Three cases are now explicitly handled:
+- **No prior DB** (fresh start): skip backup; on failure remove any partial file `InitDatabase` created.
+- **DB exists, init succeeds**: renamed to `.bak` → new DB healthy → `.bak` deleted.
+- **DB exists, init fails**: renamed to `.bak` → error → `.bak` restored, no data lost.
+
+A rename failure is returned as an error immediately rather than being silently ignored.
+
+---
+
+### 13. No Backend Score Validation ✅ RESOLVED (March 20, 2026)
+
+**Severity:** Medium  
+**Files:** `handlers_queries.go`
+
+**Original Problem:** `AssignScore` wrote any integer value to the database without checking it against the configured bounds, so scores outside the valid range could be stored by bypassing the frontend.
+
+**Resolution:** A range check is performed before the database write:
+```go
+if score < a.cfg.Ergebnisse.MinPunkte || score > a.cfg.Ergebnisse.MaxPunkte {
+    return map[string]interface{}{
+        "status":  "error",
+        "message": fmt.Sprintf("Ungültiges Ergebnis %d: muss zwischen %d und %d liegen", score, a.cfg.Ergebnisse.MinPunkte, a.cfg.Ergebnisse.MaxPunkte),
+    }
+}
+```
+
+---
+
+### 14. Duplicate Button-State Management ✅ RESOLVED (March 20, 2026)
+
+**Severity:** Low  
+**Files:** `frontend/shared/dom.js`, `frontend/admin/file-handler.js`, `frontend/stations/stations.js`
+
+**Original Problem:** Enabling or disabling the four evaluation/certificate buttons required an identical 4-line block repeated in three separate locations.
+
+**Resolution:** A `setEvalButtonsEnabled(enabled)` helper was added to `shared/dom.js`:
+```javascript
+export function setEvalButtonsEnabled(enabled) {
+    if (btnEvaluation) btnEvaluation.disabled = !enabled;
+    if (btnOrtsverband) btnOrtsverband.disabled = !enabled;
+    if (btnCertificates) btnCertificates.disabled = !enabled;
+    if (btnOVCertificates) btnOVCertificates.disabled = !enabled;
+}
+```
+Both `file-handler.js` and `stations.js` now call this helper. The four individual button refs are no longer imported in those modules.
+
+---
+
 ## Strengths 🎉
 
 ### 1. Security-First Approach ✅
@@ -626,10 +700,10 @@ if err != nil {
 
 ### Priority 2 (Medium - Next Quarter)
 
-| Action | Effort | Impact | Timeline |
-|--------|--------|--------|----------|
-| **Add retry mechanisms for critical operations** | Medium (1-2 days) | Medium | Q2 2026 |
-| **Remove empty handlers directory** | Minimal (5 min) | Low | Any time |
+| Action | Effort | Impact | Timeline | Status |
+|--------|--------|--------|----------|--------|
+| **Add retry mechanisms for critical operations** | Medium (1-2 days) | Medium | Q2 2026 | ⚠️ Open |
+| **Remove empty `backend/handlers/` directory** | Minimal (5 min) | Low | Any time | ⚠️ Deferred — decision pending |
 
 ### Priority 3 (Low - Future Backlog)
 
@@ -679,6 +753,12 @@ All originally identified Critical and High findings have been resolved:
 - ✅ Connection lifecycle managed in `shutdown()`
 - ✅ TOML configuration system implemented with in-app editor
 
+Additional code-review findings resolved (March 20, 2026):
+- ✅ Hardcoded certificate year → reads from `a.cfg.Veranstaltung.Jahr`
+- ✅ Data loss window in `LoadFile` → rename-to-backup with fresh-start handling
+- ✅ No backend score validation → range check in `AssignScore`
+- ✅ Duplicate button-state management → `setEvalButtonsEnabled()` helper
+
 Remaining open items are all Low/Medium with no blocking impact on production use.
 
 **Overall Assessment**: This is a **production-ready application** for youth olympics events of typical scale (up to ~500 participants).
@@ -687,4 +767,4 @@ Remaining open items are all Low/Medium with no blocking impact on production us
 
 **Reviewed by**: Architecture Reviewer Agent  
 **Initial Review**: March 10, 2026  
-**Last Updated**: March 17, 2026 (all P0/P1 items resolved)
+**Last Updated**: March 20, 2026 (code review fixes 1–4 resolved)

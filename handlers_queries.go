@@ -100,6 +100,13 @@ func (a *App) AssignScore(groupID int, stationID int, score int) map[string]inte
 		}
 	}
 
+	if score < a.cfg.Ergebnisse.MinPunkte || score > a.cfg.Ergebnisse.MaxPunkte {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Ungültiges Ergebnis %d: muss zwischen %d und %d liegen", score, a.cfg.Ergebnisse.MinPunkte, a.cfg.Ergebnisse.MaxPunkte),
+		}
+	}
+
 	if err := database.AssignGroupStationScore(a.db, groupID, stationID, score); err != nil {
 		return map[string]interface{}{
 			"status":  "error",

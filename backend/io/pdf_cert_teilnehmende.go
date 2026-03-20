@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/models"
@@ -14,7 +15,7 @@ import (
 
 // GenerateParticipantCertificates creates a PDF with one certificate per participant.
 // If certificate_template.png exists in the working directory it is used as background.
-func GenerateParticipantCertificates(db *sql.DB) error {
+func GenerateParticipantCertificates(db *sql.DB, eventYear int) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
 	}
@@ -51,7 +52,10 @@ func GenerateParticipantCertificates(db *sql.DB) error {
 	const contentRight = 147.83
 	const contentWidth = contentRight - contentLeft
 
-	currentYear := 2026
+	currentYear := eventYear
+	if currentYear == 0 {
+		currentYear = time.Now().Year()
+	}
 
 	for _, group := range groups {
 		rank := groupRanks[group.GroupID]

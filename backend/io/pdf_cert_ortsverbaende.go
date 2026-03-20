@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"THW-JugendOlympiade/backend/database"
 
@@ -25,7 +26,7 @@ const (
 //
 // The layout is always fully programmatic and centered on A4.
 // No background image is used.
-func GenerateOrtsverbandCertificates(db *sql.DB) error {
+func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
 	}
@@ -55,7 +56,10 @@ func GenerateOrtsverbandCertificates(db *sql.DB) error {
 	pdf.SetMargins(ovMarginLR, ovMarginLR, ovMarginLR)
 	pdf.SetAutoPageBreak(false, 0) // absolute positioning throughout
 
-	currentYear := 2026
+	currentYear := eventYear
+	if currentYear == 0 {
+		currentYear = time.Now().Year()
+	}
 
 	for i, eval := range evaluations {
 		pdf.AddPage()

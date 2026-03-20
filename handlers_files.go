@@ -70,14 +70,36 @@ func (a *App) LoadFile() map[string]interface{} {
 		a.db.Close()
 		a.db = nil
 	}
-	os.Remove(models.DbFile)
+	// If a database already exists, rename it to a backup so it can be restored if init fails.
+	// On a fresh start there is no existing DB, so we skip the backup.
+	var dbBackup string
+	if _, statErr := os.Stat(models.DbFile); statErr == nil {
+		dbBackup = models.DbFile + ".bak"
+		if renameErr := os.Rename(models.DbFile, dbBackup); renameErr != nil {
+			return map[string]interface{}{
+				"status":  "error",
+				"message": fmt.Sprintf("Datenbank-Backup konnte nicht erstellt werden: %v", renameErr),
+			}
+		}
+	}
 
 	db, err := database.InitDatabase()
 	if err != nil {
+		if dbBackup != "" {
+			// Restore the previous database so the user doesn't lose data
+			_ = os.Rename(dbBackup, models.DbFile)
+		} else {
+			// No prior DB — remove any partial file that InitDatabase may have created
+			_ = os.Remove(models.DbFile)
+		}
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Datenbank konnte nicht initialisiert werden: %v", err),
 		}
+	}
+	// New DB is healthy — discard the backup
+	if dbBackup != "" {
+		_ = os.Remove(dbBackup)
 	}
 	a.db = db
 

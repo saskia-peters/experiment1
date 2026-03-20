@@ -31,3 +31,11 @@ export function clearAllTabs() {
     void tabButtons.offsetHeight;
     void tabContents.offsetHeight;
 }
+
+// Enable or disable the evaluation/certificate buttons as a group
+export function setEvalButtonsEnabled(enabled) {
+    if (btnEvaluation) btnEvaluation.disabled = !enabled;
+    if (btnOrtsverband) btnOrtsverband.disabled = !enabled;
+    if (btnCertificates) btnCertificates.disabled = !enabled;
+    if (btnOVCertificates) btnOVCertificates.disabled = !enabled;
+}

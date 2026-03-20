@@ -88,7 +88,7 @@ THW-JugendOlympiade/
 │   ├── reports/
 │   │   └── pdf-handlers.js # PDF generation wrappers
 │   └── shared/
-│       ├── dom.js          # DOM element references and setStatus()
+│       ├── dom.js          # DOM element references, setStatus(), clearAllTabs(), setEvalButtonsEnabled()
 │       ├── utils.js        # escapeHtml(), switchTab()
 │       ├── styles.css      # Global styles
 │       └── components.css  # Shared component styles
@@ -347,12 +347,15 @@ CREATE TABLE group_station_scores (
 
 ### Test Organization
 
-Tests are located in `test/` directory :
+Tests are located in `test/` directory:
 
 ```
 test/
-├── input_test.go           # Excel import validation (10 tests)
-├── distribution_test.go    # Group distribution (8 tests)
+├── database_test.go       # Database operation tests
+├── distribution_test.go   # Group distribution (8 tests)
+├── input_test.go          # Excel import validation (10 tests)
+├── models_test.go         # Data model tests
+├── scores_test.go         # Score assignment tests
 └── README.md              # Detailed test documentation
 ```
 
@@ -504,10 +507,10 @@ After (optimized):
 ```go
 // 1 query with JOIN
 rows := db.Query(`
-    SELECT r.group_id, t.* 
-    FROM rel_tn_grp r
-    JOIN teilnehmer t ON r.teilnehmer_id = t.teilnehmer_id
-    ORDER BY r.group_id
+    SELECT g.group_id, t.* 
+    FROM gruppe g
+    JOIN teilnehmer t ON g.teilnehmer_id = t.teilnehmer_id
+    ORDER BY g.group_id
 `)
 
 // Map-based aggregation in memory
@@ -881,20 +884,15 @@ func DoSomething(input *Data) error {
 
 ## Future Improvements
 
-### High Priority
-1. **Refactor Global DB Connection**: Move to App struct
-2. **Add Database Indexes**: Improve query performance
-3. **Deprecate `gruppe` Table**: Use only `rel_tn_grp`
-
 ### Medium Priority
-4. **Add Integration Tests**: Test full workflows
-5. **Improve Error Messages**: More user-friendly
-6. **Add Logging Framework**: Better debugging
+1. **Add Integration Tests**: Test full workflows end-to-end
+2. **Add retry mechanisms**: For transient file/PDF failures (see architecture review)
+3. **Add Logging Framework**: Better debugging
 
 ### Low Priority
-7. **TypeScript Frontend**: Type safety for frontend
-8. **Frontend Framework**: Consider Vue.js or React
-9. **Configuration File**: External config instead of constants
+4. **TypeScript Frontend**: Type safety for frontend
+5. **Consider frontend framework**: Only if UI complexity grows significantly
+6. **Remove empty `backend/handlers/` directory**: Minor cleanup
 
 ---
 

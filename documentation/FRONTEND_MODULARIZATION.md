@@ -10,7 +10,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
    - **Purpose**: DOM element references and basic UI utilities
    - **Exports**: 
      - DOM elements: `status`, `output`, `tabs`, `tabButtons`, `tabContents`, all 8 buttons (`btnDistribute`, `btnShow`, `btnStations`, `btnEvaluation`, `btnOrtsverband`, `btnPDF`, `btnCertificates`, `btnOVCertificates`)
-     - Functions: `setStatus()`, `clearAllTabs()`
+     - Functions: `setStatus()`, `clearAllTabs()`, `setEvalButtonsEnabled(enabled)`
    - **Dependencies**: None
 
 2. **shared/utils.js**
@@ -31,6 +31,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
      - `handleDistributeGroups()`: calls `DistributeGroups()` backend method; enables `btnShow`, `btnStations`, `btnPDF`; Auswertung + Urkunden buttons remain disabled until first score
      - Backup creation with status feedback
      - Restore: checks `HasScores()` — Auswertung/Urkunden buttons enabled only if scores exist
+     - Uses `setEvalButtonsEnabled()` to toggle all four eval/cert buttons together
    - **Dependencies**: shared/dom.js
 
 4. **admin/config-editor.js**
@@ -74,6 +75,7 @@ The frontend has been restructured from a monolithic 1000+ line `app.js` into lo
      - "Alle Ergebnisse speichern" button
      - Unsaved-changes modal when switching groups
    - **State**: Module-level `savedScoreMap`, `currentGroupID`, `pendingGroupID`
+   - **On score save**: calls `setEvalButtonsEnabled(true)` to unlock evaluation/certificate buttons after the first score is stored
    - **Dependencies**: shared/dom.js, shared/utils.js
 
 7. **evaluations/evaluations.js**

@@ -1,5 +1,5 @@
 // Station management and display - Group-based results entry
-import { setStatus, output, tabs, tabButtons, tabContents, clearAllTabs, btnDistribute, btnEvaluation, btnOrtsverband, btnCertificates, btnOVCertificates } from '../shared/dom.js';
+import { setStatus, output, tabs, tabButtons, tabContents, clearAllTabs, btnDistribute, setEvalButtonsEnabled } from '../shared/dom.js';
 import { escapeHtml } from '../shared/utils.js';
 
 // Score bounds are read from the backend config (window.appConfig) at runtime.
@@ -241,10 +241,7 @@ window.saveStationScore = async function(groupID, stationID) {
             savedScoreMap[stationID] = score;
             updateStationCache(stationID, groupID, score);
             if (btnDistribute) btnDistribute.disabled = true;
-            if (btnEvaluation) btnEvaluation.disabled = false;
-            if (btnOrtsverband) btnOrtsverband.disabled = false;
-            if (btnCertificates) btnCertificates.disabled = false;
-            if (btnOVCertificates) btnOVCertificates.disabled = false;
+            setEvalButtonsEnabled(true);
             // Switch input to saved (light blue) state
             const scoreInput2 = document.getElementById('score-' + stationID);
             if (scoreInput2) {
@@ -295,10 +292,7 @@ async function doSaveAll(groupID) {
                 savedScoreMap[scoreData.stationID] = scoreData.score;
                 updateStationCache(scoreData.stationID, groupID, scoreData.score);
                 if (btnDistribute) btnDistribute.disabled = true;
-                if (btnEvaluation) btnEvaluation.disabled = false;
-                if (btnOrtsverband) btnOrtsverband.disabled = false;
-                if (btnCertificates) btnCertificates.disabled = false;
-                if (btnOVCertificates) btnOVCertificates.disabled = false;
+                setEvalButtonsEnabled(true);
                 // Switch input to saved (light blue) state
                 const savedInput = document.getElementById('score-' + scoreData.stationID);
                 if (savedInput) {
