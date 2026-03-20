@@ -21,14 +21,14 @@
                     <details class="category-dropdown" open>
                         <summary class="section-title">⚙️ Admin</summary>
                         <div class="button-group">
-                            <button class="btn-backup" onclick="handleBackupDatabase()">Datenbank sichern</button>
+                            <button class="btn-backup" id="btnBackup" onclick="handleBackupDatabase()" disabled>Datenbank sichern</button>
                             <button class="btn-restore" onclick="handleRestoreDatabase()">Datenbank wiederherstellen</button>
                             <button class="btn-config" onclick="handleEditConfig()">Konfiguration bearbeiten</button>
                         </div>
                     </details>
                 </div>
                 <div class="button-section">
-                    <details class="category-dropdown">
+                    <details class="category-dropdown" open>
                         <summary class="section-title">📝 Daten</summary>
                         <div class="button-group">
                             <button class="btn-load" onclick="openFileDialog()">Excel einlesen</button>
@@ -38,8 +38,8 @@
                         </div>
                     </details>
                 </div>
-                <div class="button-section">
-                    <details class="category-dropdown">
+                <div class="button-section" id="sectionAusgabe">
+                    <details class="category-dropdown" id="ausgabeDropdown">
                         <summary class="section-title">📊 Ausgabe</summary>
                         <div class="button-group">
                             <button class="btn-pdf" id="btnPDF" onclick="handleGeneratePDF()" disabled>Gruppen-PDF erstellen</button>

@@ -1,5 +1,5 @@
 // File loading and management
-import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnEvaluation, btnOrtsverband, btnPDF, btnCertificates, btnOVCertificates } from '../shared/dom.js';
+import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnEvaluation, btnOrtsverband, btnPDF, btnCertificates, btnOVCertificates, sectionAusgabe, ausgabeDropdown, btnBackup } from '../shared/dom.js';
 
 export async function openFileDialog() {
     try {
@@ -34,6 +34,8 @@ export async function openFileDialog() {
             btnOVCertificates.disabled = true;
             output.style.display = 'block';
             tabs.style.display = 'none';
+            btnBackup.disabled = false;
+            ausgabeDropdown.removeAttribute('open');
             output.textContent = `✔ ${uploadResult.count} Teilnehmer geladen.\n\nNächster Schritt:\n• Klicken Sie auf "Teilnehmer zu Gruppen" um ausgewogene Gruppen zu erstellen`;
             
             // Collapse Admin and expand Daten
@@ -89,18 +91,23 @@ export async function handleRestoreDatabase() {
             return new Date(b.modified) - new Date(a.modified);
         });
         
+window._selectedBackup = null;
+
         let dialogHTML = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;" id="restore-dialog">';
-        dialogHTML += '<div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">';
-        dialogHTML += '<h2 style="margin: 0 0 20px 0; color: #333;">🔄 Datenbank wiederherstellen</h2>';
-        dialogHTML += '<p style="margin-bottom: 20px; color: #666;">Backup auswählen. <strong>Warnung:</strong> Dies ersetzt die aktuelle Datenbank!</p>';
-        
-        dialogHTML += '<div style="margin-bottom: 20px;">';
+        dialogHTML += '<div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">';
+        // Header: title + Abbrechen
+        dialogHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">';
+        dialogHTML += '<h2 style="margin: 0; color: #333;">🔄 Datenbank wiederherstellen</h2>';
+        dialogHTML += '<button onclick="window.closeRestoreDialog()" style="padding: 8px 16px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Abbrechen</button>';
+        dialogHTML += '</div>';
+        dialogHTML += '<p style="margin-bottom: 16px; color: #666;">Backup auswählen. <strong>Warnung:</strong> Dies ersetzt die aktuelle Datenbank!</p>';
+        // Scrollable backup list
+        dialogHTML += '<div style="overflow-y: auto; flex: 1; margin-bottom: 16px;">';
         backups.forEach((backup, index) => {
             const sizeKB = (backup.size / 1024).toFixed(2);
             dialogHTML += '<div style="border: 2px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s;" ';
-            dialogHTML += 'onmouseover="this.style.borderColor=\'#667eea\'; this.style.background=\'#f0f8ff\';" ';
-            dialogHTML += 'onmouseout="this.style.borderColor=\'#ddd\'; this.style.background=\'white\';" ';
-            dialogHTML += 'onclick="window.confirmRestore(\'' + backup.name + '\')">';
+            dialogHTML += 'id="backup-item-' + index + '" ';
+            dialogHTML += 'onclick="window.selectBackup(' + index + ', \'' + backup.name + '\')">'; 
             dialogHTML += '<div style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">' + backup.name + '</div>';
             dialogHTML += '<div style="font-size: 12px; color: #666;">';
             dialogHTML += '<span>📅 ' + backup.modified + '</span>';
@@ -109,11 +116,11 @@ export async function handleRestoreDatabase() {
             dialogHTML += '</div>';
         });
         dialogHTML += '</div>';
-        
+        // Footer: Wiederherstellen button
         dialogHTML += '<div style="text-align: right;">';
-        dialogHTML += '<button onclick="window.closeRestoreDialog()" style="padding: 10px 20px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Abbrechen</button>';
+        dialogHTML += '<button id="btn-do-restore" onclick="window.doRestoreSelected()" disabled ';
+        dialogHTML += 'style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-weight: 600; opacity: 0.4; cursor: not-allowed;">Wiederherstellen</button>';
         dialogHTML += '</div>';
-        
         dialogHTML += '</div></div>';
         
         // Add dialog to page
@@ -138,19 +145,33 @@ window.closeRestoreDialog = function() {
     setStatus('Wiederherstellung abgebrochen', 'info');
 };
 
-// Helper function to confirm and perform restore
-window.confirmRestore = async function(backupFilename) {
-    const confirmed = confirm(
-        '⚠️ WARNUNG: Die aktuelle Datenbank wird durch das Backup ersetzt!\n\n' +
-        'Backup: ' + backupFilename + '\n\n' +
-        'Möchten Sie wirklich fortfahren?'
-    );
-    
-    if (!confirmed) {
-        return;
+// Select a backup in the restore dialog
+window.selectBackup = function(index, name) {
+    document.querySelectorAll('[id^="backup-item-"]').forEach(el => {
+        el.style.borderColor = '#ddd';
+        el.style.background = 'white';
+    });
+    const item = document.getElementById('backup-item-' + index);
+    if (item) {
+        item.style.borderColor = '#667eea';
+        item.style.background = '#f0f8ff';
     }
-    
-    // Close dialog
+    window._selectedBackup = name;
+    const btn = document.getElementById('btn-do-restore');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    }
+};
+
+// Trigger restore for the selected backup
+window.doRestoreSelected = function() {
+    if (window._selectedBackup) window.confirmRestore(window._selectedBackup);
+};
+
+// Perform restore
+window.confirmRestore = async function(backupFilename) {
     window.closeRestoreDialog();
     
     setStatus('Datenbank wird aus Backup wiederhergestellt...', 'info');
@@ -181,6 +202,8 @@ window.confirmRestore = async function(backupFilename) {
             // Refresh the view
             output.style.display = 'block';
             tabs.style.display = 'none';
+            btnBackup.disabled = false;
+            ausgabeDropdown.setAttribute('open', 'open');
             output.textContent = '✔ Datenbank erfolgreich aus Backup wiederhergestellt!\n\nAlle Funktionen stehen jetzt zur Verfügung.';
         }
     } catch (err) {

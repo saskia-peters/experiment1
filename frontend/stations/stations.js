@@ -174,11 +174,11 @@ function renderStationTable(groupID, stations) {
         html += '<tr id="row-' + station.StationID + '">';
         html += '<td class="station-name">' + escapeHtml(station.StationName) + '</td>';
         html += '<td>';
-        html += '<input type="number" id="score-' + station.StationID + '" ';
+        html += '<input type="text" inputmode="numeric" id="score-' + station.StationID + '" ';
         html += 'class="score-input" ';
-        html += 'min="' + scoreMin() + '" max="' + scoreMax() + '" step="50" ';
         html += 'value="' + existingScore + '" ';
-        html += 'placeholder="' + scoreMin() + '-' + scoreMax() + '">';
+        html += 'placeholder="' + scoreMin() + '-' + scoreMax() + '" ';
+        html += 'oninput="window.onScoreInput(this)">';
         html += '</td>';
         html += '<td>';
         html += '<button onclick="window.saveStationScore(' + groupID + ', ' + station.StationID + ')" ';
@@ -197,7 +197,29 @@ function renderStationTable(groupID, stations) {
     
     container.innerHTML = html;
     container.classList.add('visible');
+
+    // Apply saved (light blue) highlight to all pre-filled inputs
+    stations.forEach((station) => {
+        if (savedScoreMap[station.StationID] !== '') {
+            const inp = document.getElementById('score-' + station.StationID);
+            if (inp) inp.classList.add('score-input--saved');
+        }
+    });
 }
+
+// Score input: digits only + live range validation highlight
+window.onScoreInput = function(input) {
+    const stripped = input.value.replace(/\D/g, '');
+    if (input.value !== stripped) input.value = stripped;
+    input.classList.remove('score-input--invalid', 'score-input--valid', 'score-input--saved');
+    if (stripped === '') return;
+    const score = parseInt(stripped, 10);
+    if (score < scoreMin() || score > scoreMax()) {
+        input.classList.add('score-input--invalid');
+    } else {
+        input.classList.add('score-input--valid');
+    }
+};
 
 // Save single station score
 window.saveStationScore = async function(groupID, stationID) {
@@ -223,6 +245,12 @@ window.saveStationScore = async function(groupID, stationID) {
             if (btnOrtsverband) btnOrtsverband.disabled = false;
             if (btnCertificates) btnCertificates.disabled = false;
             if (btnOVCertificates) btnOVCertificates.disabled = false;
+            // Switch input to saved (light blue) state
+            const scoreInput2 = document.getElementById('score-' + stationID);
+            if (scoreInput2) {
+                scoreInput2.classList.remove('score-input--valid', 'score-input--invalid');
+                scoreInput2.classList.add('score-input--saved');
+            }
             const row = document.getElementById('row-' + stationID);
             if (row) {
                 row.classList.add('row-saved');
@@ -271,6 +299,12 @@ async function doSaveAll(groupID) {
                 if (btnOrtsverband) btnOrtsverband.disabled = false;
                 if (btnCertificates) btnCertificates.disabled = false;
                 if (btnOVCertificates) btnOVCertificates.disabled = false;
+                // Switch input to saved (light blue) state
+                const savedInput = document.getElementById('score-' + scoreData.stationID);
+                if (savedInput) {
+                    savedInput.classList.remove('score-input--valid', 'score-input--invalid');
+                    savedInput.classList.add('score-input--saved');
+                }
                 const row = document.getElementById('row-' + scoreData.stationID);
                 if (row) {
                     row.classList.add('row-saved');

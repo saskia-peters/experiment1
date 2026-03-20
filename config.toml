@@ -14,7 +14,7 @@ max_groesse = 8
 
 [ergebnisse]
 # Kleinstes erlaubtes Ergebnis pro Station
-min_punkte = 100
+min_punkte = 500
 # Groesstes erlaubtes Ergebnis pro Station
 max_punkte = 1200
 
