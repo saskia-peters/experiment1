@@ -10,7 +10,7 @@ Die Datei muss **zwei Tabellenblätter** enthalten:
 
 ---
 
-### Tabellenblatt 1: `Teilnehmer`
+### Tabellenblatt 1: `Teilnehmende`
 
 Dieses Blatt enthält alle angemeldeten Teilnehmenden. Die **erste Zeile ist die Kopfzeile** und muss exakt folgende Spaltennamen enthalten (Groß- und Kleinschreibung wird ignoriert):
 
@@ -53,15 +53,15 @@ Wird das Blatt weggelassen oder ist es leer, können Stationen später nicht ben
 3. Im Dateidialog die vorbereitete XLSX-Datei auswählen und öffnen.
 4. Die Anwendung liest alle Teilnehmenden ein und speichert sie in der Datenbank.
 
-Nach erfolgreichem Import erscheint eine grüne Statusmeldung. Im Abschnitt **📝 Daten** wird die Schaltfläche **„Teilnehmer zu Gruppen“** aktiv.
+Nach erfolgreichem Import erscheint eine grüne Statusmeldung. Im Abschnitt **📝 Daten** wird die Schaltfläche **„Gruppen zusammenstellen"** aktiv.
 
 > **Hinweis:** Ein erneuter Import ersetzt alle bestehenden Daten in der Datenbank.
 
 ---
 
-## Schritt 2: Teilnehmer auf Gruppen verteilen
+## Schritt 2: Gruppen zusammenstellen
 
-1. Im Abschnitt **📝 Daten** auf **„Teilnehmer zu Gruppen“** klicken.
+1. Im Abschnitt **📝 Daten** auf **„Gruppen zusammenstellen"** klicken.
 2. Die Anwendung erstellt automatisch ausgewogene Gruppen.
 
 Die automatische Gruppenverteilung berücksichtigt:
@@ -71,7 +71,7 @@ Die automatische Gruppenverteilung berücksichtigt:
 
 Nach der Verteilung werden die Schaltflächen **„Gruppen anzeigen"**, **„Ergebniseingabe"** und **„Gruppen-PDF erstellen"** aktiv. Die Auswertungs- und Urkundenschaltflächen bleiben gesperrt, bis das erste Ergebnis gespeichert wurde.
 
-> **Wichtig:** Sobald mindestens ein Ergebnis gespeichert wurde, ist diese Schaltfläche gesperrt. So wird verhindert, dass eine neue Verteilung bestehende Ergebnisdaten unnötig unbrauchbar macht. Wenn Sie die Gruppenverteilung vor der Ergebniseingabe anpassen möchten (z. B. andere Gruppengröße in `config.toml` eintragen), klicken Sie erneut auf **„Teilnehmer zu Gruppen“**.
+> **Wichtig:** Sobald mindestens ein Ergebnis gespeichert wurde, ist diese Schaltfläche gesperrt. So wird verhindert, dass eine neue Verteilung bestehende Ergebnisdaten unnötig unbrauchbar macht. Wenn Sie die Gruppenverteilung vor der Ergebniseingabe anpassen möchten (z. B. andere Gruppengröße in `config.toml` eintragen), klicken Sie erneut auf **„Gruppen zusammenstellen"**.
 
 ---
 
@@ -89,7 +89,7 @@ Nach der Verteilung werden die Schaltflächen **„Gruppen anzeigen"**, **„Erg
 2. Auf **„Gruppen-PDF erstellen"** klicken.
 3. Nach kurzer Verarbeitung erscheint eine Erfolgsmeldung.
 
-Die Datei **`Gruppeneinteilung.pdf`** wird im Ordner **`pdfdocs/`** neben der Anwendung gespeichert. Sie enthält eine Seite pro Gruppe mit der vollständigen Teilnehmerliste und einer Gruppenstatistik.
+Die Datei **`Gruppeneinteilung.pdf`** wird im Ordner **`pdfdocs/`** neben der Anwendung gespeichert. Sie enthält eine Seite pro Gruppe mit der vollständigen Teilnehmendenliste und einer Gruppenstatistik.
 
 ---
 
@@ -166,7 +166,7 @@ Alle erzeugten PDFs werden im Unterordner **`pdfdocs/`** im Programmverzeichnis 
 
 | Datei | Inhalt | Erzeugt durch |
 |-------|--------|---------------|
-| `Gruppeneinteilung.pdf` | Alle Gruppen mit Teilnehmerlisten | „Gruppen-PDF erstellen" |
+| `Gruppeneinteilung.pdf` | Alle Gruppen mit Teilnehmendenlisten | „Gruppen-PDF erstellen" |
 | `Auswertung_nach_Gruppe.pdf` | Gruppenrangliste nach Gesamtpunktzahl | „📄 PDF erstellen" in Gruppenauswertung |
 | `Auswertung_nach_Ortsverband.pdf` | Ortsverbandsrangliste nach Ø-Score | „📄 PDF erstellen" in Ortsverbandsauswertung |
 | `Urkunden_Teilnehmende.pdf` | Eine Urkunde pro Teilnehmende/r | „Urkunden Teilnehmende" |
@@ -191,7 +191,7 @@ name = "THW-JugendOlympiade 2026"  # Name erscheint auf Urkunden und PDFs
 jahr = 2026
 
 [gruppen]
-max_groesse = 8  # Maximale Teilnehmer pro Gruppe
+max_groesse = 8  # Maximale Teilnehmende pro Gruppe
 
 [ergebnisse]
 min_punkte = 100   # Kleinstes erlaubtes Ergebnis pro Station

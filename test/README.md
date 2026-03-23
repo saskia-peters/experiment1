@@ -77,7 +77,7 @@ Tests create temporary Excel files dynamically using the `excelize` library. No 
 ## Expected Behavior
 
 ### Valid Excel File Format:
-- **Sheet name**: "Teilnehmer"
+- **Sheet name**: "Teilnehmende"
 - **Headers**: Name, Ortsverband, Alter, Geschlecht (case-insensitive)
 - **Data validation**:
   - Name: Required (rows with empty names are skipped)

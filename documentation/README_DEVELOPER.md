@@ -175,11 +175,11 @@ The application uses SQLite with four main tables:
 
 ```mermaid
 erDiagram
-    teilnehmer ||--o{ gruppe : "has"
+    teilnehmende ||--o{ gruppe : "has"
     gruppe ||--o{ group_station_scores : "visits"
     stations ||--o{ group_station_scores : "scored by"
 
-    teilnehmer {
+    teilnehmende {
         INTEGER id PK "Auto-increment"
         INTEGER teilnehmer_id "Sequential participant ID"
         TEXT name "Participant name"
@@ -192,7 +192,7 @@ erDiagram
     gruppe {
         INTEGER id PK "Auto-increment"
         INTEGER group_id "Group identifier"
-        INTEGER teilnehmer_id FK "References teilnehmer.teilnehmer_id"
+        INTEGER teilnehmer_id FK "References teilnehmende.teilnehmer_id"
     }
 
     stations {
@@ -210,11 +210,11 @@ erDiagram
 
 ### Table Details
 
-#### teilnehmer (Participants)
+#### teilnehmende (Participants)
 Primary participant data table.
 
 ```sql
-CREATE TABLE teilnehmer (
+CREATE TABLE teilnehmende (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     teilnehmer_id INTEGER,
     name TEXT,
@@ -236,7 +236,7 @@ CREATE TABLE gruppe (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     group_id INTEGER NOT NULL,
     teilnehmer_id INTEGER UNIQUE NOT NULL,
-    FOREIGN KEY (teilnehmer_id) REFERENCES teilnehmer(teilnehmer_id)
+    FOREIGN KEY (teilnehmer_id) REFERENCES teilnehmende(teilnehmer_id)
 );
 ```
 
@@ -440,10 +440,10 @@ All database queries use parameterized statements:
 
 ```go
 // ❌ VULNERABLE (old code)
-query := fmt.Sprintf("SELECT * FROM teilnehmer WHERE id = %d", id)
+query := fmt.Sprintf("SELECT * FROM teilnehmende WHERE id = %d", id)
 
 // ✅ SAFE (current code)
-query := "SELECT * FROM teilnehmer WHERE id = ?"
+query := "SELECT * FROM teilnehmende WHERE id = ?"
 db.Query(query, id)
 ```
 
@@ -509,7 +509,7 @@ After (optimized):
 rows := db.Query(`
     SELECT g.group_id, t.* 
     FROM gruppe g
-    JOIN teilnehmer t ON g.teilnehmer_id = t.teilnehmer_id
+    JOIN teilnehmende t ON g.teilnehmer_id = t.teilnehmer_id
     ORDER BY g.group_id
 `)
 

@@ -573,11 +573,11 @@ Both `file-handler.js` and `stations.js` now call this helper. The four individu
 All database queries use parameterized statements:
 ```go
 // ✅ Parameterized queries throughout codebase
-query := "SELECT * FROM teilnehmer WHERE id = ?"
+query := "SELECT * FROM teilnehmende WHERE id = ?"
 db.Query(query, id)
 
 // ✅ No string concatenation for SQL
-// ❌ NEVER: query := "SELECT * FROM teilnehmer WHERE id = " + id
+// ❌ NEVER: query := "SELECT * FROM teilnehmende WHERE id = " + id
 ```
 
 **Input Validation:**
@@ -621,7 +621,7 @@ for _, group := range groups {
 query := `
     SELECT g.group_id, t.* 
     FROM gruppe g
-    JOIN teilnehmer t ON g.teilnehmer_id = t.teilnehmer_id
+    JOIN teilnehmende t ON g.teilnehmer_id = t.teilnehmer_id
     ORDER BY g.group_id
 `
 // Map-based aggregation in memory
@@ -632,7 +632,7 @@ Bulk inserts wrapped in transactions for performance:
 ```go
 tx, _ := db.Begin()
 for _, participant := range participants {
-    tx.Exec("INSERT INTO teilnehmer ...")
+    tx.Exec("INSERT INTO teilnehmende ...")
 }
 tx.Commit()
 ```

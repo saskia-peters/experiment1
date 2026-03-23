@@ -61,7 +61,7 @@ Download the latest release for your platform:
 ### 1. Load Participant Data
 
 **Prepare Your Excel File:**
-- Create an XLSX file with a sheet named "Teilnehmer"
+- Create an XLSX file with a sheet named "Teilnehmende"
 - Required columns (in order):
   1. **Name**: Participant name
   2. **Ortsverband**: Location/district
@@ -73,11 +73,11 @@ Download the latest release for your platform:
 1. Click **"Excel einlesen"** (in the 📝 Daten section)
 2. Select your XLSX file
 3. Wait for confirmation message
-4. Click "Teilnehmer zu Gruppen" to create balanced groups
+4. Click "Gruppen zusammenstellen" to create balanced groups
 
 ### 2. Distribute into Groups
 
-- Click "Teilnehmer zu Gruppen" to create balanced groups from the loaded data
+- Click "Gruppen zusammenstellen" to create balanced groups from the loaded data
 - This step is intentionally separate so you can adjust settings in `config.toml` before committing to a distribution
 - Once at least one score has been saved, this button is locked to protect data integrity
 
@@ -185,7 +185,7 @@ After using the application, you'll find:
 - Close any other programs that might be accessing \`data.db\`
 
 **"invalid file format"**
-- Check that your Excel file has a sheet named "Teilnehmer"
+- Check that your Excel file has a sheet named "Teilnehmende"
 - Verify column headers: Name, Ortsverband, Alter, Geschlecht
 - Ensure file is \`.xlsx\` format (not \`.xls\` or \`.csv\`)
 
