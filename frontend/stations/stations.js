@@ -61,6 +61,7 @@ export async function handleShowStationsForGroup(preselectedGroupID) {
             output.textContent = 'Fehler beim Laden der Gruppen: ' + groupsResult.message;
         } else {
             setStatus('Bereit zur Ergebniseingabe', 'success');
+            document.querySelectorAll('.category-dropdown').forEach(d => d.removeAttribute('open'));
             output.style.display = 'none';
             tabs.style.display = 'block';
             // Ensure complete cleanup before rendering
