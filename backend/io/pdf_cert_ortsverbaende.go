@@ -27,7 +27,7 @@ const (
 //
 // If cert_background_ov.png exists in the working directory it is rendered as a
 // full-page background on every certificate page before the text content.
-func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
+func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
 	}
@@ -72,9 +72,9 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
 			pdf.Image(bgFile, 0, 0, 210, 297, false, imageTypeFromFile(bgFile), 0, "")
 		}
 		if i == 0 {
-			ovRenderWinner(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear)
+			ovRenderWinner(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear, eventName)
 		} else {
-			ovRenderParticipant(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear)
+			ovRenderParticipant(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear, eventName)
 		}
 	}
 
@@ -85,27 +85,27 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
 }
 
 // ovRenderWinner renders the Siegerurkunde for the best Ortsverband.
-// ov_winner_image.png (90 mm wide, centred; height auto from aspect ratio)
+// ov_winner_image.png (140 mm wide, centred; height auto from aspect ratio)
 // is placed above the "Bester Ortsverband" text.
 //
 // Vertical layout (y in mm):
 //
-//	 25  "Jugendolympiade" title
+//	 25  event name title
 //	 44  year
 //	 62  "Siegerurkunde"
 //	 78  ortsverband name
-//	105  ov_winner_image.png  (90 mm wide, centred)
-//	185  "Bester Ortsverband" (gold)
-//	200  "Teilnehmende" section label
-//	210  participant list
-func ovRenderWinner(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, participants []string, year int) {
+//	 88  ov_winner_image.png  (140 mm wide, centred)
+//	187  "Bester Ortsverband" (gold)
+//	201  "Teilnehmende" section label
+//	212  participant list
+func ovRenderWinner(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, participants []string, year int, eventName string) {
 	const left = ovMarginLR
 	const w = ovContentW
 
 	pdf.SetXY(left, 25)
 	theme.Font(pdf, "B", theme.SizeCertTitle)
 	theme.TextColor(pdf, theme.ColorPrimary)
-	pdf.CellFormat(w, 14, "Jugendolympiade", "", 0, "C", false, 0, "")
+	pdf.CellFormat(w, 14, enc(eventName), "", 0, "C", false, 0, "")
 
 	pdf.SetXY(left, 44)
 	theme.Font(pdf, "B", theme.SizeCertYear)
@@ -122,21 +122,21 @@ func ovRenderWinner(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, partic
 	theme.TextColor(pdf, theme.ColorText)
 	pdf.CellFormat(w, 14, enc(ortsverband), "", 0, "C", false, 0, "")
 
-	// Winner image: centred horizontally, 90 mm wide, height from aspect ratio.
-	const imgW = 90.0
-	pdf.Image("ov_winner_image.png", (ovPageW-imgW)/2, 105, imgW, 0, false, "", 0, "")
+	// Winner image: centred horizontally, 140 mm wide, height from aspect ratio.
+	const imgW = 140.0
+	pdf.Image("ov_winner_image.png", (ovPageW-imgW)/2, 88, imgW, 0, false, "", 0, "")
 
-	pdf.SetXY(left, 185)
+	pdf.SetXY(left, 187)
 	theme.Font(pdf, "B", theme.SizeCertRank)
 	theme.TextColor(pdf, theme.ColorAccent)
 	pdf.CellFormat(w, 14, "Bester Ortsverband", "", 0, "C", false, 0, "")
 
-	pdf.SetXY(left, 200)
-	theme.Font(pdf, "B", theme.SizeCertLabel)
+	pdf.SetXY(left, 201)
+	theme.Font(pdf, "B", theme.SizeCertGroup)
 	theme.TextColor(pdf, theme.ColorText)
-	pdf.CellFormat(w, 8, "Teilnehmende", "", 0, "C", false, 0, "")
+	pdf.CellFormat(w, 10, "Teilnehmende", "", 0, "C", false, 0, "")
 
-	ovParticipantsList(pdf, theme, participants, left, w, 210)
+	ovParticipantsList(pdf, theme, participants, left, w, 212)
 }
 
 // ovRenderParticipant renders the standard participation Urkunde.
@@ -144,21 +144,20 @@ func ovRenderWinner(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, partic
 //
 // Vertical layout (y in mm):
 //
-//	 40  "Jugendolympiade" title
+//	 40  event name title
 //	 60  year
 //	 80  "Urkunde"
 //	100  ortsverband name
-//	125  "hat erfolgreich teilgenommen"
-//	150  "Teilnehmende" section label
-//	160  participant list
-func ovRenderParticipant(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, participants []string, year int) {
+//	125  "Teilnehmende" section label
+//	138  participant list
+func ovRenderParticipant(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, participants []string, year int, eventName string) {
 	const left = ovMarginLR
 	const w = ovContentW
 
 	pdf.SetXY(left, 40)
 	theme.Font(pdf, "B", theme.SizeCertTitle)
 	theme.TextColor(pdf, theme.ColorPrimary)
-	pdf.CellFormat(w, 14, "Jugendolympiade", "", 0, "C", false, 0, "")
+	pdf.CellFormat(w, 14, enc(eventName), "", 0, "C", false, 0, "")
 
 	pdf.SetXY(left, 60)
 	theme.Font(pdf, "B", theme.SizeCertYear)
@@ -176,26 +175,21 @@ func ovRenderParticipant(pdf *gofpdf.Fpdf, theme PDFTheme, ortsverband string, p
 	pdf.CellFormat(w, 14, enc(ortsverband), "", 0, "C", false, 0, "")
 
 	pdf.SetXY(left, 125)
-	theme.Font(pdf, "", theme.SizeCertOrtsverband)
-	theme.TextColor(pdf, theme.ColorSubtext)
-	pdf.CellFormat(w, 10, "hat erfolgreich teilgenommen", "", 0, "C", false, 0, "")
-
-	pdf.SetXY(left, 150)
-	theme.Font(pdf, "B", theme.SizeCertLabel)
+	theme.Font(pdf, "B", theme.SizeCertGroup)
 	theme.TextColor(pdf, theme.ColorText)
-	pdf.CellFormat(w, 8, "Teilnehmende", "", 0, "C", false, 0, "")
+	pdf.CellFormat(w, 10, "Teilnehmende", "", 0, "C", false, 0, "")
 
-	ovParticipantsList(pdf, theme, participants, left, w, 160)
+	ovParticipantsList(pdf, theme, participants, left, w, 138)
 }
 
-// ovParticipantsList renders a single-column list of participant names
-// starting at the given absolute y position (mm).
+// ovParticipantsList renders a plain list of participant names (no table borders
+// or alternating fills), one name per line, centred, starting at startY (mm).
 func ovParticipantsList(pdf *gofpdf.Fpdf, theme PDFTheme, names []string, left, width, startY float64) {
 	pdf.SetXY(left, startY)
-	theme.Font(pdf, "", theme.SizeCertTableBody)
-	theme.FillColor(pdf, theme.ColorTableRowAlt)
-	for i, name := range names {
+	theme.Font(pdf, "", theme.SizeCertOrtsverband)
+	theme.TextColor(pdf, theme.ColorText)
+	for _, name := range names {
 		pdf.SetX(left)
-		pdf.CellFormat(width, 7, enc(name), "1", 1, "L", i%2 == 0, 0, "")
+		pdf.CellFormat(width, 6, enc(name), "", 1, "C", false, 0, "")
 	}
 }
