@@ -3,6 +3,7 @@ package io
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -24,8 +25,8 @@ const (
 //   - Index 0 → Siegerurkunde: shows ov_winner_image.png above "Bester Ortsverband"
 //   - All others → Urkunde: identical layout, no ranking mentioned
 //
-// The layout is always fully programmatic and centered on A4.
-// No background image is used.
+// If cert_background_ov.png exists in the working directory it is rendered as a
+// full-page background on every certificate page before the text content.
 func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
@@ -56,6 +57,10 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
 	pdf.SetMargins(ovMarginLR, ovMarginLR, ovMarginLR)
 	pdf.SetAutoPageBreak(false, 0) // absolute positioning throughout
 
+	const bgFile = "cert_background_ov.png"
+	_, statErr := os.Stat(bgFile)
+	useBg := statErr == nil
+
 	currentYear := eventYear
 	if currentYear == 0 {
 		currentYear = time.Now().Year()
@@ -63,6 +68,9 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int) error {
 
 	for i, eval := range evaluations {
 		pdf.AddPage()
+		if useBg {
+			pdf.Image(bgFile, 0, 0, 210, 297, false, "", 0, "")
+		}
 		if i == 0 {
 			ovRenderWinner(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear)
 		} else {
