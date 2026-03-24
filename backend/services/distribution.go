@@ -118,7 +118,7 @@ func distributeIntoGroups(teilnehmende []models.Teilnehmende, maxGroupSize int) 
 	for i := range groups {
 		groups[i] = models.Group{
 			GroupID:      i + 1,
-			Teilnehmende:  make([]models.Teilnehmende, 0, maxGroupSize),
+			Teilnehmende: make([]models.Teilnehmende, 0, maxGroupSize),
 			Ortsverbands: make(map[string]int),
 			Geschlechts:  make(map[string]int),
 		}
