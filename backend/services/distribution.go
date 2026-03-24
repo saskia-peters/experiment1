@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/models"
@@ -21,6 +22,11 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) error {
 
 	if len(teilnehmende) == 0 {
 		return nil // No participants to group
+	}
+
+	// Reject distribution if any pre-group exceeds the configured group size
+	if err := validatePreGroups(teilnehmende, maxGroupSize); err != nil {
+		return err
 	}
 
 	// Create balanced groups using the distribution algorithm
@@ -49,6 +55,32 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) error {
 	}
 
 	return nil
+}
+
+// validatePreGroups returns an error if any PreGroup tag has more members than
+// maxGroupSize, listing every offending group by name so the user knows exactly
+// which rows in the Excel file need to be corrected.
+func validatePreGroups(teilnehmende []models.Teilnehmende, maxGroupSize int) error {
+	counts := make(map[string]int)
+	for _, t := range teilnehmende {
+		if t.PreGroup != "" {
+			counts[t.PreGroup]++
+		}
+	}
+	var oversized []string
+	for name, count := range counts {
+		if count > maxGroupSize {
+			oversized = append(oversized,
+				fmt.Sprintf("%q (%d Mitglieder, Maximum: %d)", name, count, maxGroupSize))
+		}
+	}
+	if len(oversized) == 0 {
+		return nil
+	}
+	sort.Strings(oversized)
+	return fmt.Errorf(
+		"folgende Vorgruppen überschreiten die maximale Gruppengröße von %d: %s",
+		maxGroupSize, strings.Join(oversized, "; "))
 }
 
 // distributeIntoGroups distributes participants into balanced groups
