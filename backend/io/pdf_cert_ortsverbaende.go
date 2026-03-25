@@ -66,12 +66,13 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string
 		currentYear = time.Now().Year()
 	}
 
-	for i, eval := range evaluations {
+	topScore := evaluations[0].AverageScore
+	for _, eval := range evaluations {
 		pdf.AddPage()
 		if useBg {
 			pdf.Image(bgFile, 0, 0, 210, 297, false, imageTypeFromFile(bgFile), 0, "")
 		}
-		if i == 0 {
+		if eval.AverageScore == topScore {
 			ovRenderWinner(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear, eventName)
 		} else {
 			ovRenderParticipant(pdf, theme, eval.Ortsverband, ovParticipants[eval.Ortsverband], currentYear, eventName)

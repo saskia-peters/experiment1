@@ -150,7 +150,7 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 		}
 		name := enc(eval.Ortsverband)
 		if isWinner {
-			name = enc("★ " + eval.Ortsverband + " – Bester Ortsverband")
+			name = enc("* " + eval.Ortsverband + " - Bester Ortsverband")
 		}
 
 		pdf.CellFormat(colWidths[0], 9, name, "1", 0, "L", isWinner, 0, "")
