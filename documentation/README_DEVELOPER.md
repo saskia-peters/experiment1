@@ -55,20 +55,21 @@ THW-JugendOlympiade/
 │   ├── database/            # Database layer
 │   │   ├── db.go           # DB initialization and connection
 │   │   ├── queries.go      # Optimized read queries
-│   │   ├── inserts.go      # Write operations
+│   │   ├── inserts.go      # Write operations (incl. SaveGroupBetreuende)
 │   │   ├── evaluations.go  # Ranking and evaluation queries
 │   │   └── scores.go       # Score management
 │   ├── io/                 # Input/Output operations
-│   │   ├── input.go        # Excel import with validation
+│   │   ├── input.go        # Excel import (Teilnehmende + Betreuende + Stationen)
 │   │   ├── output.go       # Shared PDF helpers (enc(), directory setup)
-│   │   ├── pdf_groups.go   # Groups report PDF generation
+│   │   ├── pdf_groups.go   # Groups + Betreuende report PDF
+│   │   ├── pdf_styles.go   # Shared PDF style helpers
 │   │   ├── pdf_evaluations.go         # Evaluation PDFs (group + ortsverband)
 │   │   ├── pdf_cert_teilnehmende.go   # Participant certificates (one per person)
-│   │   └── pdf_cert_ortsverbaende.go  # Ortsverband certificates (Siegerurkunde + Urkunde)
+│   │   └── pdf_cert_ortsverbaende.go  # OV certificates (Siegerurkunde + Urkunde)
 │   ├── models/             # Data models
-│   │   └── types.go        # Structs and type definitions
+│   │   └── types.go        # Structs: Teilnehmende, Betreuende (incl. Fahrerlaubnis), Group, Station …
 │   └── services/           # Business logic
-│       └── distribution.go # Group distribution algorithm
+│       └── distribution.go # Participant + Betreuende distribution algorithm
 ├── frontend/               # Web frontend (vanilla ES6 modules)
 │   ├── index.html         # Main UI structure
 │   ├── app.js             # Orchestrator: imports modules, loads config, exposes to window
@@ -76,10 +77,10 @@ THW-JugendOlympiade/
 │   │   ├── file-handler.js # File load, backup, restore, group distribution
 │   │   └── config-editor.js # In-app TOML config editor modal
 │   ├── groups/
-│   │   ├── groups.js       # Group display with tabs and statistics
+│   │   ├── groups.js       # Group display with tabs, Betreuende + statistics
 │   │   └── groups.css
 │   ├── stations/
-│   │   ├── stations.js     # Group-based results entry with dirty-tracking
+│   │   ├── stations.js     # Results entry, dirty-tracking, Eingabeübersicht matrix
 │   │   ├── scores.js       # Legacy per-station score assignment helpers
 │   │   └── stations.css
 │   ├── evaluations/
@@ -88,7 +89,7 @@ THW-JugendOlympiade/
 │   ├── reports/
 │   │   └── pdf-handlers.js # PDF generation wrappers
 │   └── shared/
-│       ├── dom.js          # DOM element references, setStatus(), clearAllTabs(), setEvalButtonsEnabled()
+│       ├── dom.js          # DOM refs, setStatus(), clearAllTabs(), setEvalButtonsEnabled()
 │       ├── utils.js        # escapeHtml(), switchTab()
 │       ├── styles.css      # Global styles
 │       └── components.css  # Shared component styles
@@ -176,6 +177,8 @@ The application uses SQLite with four main tables:
 ```mermaid
 erDiagram
     teilnehmende ||--o{ gruppe : "has"
+    betreuende ||--o{ group_betreuende : "assigned to"
+    gruppe ||--o{ group_betreuende : "has"
     gruppe ||--o{ group_station_scores : "visits"
     stations ||--o{ group_station_scores : "scored by"
 
@@ -189,10 +192,23 @@ erDiagram
         TEXT pregroup "Optional pre-group code"
     }
 
+    betreuende {
+        INTEGER id PK "Auto-increment"
+        TEXT name "Supervisor name"
+        TEXT ortsverband "Location/District"
+        INTEGER fahrerlaubnis "1 = ja, 0 = nein"
+    }
+
     gruppe {
         INTEGER id PK "Auto-increment"
         INTEGER group_id "Group identifier"
         INTEGER teilnehmer_id FK "References teilnehmende.teilnehmer_id"
+    }
+
+    group_betreuende {
+        INTEGER id PK "Auto-increment"
+        INTEGER group_id FK "References gruppe.group_id"
+        INTEGER betreuenden_id FK "References betreuende.id"
     }
 
     stations {
@@ -227,6 +243,33 @@ CREATE TABLE teilnehmende (
 - `id`: Internal auto-increment key
 - `teilnehmer_id`: Sequential ID based on import order (1, 2, 3, ...)
 - `name`, `ortsverband`, `age`, `geschlecht`: Data from Excel import
+
+#### betreuende (Supervisors)
+Supervisor data imported from the `Betreuende` sheet.
+
+```sql
+CREATE TABLE betreuende (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    ortsverband TEXT,
+    fahrerlaubnis INTEGER  -- 1 = ja, 0 = nein
+);
+```
+
+#### group_betreuende (Group–Supervisor Assignment)
+Links supervisors to groups.
+
+```sql
+CREATE TABLE group_betreuende (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER NOT NULL,
+    betreuenden_id INTEGER NOT NULL,
+    FOREIGN KEY (group_id) REFERENCES gruppe(group_id),
+    FOREIGN KEY (betreuenden_id) REFERENCES betreuende(id)
+);
+```
+
+- Cleared and re-written each time `DistributeGroups()` is called.
 
 #### gruppe (Groups)
 Group-participant assignment table.
@@ -278,58 +321,49 @@ CREATE TABLE group_station_scores (
 
 **Location**: `backend/services/distribution.go`
 
-**Objective**: Create balanced groups with maximum diversity across ortsverband, gender, and age.
+**Objective**: Create balanced groups with maximum diversity across Ortsverband, gender, and age, then assign Betreuende observing Fahrerlaubnis and OV-cohesion rules.
 
-**Algorithm Steps:**
+#### Participant Distribution
 
-1. **Calculate Group Count**
+1. **Validate Pre-Groups** — any `PreGroup` that exceeds `maxGroupSize` is rejected with a clear error listing the offending group names.
+
+2. **Calculate Group Count**
    ```go
-   groupCount := (len(participants) + maxGroupSize - 1) / maxGroupSize
-   ```
-   - Divides participants into groups of ≤ 8 members
-   - Ensures balanced group sizes
-
-2. **Initialize Group Statistics**
-   ```go
-   type GroupStats struct {
-       OrtsverbandCount map[string]int
-       GeschlechtCount  map[string]int
-       TotalAge         int
-       MemberCount      int
-   }
-   ```
-   - Tracks composition of each group for scoring
-
-3. **Pre-Sort Participants**
-   ```go
-   sort.Slice(participants, func(i, j int) bool {
-       if participants[i].Ortsverband != participants[j].Ortsverband {
-           return participants[i].Ortsverband < participants[j].Ortsverband
-       }
-       // ... additional sorting
-   })
-   ```
-   - Improves initial distribution quality
-   - Ensures consistent output
-
-4. **Diversity Scoring**
-   For each participant, calculate score for each group:
-   ```go
-   score := 0.0
-   score -= float64(stats.OrtsverbandCount[p.Ortsverband]) * 10.0  // Ortsverband penalty
-   score -= float64(stats.GeschlechtCount[p.Geschlecht]) * 5.0     // Gender penalty
-   score -= float64(abs(avgAge - p.Age)) * 2.0                      // Age difference penalty
-   score -= float64(stats.MemberCount) * 3.0                         // Size penalty
+   numPreGroups + ceil(len(unassigned) / maxGroupSize)
    ```
 
-5. **Greedy Assignment**
-   - Assign each participant to highest-scoring group
-   - Update group statistics after each assignment
-   - O(n·g) complexity where n=participants, g=groups
+3. **Place Pre-Groups** — participants sharing a `PreGroup` code are placed into dedicated groups first.
 
-**Time Complexity**: O(n·g) ≈ O(n²/8) for typical datasets
+4. **Diversity Scoring** — remaining participants are sorted and assigned to the group with the best diversity score:
+   ```go
+   score += float64(ortsverbandCount) * 2.0  // penalise same OV
+   score += float64(geschlechtCount)  * 1.5  // penalise same gender
+   score += 1.0  // penalise if age close to group average
+   ```
+   Prefer the group with the fewest members (size bonus 0.5 per member).
 
-**Space Complexity**: O(g) for group statistics
+#### Betreuende Distribution (four-phase)
+
+1. **Phase 1 — Spread licensed drivers (Fahrerlaubnis=ja) one-per-group.**  
+   Uses `findGroupForLicensed()`: picks the group with the fewest licensed drivers already assigned (OV participant count breaks ties). This guarantees no group receives a second licensed driver before every group has at least one.
+
+2. **Phase 2 — Unlicensed Betreuende follow their OV.**  
+   Uses `findGroupForUnlicensed()`: priority order:
+   - Group that already has a licensed driver from the same OV.
+   - Group that has any Betreuende from the same OV.
+   - Group with the fewest Betreuende overall.
+
+3. **Phase 2b — Rebalance unlicensed members evenly.**  
+   Iteratively moves one unlicensed member from the most-loaded group to the least-loaded until the difference in total Betreuende count is ≤ 1. Only unlicensed members are moved to preserve the Phase 1 guarantee.
+
+4. **Phase 3 — Safety net.**  
+   Any group still without a Betreuende steals one from the group with the largest surplus (unlicensed preferred, to keep licensed drivers where possible).
+
+**Warnings** (returned as `string` from `CreateBalancedGroups`):  
+- Groups with no Betreuende at all (shows group numbers).  
+- Groups with no licensed driver (shows group numbers).
+
+**Time Complexity**: O(n·g) for participants; O(b·g) for Betreuende (b = Betreuende count, g = group count).
 
 ### Evaluation Queries
 
@@ -713,7 +747,7 @@ A `config.toml` file is auto-created next to the executable on first launch. It 
 
 ```toml
 [veranstaltung]
-name = "THW-JugendOlympiade 2026"  # Appears on PDFs and certificates
+name = "THW-JugendOlympiade"  # Appears on PDFs and certificates
 jahr = 2026
 
 [gruppen]
@@ -725,6 +759,7 @@ max_punkte = 1200  # Maximum score per station
 
 [ausgabe]
 pdf_ordner = "pdfdocs"  # Output directory for generated PDFs
+db_name = "data.db"     # SQLite database filename
 ```
 
 The in-app editor (Admin → "Konfiguration bearbeiten") calls `GetConfigRaw()` / `SaveConfigRaw()` to read and write this file with server-side TOML validation.

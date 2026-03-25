@@ -1,6 +1,197 @@
 # Frontend Modularization
 
-The frontend has been restructured from a monolithic 1000+ line `app.js` into logical ES6 modules for improved maintainability and testability.
+The frontend is structured as ES6 modules for maintainability and clear separation of concerns. The original monolithic `app.js` (`app.old.js`) has been replaced.
+
+## Module Structure
+
+### Shared Modules (`shared/`)
+
+1. **shared/dom.js**
+   - **Purpose**: DOM element references and basic UI utilities
+   - **Exports**:
+     - DOM elements: `status`, `output`, `tabs`, `tabButtons`, `tabContents`
+     - Buttons: `btnDistribute`, `btnShow`, `btnStations`, `btnOverview`, `btnEvaluation`, `btnOrtsverband`, `btnPDF`, `btnCertificates`, `btnOVCertificates`, `btnBackup`
+     - Functions: `setStatus()`, `clearAllTabs()`, `setEvalButtonsEnabled(enabled)`
+   - **Dependencies**: None
+
+2. **shared/utils.js**
+   - **Purpose**: Shared utility functions
+   - **Exports**:
+     - `escapeHtml()` — XSS prevention for user-generated content
+     - `switchTab()` — Tab switching logic
+   - **Dependencies**: None
+
+### Feature Modules
+
+3. **admin/file-handler.js**
+   - **Purpose**: File loading, database backup/restore, group distribution
+   - **Exports**: `openFileDialog()`, `handleBackupDatabase()`, `handleRestoreDatabase()`, `handleDistributeGroups()`
+   - **Functionality**:
+     - `openFileDialog()`: Confirms data overwrite if DB has existing data, calls `LoadFile()`, enables only `btnDistribute`
+     - `handleDistributeGroups()`: Calls `DistributeGroups()` backend method; enables `btnShow`, `btnStations`, `btnOverview`, `btnPDF`; shows a warning dialog if Betreuende Fahrerlaubnis constraint cannot be fully satisfied; Auswertung + Urkunden buttons remain disabled until first score
+     - `handleRestoreDatabase()`: Calls `HasScores()` — enables evaluation/certificate buttons only if scores already exist; enables `btnOverview`
+     - Uses `setEvalButtonsEnabled()` to toggle all four eval/cert buttons together
+   - **Dependencies**: shared/dom.js
+
+4. **admin/config-editor.js**
+   - **Purpose**: In-app editor for `config.toml`
+   - **Exports**: `handleEditConfig()`
+   - **Functionality**:
+     - Loads raw TOML text via `GetConfigRaw()` backend method
+     - Opens a modal with a monospace textarea
+     - Validates TOML syntax server-side before saving (`SaveConfigRaw()`)
+     - Shows inline error if validation fails
+     - Refreshes `window.appConfig` after successful save
+   - **Dependencies**: shared/dom.js
+
+5. **groups/groups.js**
+   - **Purpose**: Group display with tabs and statistics
+   - **Exports**: `handleShowGroups()`
+   - **Internal**: `renderGroupTabs()`, `formatGroupContent()`
+   - **UI Elements**:
+     - Participant table (Name, Ortsverband, Alter, Geschlecht)
+     - Betreuende table (Name, Ortsverband, Fahrerlaubnis ✓/–)
+     - Statistics panel (total, avg age, ortsverband distribution, gender distribution)
+     - Per-group link to Ergebniseingabe
+   - **Dependencies**: shared/dom.js, shared/utils.js
+
+6. **stations/scores.js**
+   - **Purpose**: Legacy per-station score assignment helpers
+   - **Exports**:
+     - `checkForExistingScore()` — Duplicate score detection
+     - `handleGlobalAssignScore()` — Global score form handler
+     - `handleAssignScore()` — Per-station score handler
+   - **Dependencies**: shared/dom.js, dynamic import of stations/stations.js
+
+7. **stations/stations.js**
+   - **Purpose**: Group-based results entry, dirty-tracking, and Eingabeübersicht matrix
+   - **Exports**:
+     - `handleShowStations()` — Entry point, loads stations + groups
+     - `handleShowStationsForGroup(groupID, focusStationID?)` — Jump to specific group; optionally scrolls to and focuses a station row
+     - `handleShowInputOverview()` — Displays station × group matrix
+   - **Internal**: `renderGroupBasedEntry()`, `renderStationTable()`, `renderInputOverview()`, `scrollToStation()`, `doSaveAll()`, `hasDirtyScores()`, `showUnsavedWarning()`
+   - **UI Elements**:
+     - Group selector dropdown
+     - Station scores table (one row per station, input + save button)
+     - "Alle Ergebnisse speichern" button
+     - Unsaved-changes modal when switching groups
+     - **Eingabeübersicht**: stations × groups matrix; green ✓ = score present, red ✗ = missing; clicking a cell jumps to Ergebniseingabe for that group/station
+   - **State**: Module-level `savedScoreMap`, `currentGroupID`, `pendingGroupID`
+   - **On score save**: calls `setEvalButtonsEnabled(true)` to unlock evaluation/certificate buttons after the first score is stored
+   - **Dependencies**: shared/dom.js, shared/utils.js
+
+8. **evaluations/evaluations.js**
+   - **Purpose**: Evaluation rendering for groups and Ortsverbände
+   - **Exports**:
+     - `handleGroupEvaluation()` — Display group rankings
+     - `handleOrtsverbandEvaluation()` — Display Ortsverband rankings
+   - **Internal**: `renderGroupEvaluations()`, `renderOrtsverbandEvaluations()`
+   - **UI Elements**:
+     - Rankings table with 🥇🥈🥉 medals
+     - Statistics panels (total, averages, highest/lowest)
+     - "PDF erstellen" button
+   - **Dependencies**: shared/dom.js, shared/utils.js
+
+9. **reports/pdf-handlers.js**
+   - **Purpose**: PDF generation wrappers
+   - **Exports**:
+     - `handleGeneratePDF()` — Groups report PDF (`Gruppeneinteilung.pdf`)
+     - `handleGenerateGroupEvaluationPDF()` — Group evaluation PDF
+     - `handleGenerateOrtsverbandEvaluationPDF()` — Ortsverband evaluation PDF
+     - `handleGenerateCertificates()` — Participant certificates (`Urkunden_Teilnehmende.pdf`)
+     - `handleGenerateOVCertificates()` — Ortsverband certificates (`Urkunden_Ortsverbaende.pdf`)
+   - **Dependencies**: shared/dom.js
+
+10. **app.js**
+    - **Purpose**: Main orchestrator — imports all modules, wires up onclick handlers, runs startup DB check
+    - **Functionality**:
+      - Loads `window.appConfig` from backend on startup via `GetConfig()`
+      - Runs `CheckStartup()` — if a database already exists, shows a keep/fresh dialog
+      - Exposes all handler functions to `window` object for HTML onclick attributes
+    - **Dependencies**: All feature modules
+
+## Button Enable/Disable Summary
+
+| Button | Enabled after… |
+|--------|----------------|
+| `btnBackup` | Excel loaded or existing DB kept |
+| `btnDistribute` | Excel loaded (disabled again once scores exist) |
+| `btnShow` | Gruppen zusammenstellen or restore |
+| `btnStations` | Gruppen zusammenstellen or restore |
+| `btnOverview` | Gruppen zusammenstellen or restore |
+| `btnPDF` | Gruppen zusammenstellen or restore |
+| `btnEvaluation`, `btnOrtsverband`, `btnCertificates`, `btnOVCertificates` | First score saved or restore with existing scores |
+
+## Dependency Graph
+
+```
+app.js (orchestrator)
+├── admin/file-handler.js
+│   └── shared/dom.js
+├── admin/config-editor.js
+│   └── shared/dom.js
+├── groups/groups.js
+│   ├── shared/dom.js
+│   └── shared/utils.js
+├── stations/scores.js
+│   ├── shared/dom.js
+│   └── stations/stations.js (dynamic import)
+├── stations/stations.js
+│   ├── shared/dom.js
+│   └── shared/utils.js
+├── evaluations/evaluations.js
+│   ├── shared/dom.js
+│   └── shared/utils.js
+└── reports/pdf-handlers.js
+    └── shared/dom.js
+```
+
+## Integration with HTML
+
+The `index.html` file loads the app as an ES6 module:
+
+```html
+<script type="module" src="app.js"></script>
+```
+
+Functions are exposed to the global `window` object to support onclick handlers:
+
+```javascript
+window.openFileDialog = openFileDialog;
+window.handleDistributeGroups = handleDistributeGroups;
+window.handleShowGroups = handleShowGroups;
+window.handleShowStationsForGroup = handleShowStationsForGroup;
+window.handleShowInputOverview = handleShowInputOverview;
+window.handleEditConfig = handleEditConfig;
+// ... etc
+```
+
+## Layout of Daten Section (index.html)
+
+```html
+<!-- 📝 Daten section -->
+<button onclick="openFileDialog()">Excel einlesen</button>
+<button onclick="handleDistributeGroups()">Gruppen zusammenstellen</button>
+<button onclick="handleShowGroups()">Gruppen anzeigen</button>
+<button onclick="handleShowStations()">Ergebniseingabe</button>
+<button onclick="handleShowInputOverview()">Eingabeübersicht</button>
+```
+
+## Module File List
+
+| Module | Purpose |
+|--------|---------|
+| shared/dom.js | DOM references & UI utilities |
+| shared/utils.js | Helper functions |
+| admin/file-handler.js | File loading, backup, restore, distribution |
+| admin/config-editor.js | In-app TOML config editor |
+| groups/groups.js | Group display with Betreuende & statistics |
+| stations/scores.js | Legacy per-station score helpers |
+| stations/stations.js | Group-based results entry + Eingabeübersicht |
+| evaluations/evaluations.js | Rankings & evaluations |
+| reports/pdf-handlers.js | PDF generation wrappers |
+| app.js | Main orchestrator |
+
 
 ## Module Structure
 

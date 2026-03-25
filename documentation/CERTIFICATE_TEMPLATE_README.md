@@ -1,6 +1,101 @@
 # Certificate Template Usage
 
-The participant certificate generator supports custom templates using background images.
+The application generates two types of PDF certificates. Both support optional custom background images.
+
+---
+
+## 1. Participant Certificates (`Urkunden_Teilnehmende.pdf`)
+
+One certificate per participant. Generated via **📊 Ausgabe → „Urkunden Teilnehmende"**.
+
+### Optional Background Image
+
+Place a file named `certificate_template.png` in the application directory:
+
+```
+certificate_template.png
+```
+
+If the file is absent, a built-in programmatic layout is used instead.
+
+### Template Specifications
+
+- **Format**: PNG
+- **Size**: A4 portrait — 210 mm × 297 mm (2480 × 3508 px at 300 DPI)
+
+### Design Guidelines – leave space for dynamic content:
+
+| Content | Approx. Y position |
+|---------|-------------------|
+| Event year | ~35 mm from top |
+| Participant name | ~85 mm from top |
+| Ortsverband | ~105 mm from top |
+| Group number ("Gruppe X") | ~125 mm from top |
+| Rank ("1. Platz" etc.) | ~140 mm from top |
+| Group members table | starts ~165 mm from top |
+
+### Adjusting Text Positions
+
+Edit Y-coordinates in `backend/io/pdf_cert_teilnehmende.go`:
+
+```go
+pdf.SetXY(0, 85)  // second number = Y position in mm
+```
+
+### Example Layout
+
+```
+┌─────────────────────────────────────┐
+│       [Decorative Header/Logo]      │
+│           2026  (35mm)              │
+│                                     │
+│      [Participant Name] (85mm)      │
+│      [Ortsverband]      (105mm)     │
+│      Gruppe X           (125mm)     │
+│      1. Platz           (140mm)     │
+│                                     │
+│      Gruppenmitglieder: (165mm)     │
+│      ┌──────────────────────┐       │
+│      │ [Members Table]      │       │
+│      └──────────────────────┘       │
+│       [Decorative Footer]           │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 2. Ortsverband Certificates (`Urkunden_Ortsverbaende.pdf`)
+
+One certificate page per Ortsverband. Generated via **📊 Ausgabe → „Urkunden Ortsverbände"**.
+
+- The **best Ortsverband** (highest average score) receives a **Siegerurkunde** with trophy image and "Bester Ortsverband" heading.
+- All other Ortsverbände receive a standard participation certificate.
+- The event name used on each certificate is taken from `config.toml` (`veranstaltung.name`).
+
+### Optional Files
+
+| File | Purpose |
+|------|---------|
+| `cert_background_ov.png` | Background image for OV certificates (A4 PNG, same specs as above). Gracefully skipped if missing or invalid. |
+| `ov_winner_image.png` | Trophy/winner image displayed on the Siegerurkunde. Skipped if missing. |
+
+### Dynamic Content on OV Certificates
+
+- Veranstaltungsname (from `config.toml`)
+- "Bester Ortsverband" heading (winner only)
+- Trophy image at 140 mm width (winner only)
+- "Teilnehmende" list (plain, no table) for each OV
+- OV name
+
+---
+
+## Tips
+
+- Use semi-transparent or white areas where text will be overlaid.
+- Test with a small dataset (2–3 groups) first to check alignment.
+- Text color is hardcoded (black / purple accents for participant certificates).
+- Convert PDF or JPG templates to PNG using an online tool (e.g. pdf2png.com) or Adobe Acrobat.
+
 
 ## How to Use a Custom Template
 
