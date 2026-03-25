@@ -78,38 +78,3 @@ func main() {
 		println("Error:", err.Error())
 	}
 }
-
-// GetConfig returns the user-facing configuration values needed by the frontend.
-func (a *App) GetConfig() map[string]interface{} {
-	return map[string]interface{}{
-		"scoreMin":     a.cfg.Ergebnisse.MinPunkte,
-		"scoreMax":     a.cfg.Ergebnisse.MaxPunkte,
-		"maxGroupSize": a.cfg.Gruppen.MaxGroesse,
-		"eventName":    a.cfg.Veranstaltung.Name,
-		"eventYear":    a.cfg.Veranstaltung.Jahr,
-	}
-}
-
-// GetConfigRaw returns the raw text content of config.toml for in-app editing.
-func (a *App) GetConfigRaw() map[string]interface{} {
-	content, err := config.ReadRaw()
-	if err != nil {
-		return map[string]interface{}{"status": "error", "message": err.Error()}
-	}
-	return map[string]interface{}{"status": "ok", "content": content}
-}
-
-// SaveConfigRaw validates content as TOML, writes config.toml, and reloads the
-// in-memory config so changes take effect immediately (where possible).
-func (a *App) SaveConfigRaw(content string) map[string]interface{} {
-	cfg, err := config.ValidateAndSave(content)
-	if err != nil {
-		return map[string]interface{}{"status": "error", "message": err.Error()}
-	}
-	a.cfg = cfg
-	io.SetPDFOutputDir(cfg.Ausgabe.PDFOrdner)
-	return map[string]interface{}{
-		"status":  "ok",
-		"message": "Konfiguration gespeichert. Einige Änderungen (z. B. Gruppen, Ergebnisse) werden erst nach einem Neustart der App wirksam.",
-	}
-}
