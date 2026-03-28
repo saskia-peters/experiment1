@@ -34,11 +34,16 @@ func OpenExistingDB() (*sql.DB, error) {
 }
 
 // InitDatabase creates the SQLite database and tables
-func InitDatabase() (*sql.DB, error) {
+func InitDatabase() (retDB *sql.DB, retErr error) {
 	db, err := sql.Open("sqlite", models.DbFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
+	defer func() {
+		if retErr != nil {
+			db.Close()
+		}
+	}()
 
 	if _, err = db.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
