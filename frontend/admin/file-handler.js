@@ -103,12 +103,12 @@ window._selectedBackup = null;
         dialogHTML += '<div style="overflow-y: auto; flex: 1; margin-bottom: 16px;">';
         backups.forEach((backup, index) => {
             const sizeKB = (backup.size / 1024).toFixed(2);
+            // No user data in the HTML string — text is set via textContent after DOM insertion
             dialogHTML += '<div style="border: 2px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s;" ';
-            dialogHTML += 'id="backup-item-' + index + '" ';
-            dialogHTML += 'onclick="window.selectBackup(' + index + ', \'' + backup.name + '\')">'; 
-            dialogHTML += '<div style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">' + backup.name + '</div>';
+            dialogHTML += 'id="backup-item-' + index + '">';
+            dialogHTML += '<div class="backup-item-name" style="font-weight: 600; font-size: 14px; margin-bottom: 5px;"></div>';
             dialogHTML += '<div style="font-size: 12px; color: #666;">';
-            dialogHTML += '<span>📅 ' + backup.modified + '</span>';
+            dialogHTML += '<span class="backup-item-date"></span>';
             dialogHTML += '<span style="margin-left: 15px;">💾 ' + sizeKB + ' KB</span>';
             dialogHTML += '</div>';
             dialogHTML += '</div>';
@@ -125,6 +125,16 @@ window._selectedBackup = null;
         const dialogElement = document.createElement('div');
         dialogElement.innerHTML = dialogHTML;
         document.body.appendChild(dialogElement);
+
+        // Populate text and wire click handlers after DOM insertion (prevents XSS via backup.name)
+        backups.forEach((backup, index) => {
+            const item = dialogElement.querySelector('#backup-item-' + index);
+            if (item) {
+                item.querySelector('.backup-item-name').textContent = backup.name;
+                item.querySelector('.backup-item-date').textContent = '📅 ' + backup.modified;
+                item.addEventListener('click', () => window.selectBackup(index, backup.name));
+            }
+        });
         
         setStatus('Backup zum Wiederherstellen auswählen', 'info');
         
