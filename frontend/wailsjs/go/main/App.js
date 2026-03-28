@@ -46,6 +46,10 @@ export function GetAllGroups() {
   return window['go']['main']['App']['GetAllGroups']();
 }
 
+export function GetCertLayoutJSON() {
+  return window['go']['main']['App']['GetCertLayoutJSON']();
+}
+
 export function GetCertLayoutRaw() {
   return window['go']['main']['App']['GetCertLayoutRaw']();
 }
@@ -62,12 +66,20 @@ export function GetGroupEvaluations() {
   return window['go']['main']['App']['GetGroupEvaluations']();
 }
 
+export function GetImageAsBase64(arg1) {
+  return window['go']['main']['App']['GetImageAsBase64'](arg1);
+}
+
 export function GetOrtsverbandEvaluations() {
   return window['go']['main']['App']['GetOrtsverbandEvaluations']();
 }
 
 export function HasScores() {
   return window['go']['main']['App']['HasScores']();
+}
+
+export function ListBackgroundImages() {
+  return window['go']['main']['App']['ListBackgroundImages']();
 }
 
 export function ListBackups() {
@@ -84,6 +96,10 @@ export function ResetToFreshDB() {
 
 export function RestoreDatabase(arg1) {
   return window['go']['main']['App']['RestoreDatabase'](arg1);
+}
+
+export function SaveCertLayoutJSON(arg1) {
+  return window['go']['main']['App']['SaveCertLayoutJSON'](arg1);
 }
 
 export function SaveCertLayoutRaw(arg1) {

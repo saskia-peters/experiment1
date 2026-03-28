@@ -1,58 +1,25 @@
 package io
 
-// cert_layout.go — JSON-driven certificate layout engine (Finding 9, Option A).
+// cert_layout.go — TOML-driven certificate layout engine (Finding 9, Option A).
 //
-// The layout is stored in certificate_layout.json alongside config.toml.
-// When the file is absent, DefaultCertLayout() is written and returned.
+// The layout is stored in certificate_layout.toml alongside config.toml.
+// When the file is absent, the built-in default layout is written and returned.
 //
-// Layout file structure:
-//
-//	{
-//	  "participant": { … },          // Urkunden Teilnehmende (text style)
-//	  "participant_picture": { … },  // Urkunden Teilnehmende (picture style)
-//	  "ov_winner": { … },            // Siegerurkunde Ortsverband
-//	  "ov_participant": { … }        // Teilnahme-Urkunde Ortsverband
-//	}
-//
-// Each page layout has two parts:
-//
-//  1. "content_area" – the rectangle (mm) inside which all elements are placed.
-//     This defines the usable area left free by the background image.
-//     Fields: left, top, right, bottom  (all in mm from the page edge).
-//
-//  2. "elements" array.  Every element has mandatory fields:
-//     - "type": "text" | "dynamic" | "members_table" | "group_picture" | "ov_image"
-//     - "x", "y": absolute position in mm.
-//       Special value -1 means "use content_area.left" (x) or "use current cursor" (y).
-//     - "width": cell width in mm.
-//       Special value 0 means "use full content_area width (right − left)".
-//     - "height": cell height in mm; 0 = derived from font size.
-//     - "font_style": "" | "B" | "I" | "BI"
-//     - "font_size": pt
-//     - "align": "C" | "L" | "R"
-//     - "color": [R, G, B]
-//
-// "text" elements also have "content" (static string).
-// "dynamic" elements have "field":
-//
-//	year | name | ortsverband | group | rank | event_name | winner_label
-//
-// "members_table" is self‑sizing; only x, y, and width matter.
-// "group_picture" uses "img_width" (mm) for scaling; centred within the content area.
-// "ov_image"      renders ov_winner_image.png; centred within the content area.
+// See defaultCertLayoutTOML below for a fully-commented example of the file format.
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
 
 	"THW-JugendOlympiade/backend/models"
 
+	"github.com/BurntSushi/toml"
 	"github.com/jung-kurt/gofpdf"
 )
 
-const certLayoutFile = "certificate_layout.json"
+const certLayoutFile = "certificate_layout.toml"
 
 // ---- Data types -------------------------------------------------------
 
@@ -60,10 +27,10 @@ const certLayoutFile = "certificate_layout.json"
 // All element positions and widths default to this area when the element's
 // own x/width are set to the sentinel values -1 / 0.
 type ContentArea struct {
-	Left   float64 `json:"left"`
-	Top    float64 `json:"top"`
-	Right  float64 `json:"right"`
-	Bottom float64 `json:"bottom"`
+	Left   float64 `toml:"left"   json:"left"`
+	Top    float64 `toml:"top"    json:"top"`
+	Right  float64 `toml:"right"  json:"right"`
+	Bottom float64 `toml:"bottom" json:"bottom"`
 }
 
 // Width returns the horizontal extent of the content area.
@@ -71,176 +38,595 @@ func (a ContentArea) Width() float64 { return a.Right - a.Left }
 
 // CertLayoutElement describes one element on a certificate page.
 type CertLayoutElement struct {
-	Type        string  `json:"type"`         // text | dynamic | members_table | group_picture | ov_image
-	Content     string  `json:"content"`      // static text (type=text)
-	Field       string  `json:"field"`        // dynamic field name (type=dynamic)
-	X           float64 `json:"x"`            // mm from left; -1 = use content_area.left
-	Y           float64 `json:"y"`            // mm from top;  -1 = use current cursor Y
-	Width       float64 `json:"width"`        // cell / image width (mm); 0 = use content_area width
-	Height      float64 `json:"height"`       // cell height (mm); 0 = auto from font size
-	ImgWidth    float64 `json:"img_width"`    // image render width (mm)
-	FontStyle   string  `json:"font_style"`   // "" | "B" | "I" | "BI"
-	FontSize    float64 `json:"font_size"`    // pt
-	Align       string  `json:"align"`        // "C" | "L" | "R"
-	Color       [3]int  `json:"color"`        // [R, G, B]
-	SpaceBefore float64 `json:"space_before"` // Ln() before element (mm); only used in flow mode
+	Type        string  `toml:"type"         json:"type"`         // text | dynamic | members_table | group_picture | ov_image
+	Content     string  `toml:"content"      json:"content"`      // static text (type=text)
+	Field       string  `toml:"field"        json:"field"`        // dynamic field name (type=dynamic)
+	X           float64 `toml:"x"            json:"x"`            // mm from left; -1 = use content_area.left
+	Y           float64 `toml:"y"            json:"y"`            // mm from top;  -1 = use current cursor Y
+	Width       float64 `toml:"width"        json:"width"`        // cell / image width (mm); 0 = use content_area width
+	Height      float64 `toml:"height"       json:"height"`       // cell height (mm); 0 = auto from font size
+	ImgWidth    float64 `toml:"img_width"    json:"img_width"`    // image render width (mm)
+	FontFamily  string  `toml:"font_family"  json:"font_family"`  // "" = theme default | "Arial" | "Helvetica" | "Times" | "Courier"
+	FontStyle   string  `toml:"font_style"   json:"font_style"`   // "" | "B" | "I" | "BI"
+	FontSize    float64 `toml:"font_size"    json:"font_size"`    // pt
+	Align       string  `toml:"align"        json:"align"`        // "C" | "L" | "R"
+	Color       [3]int  `toml:"color"        json:"color"`        // [R, G, B]
+	SpaceBefore float64 `toml:"space_before" json:"space_before"` // Ln() before element (mm); only used in flow mode
 }
 
 // CertPageLayout holds a content area and the list of elements for one certificate variant.
 type CertPageLayout struct {
-	Area     ContentArea         `json:"content_area"`
-	Elements []CertLayoutElement `json:"elements"`
+	BackgroundImage string              `toml:"background_image" json:"background_image"` // path relative to working dir; "" = none
+	Area            ContentArea         `toml:"content_area"     json:"content_area"`
+	Elements        []CertLayoutElement `toml:"elements"         json:"elements"`
 }
 
-// CertLayoutFile is the top‑level JSON document.
+// CertLayoutFile is the top‑level TOML document.
 type CertLayoutFile struct {
-	Participant        CertPageLayout `json:"participant"`
-	ParticipantPicture CertPageLayout `json:"participant_picture"`
-	OVWinner           CertPageLayout `json:"ov_winner"`
-	OVParticipant      CertPageLayout `json:"ov_participant"`
+	Participant        CertPageLayout `toml:"participant"         json:"participant"`
+	ParticipantPicture CertPageLayout `toml:"participant_picture" json:"participant_picture"`
+	OVWinner           CertPageLayout `toml:"ov_winner"           json:"ov_winner"`
+	OVParticipant      CertPageLayout `toml:"ov_participant"      json:"ov_participant"`
 }
 
-// ---- Default layout (mirrors current hard‑coded layout) ---------------
+// ---- Default layout ---------------------------------------------------
 
-// DefaultCertLayout returns a CertLayoutFile whose values exactly reproduce
-// the hard-coded layout that was previously baked into the renderer functions.
+// defaultCertLayoutTOML is the built-in certificate layout written to disk the
+// first time the application runs.  It is a fully commented TOML file so that
+// users can edit it directly without needing to look up field names.
 //
-// All element x values are set to -1 (= use content_area.left) and widths to 0
-// (= use content_area width). Adjust the content_area to reposition everything
-// at once. Set explicit x/width on individual elements to override.
-func DefaultCertLayout() CertLayoutFile {
-	// Content area for Teilnehmende certificates.
-	// The background template image leaves the left ~148 mm free for content.
-	participantArea := ContentArea{Left: 10, Top: 55, Right: 147.83, Bottom: 275}
+// Quick reference
+// ---------------
+// Coordinates and sizes are all in millimetres (A4 = 210 × 297 mm).
+//
+// content_area defines the rectangle that the background image leaves free.
+// Element positions that equal -1 (x) or use width = 0 automatically adopt
+// the content_area edge / full width – so moving the whole block only requires
+// changing content_area.
+//
+// type values:
+//   text          – static string given by  content = "…"
+//   dynamic       – value filled in at runtime; choose with  field = "…"
+//                   valid fields: event_name | year | name | ortsverband |
+//                                 group | rank | winner_label
+//   members_table – renders the list of group members (Teilnehmende)
+//   group_picture – embeds the group photo, width given by img_width
+//   ov_image      – embeds ov_winner_image.png, width given by img_width
+//
+// font_style: ""=normal  "B"=bold  "I"=italic  "BI"=bold-italic
+// align:      "C"=centre  "L"=left  "R"=right
+// color:      [R, G, B] – three integers 0-255
+//
+// x = -1   → use content_area.left
+// width = 0 → use full content_area width (right − left)
 
-	// Participant (text style)
-	participant := CertPageLayout{
-		Area: participantArea,
-		Elements: []CertLayoutElement{
-			{Type: "dynamic", Field: "event_name", X: -1, Y: 60, Width: 0, Height: 12, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "dynamic", Field: "year", X: -1, Y: 74, Width: 0, Height: 10, FontStyle: "B", FontSize: 24, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "dynamic", Field: "name", X: -1, Y: 95, Width: 0, Height: 10, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "dynamic", Field: "ortsverband", X: -1, Y: 105, Width: 0, Height: 8, FontStyle: "", FontSize: 14, Align: "C", Color: [3]int{100, 100, 100}},
-			{Type: "dynamic", Field: "group", X: -1, Y: 125, Width: 0, Height: 10, FontStyle: "B", FontSize: 16, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "dynamic", Field: "rank", X: -1, Y: 140, Width: 0, Height: 12, FontStyle: "B", FontSize: 22, Align: "C", Color: [3]int{180, 140, 10}},
-			{Type: "text", Content: "Gruppenmitglieder", X: -1, Y: 157, Width: 0, Height: 8, FontStyle: "B", FontSize: 12, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "members_table", X: -1, Y: 167, Width: 0},
-		},
-	}
+const defaultCertLayoutTOML = `
+# ---------------------------------------------------------------------------
+# certificate_layout.toml
+# Definiert das visuelle Layout aller vier Urkunden-Varianten.
+# Alle Maße in Millimetern (A4 = 210 × 297 mm).
+#
+# INHALTSBEREICHE (content_area)
+#   Definieren den Bereich, den das Hintergrundbild freilässt.
+#   x = -1  → linker Rand des Inhaltsbereichs
+#   width = 0 → volle Breite des Inhaltsbereichs (right − left)
+#
+# ELEMENT-TYPEN (type)
+#   text          – fester Text in  content = "…"
+#   dynamic       – Laufzeitwert;  field = "event_name|year|name|ortsverband|group|rank|winner_label"
+#   members_table – Tabelle der Gruppenmitglieder
+#   group_picture – Gruppenfoto;  img_width = Breite in mm
+#   ov_image      – ov_winner_image.png;  img_width = Breite in mm
+#
+# SCHRIFT  font_style: ""=normal  "B"=fett  "I"=kursiv  "BI"=fett-kursiv
+# AUSRICH  align:  "C"=zentriert  "L"=links  "R"=rechts
+# FARBE    color = [R, G, B]  – Werte 0-255
+# ---------------------------------------------------------------------------
 
-	// Participant picture style
-	participantPicture := CertPageLayout{
-		Area: participantArea,
-		Elements: []CertLayoutElement{
-			{Type: "dynamic", Field: "event_name", X: -1, Y: 60, Width: 0, Height: 12, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "dynamic", Field: "year", X: -1, Y: 74, Width: 0, Height: 10, FontStyle: "B", FontSize: 24, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "dynamic", Field: "name", X: -1, Y: 95, Width: 0, Height: 10, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "dynamic", Field: "ortsverband", X: -1, Y: 105, Width: 0, Height: 8, FontStyle: "", FontSize: 14, Align: "C", Color: [3]int{100, 100, 100}},
-			{Type: "dynamic", Field: "group", X: -1, Y: 120, Width: 0, Height: 10, FontStyle: "B", FontSize: 16, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "dynamic", Field: "rank", X: -1, Y: 132, Width: 0, Height: 12, FontStyle: "B", FontSize: 22, Align: "C", Color: [3]int{180, 140, 10}},
-			{Type: "group_picture", X: -1, Y: 148, Width: 0, ImgWidth: 120},
-		},
-	}
+# ===========================================================================
+# Urkunde Teilnehmende – Textstil (kein Foto)
+# ===========================================================================
 
-	// Content area for Ortsverband certificates (full printable page with 15 mm margins).
-	ovArea := ContentArea{Left: 15, Top: 20, Right: 195, Bottom: 277}
+[participant]
+background_image = "certificate_template.png"  # "" = kein Hintergrundbild
 
-	// Ortsverband winner
-	ovWinner := CertPageLayout{
-		Area: ovArea,
-		Elements: []CertLayoutElement{
-			{Type: "dynamic", Field: "event_name", X: -1, Y: 25, Width: 0, Height: 14, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "dynamic", Field: "year", X: -1, Y: 44, Width: 0, Height: 12, FontStyle: "B", FontSize: 24, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "text", Content: "Siegerurkunde", X: -1, Y: 62, Width: 0, Height: 12, FontStyle: "B", FontSize: 16, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "dynamic", Field: "ortsverband", X: -1, Y: 78, Width: 0, Height: 14, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "ov_image", X: -1, Y: 88, Width: 0, ImgWidth: 140},
-			{Type: "dynamic", Field: "winner_label", X: -1, Y: 187, Width: 0, Height: 14, FontStyle: "B", FontSize: 22, Align: "C", Color: [3]int{180, 140, 10}},
-			{Type: "text", Content: "Teilnehmende", X: -1, Y: 201, Width: 0, Height: 10, FontStyle: "B", FontSize: 16, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "members_table", X: -1, Y: 212, Width: 0},
-		},
-	}
+[participant.content_area]
+# Die Vorlage lässt die linken ~148 mm für Inhalt frei.
+left   = 10
+top    = 55
+right  = 147.83
+bottom = 275
 
-	// Ortsverband participant
-	ovParticipant := CertPageLayout{
-		Area: ovArea,
-		Elements: []CertLayoutElement{
-			{Type: "dynamic", Field: "event_name", X: -1, Y: 40, Width: 0, Height: 14, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "dynamic", Field: "year", X: -1, Y: 60, Width: 0, Height: 12, FontStyle: "B", FontSize: 24, Align: "C", Color: [3]int{102, 126, 234}},
-			{Type: "text", Content: "Urkunde", X: -1, Y: 80, Width: 0, Height: 12, FontStyle: "B", FontSize: 16, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "dynamic", Field: "ortsverband", X: -1, Y: 100, Width: 0, Height: 14, FontStyle: "B", FontSize: 28, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "text", Content: "Teilnehmende", X: -1, Y: 125, Width: 0, Height: 10, FontStyle: "B", FontSize: 16, Align: "C", Color: [3]int{0, 0, 0}},
-			{Type: "members_table", X: -1, Y: 138, Width: 0},
-		},
-	}
+[[participant.elements]]
+type       = "dynamic"
+field      = "event_name"
+y          = 60      # mm von oben
+height     = 12
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [102, 126, 234]
+x          = -1      # -1 = content_area.left
+width      = 0       # 0  = volle content_area-Breite
 
-	return CertLayoutFile{
-		Participant:        participant,
-		ParticipantPicture: participantPicture,
-		OVWinner:           ovWinner,
-		OVParticipant:      ovParticipant,
-	}
-}
+[[participant.elements]]
+type       = "dynamic"
+field      = "year"
+y          = 74
+height     = 10
+font_style = "B"
+font_size  = 24
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[participant.elements]]
+type       = "dynamic"
+field      = "name"
+y          = 95
+height     = 10
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[participant.elements]]
+type       = "dynamic"
+field      = "ortsverband"
+y          = 105
+height     = 8
+font_style = ""
+font_size  = 14
+align      = "C"
+color      = [100, 100, 100]
+x          = -1
+width      = 0
+
+[[participant.elements]]
+type       = "dynamic"
+field      = "group"
+y          = 125
+height     = 10
+font_style = "B"
+font_size  = 16
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[participant.elements]]
+type       = "dynamic"
+field      = "rank"
+y          = 140
+height     = 12
+font_style = "B"
+font_size  = 22
+align      = "C"
+color      = [180, 140, 10]
+x          = -1
+width      = 0
+
+[[participant.elements]]
+type       = "text"
+content    = "Gruppenmitglieder"
+y          = 157
+height     = 8
+font_style = "B"
+font_size  = 12
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[participant.elements]]
+type  = "members_table"
+y     = 167
+x     = -1
+width = 0
+
+# ===========================================================================
+# Urkunde Teilnehmende – Bildstil (mit Gruppenfoto)
+# ===========================================================================
+
+[participant_picture]
+background_image = "certificate_template.png"  # "" = kein Hintergrundbild
+
+[participant_picture.content_area]
+left   = 10
+top    = 55
+right  = 147.83
+bottom = 275
+
+[[participant_picture.elements]]
+type       = "dynamic"
+field      = "event_name"
+y          = 60
+height     = 12
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[participant_picture.elements]]
+type       = "dynamic"
+field      = "year"
+y          = 74
+height     = 10
+font_style = "B"
+font_size  = 24
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[participant_picture.elements]]
+type       = "dynamic"
+field      = "name"
+y          = 95
+height     = 10
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[participant_picture.elements]]
+type       = "dynamic"
+field      = "ortsverband"
+y          = 105
+height     = 8
+font_style = ""
+font_size  = 14
+align      = "C"
+color      = [100, 100, 100]
+x          = -1
+width      = 0
+
+[[participant_picture.elements]]
+type       = "dynamic"
+field      = "group"
+y          = 120
+height     = 10
+font_style = "B"
+font_size  = 16
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[participant_picture.elements]]
+type       = "dynamic"
+field      = "rank"
+y          = 132
+height     = 12
+font_style = "B"
+font_size  = 22
+align      = "C"
+color      = [180, 140, 10]
+x          = -1
+width      = 0
+
+[[participant_picture.elements]]
+# img_width: Breite des Fotos in mm; wird innerhalb des Inhaltsbereichs zentriert
+type      = "group_picture"
+y         = 148
+img_width = 120
+x         = -1
+width     = 0
+
+# ===========================================================================
+# Siegerurkunde Ortsverband
+# ===========================================================================
+
+[ov_winner]
+background_image = "cert_background_ov.png"  # "" = kein Hintergrundbild
+
+[ov_winner.content_area]
+# Vollbedruckbare Seite mit 15 mm Rändern
+left   = 15
+top    = 20
+right  = 195
+bottom = 277
+
+[[ov_winner.elements]]
+type       = "dynamic"
+field      = "event_name"
+y          = 25
+height     = 14
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[ov_winner.elements]]
+type       = "dynamic"
+field      = "year"
+y          = 44
+height     = 12
+font_style = "B"
+font_size  = 24
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[ov_winner.elements]]
+type       = "text"
+content    = "Siegerurkunde"
+y          = 62
+height     = 12
+font_style = "B"
+font_size  = 16
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[ov_winner.elements]]
+type       = "dynamic"
+field      = "ortsverband"
+y          = 78
+height     = 14
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[ov_winner.elements]]
+# img_width: Breite des OV-Siegerbilds in mm
+type      = "ov_image"
+y         = 88
+img_width = 140
+x         = -1
+width     = 0
+
+[[ov_winner.elements]]
+type       = "dynamic"
+field      = "winner_label"
+y          = 187
+height     = 14
+font_style = "B"
+font_size  = 22
+align      = "C"
+color      = [180, 140, 10]
+x          = -1
+width      = 0
+
+[[ov_winner.elements]]
+type       = "text"
+content    = "Teilnehmende"
+y          = 201
+height     = 10
+font_style = "B"
+font_size  = 16
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[ov_winner.elements]]
+type  = "members_table"
+y     = 212
+x     = -1
+width = 0
+
+# ===========================================================================
+# Teilnahmeurkunde Ortsverband
+# ===========================================================================
+
+[ov_participant]
+background_image = "cert_background_ov.png"  # "" = kein Hintergrundbild
+
+[ov_participant.content_area]
+left   = 15
+top    = 20
+right  = 195
+bottom = 277
+
+[[ov_participant.elements]]
+type       = "dynamic"
+field      = "event_name"
+y          = 40
+height     = 14
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[ov_participant.elements]]
+type       = "dynamic"
+field      = "year"
+y          = 60
+height     = 12
+font_style = "B"
+font_size  = 24
+align      = "C"
+color      = [102, 126, 234]
+x          = -1
+width      = 0
+
+[[ov_participant.elements]]
+type       = "text"
+content    = "Urkunde"
+y          = 80
+height     = 12
+font_style = "B"
+font_size  = 16
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[ov_participant.elements]]
+type       = "dynamic"
+field      = "ortsverband"
+y          = 100
+height     = 14
+font_style = "B"
+font_size  = 28
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[ov_participant.elements]]
+type       = "text"
+content    = "Teilnehmende"
+y          = 125
+height     = 10
+font_style = "B"
+font_size  = 16
+align      = "C"
+color      = [0, 0, 0]
+x          = -1
+width      = 0
+
+[[ov_participant.elements]]
+type  = "members_table"
+y     = 138
+x     = -1
+width = 0
+`
 
 // ---- File I/O ---------------------------------------------------------
 
-// LoadCertLayout reads certificate_layout.json.
+// LoadCertLayout reads certificate_layout.toml.
 // If the file does not exist the default layout is written and returned.
 func LoadCertLayout() (CertLayoutFile, error) {
 	if _, err := os.Stat(certLayoutFile); os.IsNotExist(err) {
-		layout := DefaultCertLayout()
-		if writeErr := SaveCertLayout(layout); writeErr != nil {
-			return layout, nil // non-fatal: return default even if write fails
+		if writeErr := os.WriteFile(certLayoutFile, []byte(defaultCertLayoutTOML), 0644); writeErr != nil {
+			// Non-fatal: parse the in-memory default and return it
+			var layout CertLayoutFile
+			_, _ = toml.Decode(defaultCertLayoutTOML, &layout)
+			return layout, nil
 		}
-		return layout, nil
 	}
 
 	data, err := os.ReadFile(certLayoutFile)
 	if err != nil {
-		return DefaultCertLayout(), fmt.Errorf("certificate_layout.json konnte nicht gelesen werden: %w", err)
+		var fallback CertLayoutFile
+		_, _ = toml.Decode(defaultCertLayoutTOML, &fallback)
+		return fallback, fmt.Errorf("certificate_layout.toml konnte nicht gelesen werden: %w", err)
 	}
 
 	var layout CertLayoutFile
-	if err := json.Unmarshal(data, &layout); err != nil {
-		return DefaultCertLayout(), fmt.Errorf("certificate_layout.json: ungültiges JSON: %w", err)
+	if _, err := toml.Decode(string(data), &layout); err != nil {
+		var fallback CertLayoutFile
+		_, _ = toml.Decode(defaultCertLayoutTOML, &fallback)
+		return fallback, fmt.Errorf("certificate_layout.toml: ungültiges TOML: %w", err)
 	}
+	applyLayoutDefaults(&layout)
 	return layout, nil
 }
 
-// SaveCertLayout writes the layout to certificate_layout.json (indented for readability).
-func SaveCertLayout(layout CertLayoutFile) error {
-	data, err := json.MarshalIndent(layout, "", "  ")
-	if err != nil {
-		return fmt.Errorf("Layout konnte nicht serialisiert werden: %w", err)
+// applyLayoutDefaults fills in background_image with the historical default filenames
+// when the field is absent (empty string). Returns true if any field was changed.
+func applyLayoutDefaults(l *CertLayoutFile) bool {
+	changed := false
+	if l.Participant.BackgroundImage == "" {
+		l.Participant.BackgroundImage = "certificate_template.png"
+		changed = true
 	}
-	return os.WriteFile(certLayoutFile, data, 0644)
+	if l.ParticipantPicture.BackgroundImage == "" {
+		l.ParticipantPicture.BackgroundImage = "certificate_template.png"
+		changed = true
+	}
+	if l.OVWinner.BackgroundImage == "" {
+		l.OVWinner.BackgroundImage = "cert_background_ov.png"
+		changed = true
+	}
+	if l.OVParticipant.BackgroundImage == "" {
+		l.OVParticipant.BackgroundImage = "cert_background_ov.png"
+		changed = true
+	}
+	return changed
 }
 
-// ReadCertLayoutRaw returns the raw JSON text of certificate_layout.json.
-// If the file does not exist the default layout is created and returned.
+// SaveCertLayout encodes layout as TOML and writes it to certificate_layout.toml.
+func SaveCertLayout(layout CertLayoutFile) error {
+	var buf bytes.Buffer
+	if err := toml.NewEncoder(&buf).Encode(layout); err != nil {
+		return fmt.Errorf("Layout konnte nicht serialisiert werden: %w", err)
+	}
+	return os.WriteFile(certLayoutFile, buf.Bytes(), 0644)
+}
+
+// ReadCertLayoutRaw returns the raw TOML text of certificate_layout.toml.
+// If the file does not exist the default layout is written and the default text returned.
+// If fields added in newer versions are missing from the file, they are injected
+// into the returned text (but NOT written to disk – the file is only updated when
+// the user explicitly saves through the editor). This preserves all existing comments.
 func ReadCertLayoutRaw() (string, error) {
 	if _, err := os.Stat(certLayoutFile); os.IsNotExist(err) {
-		layout := DefaultCertLayout()
-		if writeErr := SaveCertLayout(layout); writeErr != nil {
-			// Return a serialised default even without writing
-			data, _ := json.MarshalIndent(layout, "", "  ")
-			return string(data), nil
-		}
+		_ = os.WriteFile(certLayoutFile, []byte(defaultCertLayoutTOML), 0644)
+		return defaultCertLayoutTOML, nil
 	}
 	data, err := os.ReadFile(certLayoutFile)
 	if err != nil {
-		return "", fmt.Errorf("certificate_layout.json konnte nicht gelesen werden: %w", err)
+		return "", fmt.Errorf("certificate_layout.toml konnte nicht gelesen werden: %w", err)
 	}
-	return string(data), nil
+	// Parse to find any missing fields.
+	var layout CertLayoutFile
+	_, _ = toml.Decode(string(data), &layout)
+	return injectMissingBackgroundImages(string(data), layout), nil
 }
 
-// ValidateAndSaveCertLayoutRaw parses content as JSON into CertLayoutFile,
-// then writes it back.  Returns the parsed layout and any error.
+// injectMissingBackgroundImages inserts background_image lines into raw TOML text
+// for any variant whose field was absent (empty after parsing). The insertion is
+// textual so all existing comments are preserved.
+func injectMissingBackgroundImages(raw string, layout CertLayoutFile) string {
+	type entry struct {
+		section string
+		defVal  string
+		current string
+	}
+	for _, e := range []entry{
+		{"participant", "certificate_template.png", layout.Participant.BackgroundImage},
+		{"participant_picture", "certificate_template.png", layout.ParticipantPicture.BackgroundImage},
+		{"ov_winner", "cert_background_ov.png", layout.OVWinner.BackgroundImage},
+		{"ov_participant", "cert_background_ov.png", layout.OVParticipant.BackgroundImage},
+	} {
+		if e.current != "" {
+			continue // already present
+		}
+		// Find the earliest sub-table or array-table belonging to this section.
+		idx := -1
+		for _, prefix := range []string{"[" + e.section + ".", "[[" + e.section + "."} {
+			i := strings.Index(raw, prefix)
+			if i >= 0 && (idx < 0 || i < idx) {
+				idx = i
+			}
+		}
+		insert := "[" + e.section + "]\nbackground_image = \"" + e.defVal + "\"  # \"\" = kein Hintergrundbild\n\n"
+		if idx < 0 {
+			raw += "\n" + insert
+		} else {
+			raw = raw[:idx] + insert + raw[idx:]
+		}
+	}
+	return raw
+}
+
+// ValidateAndSaveCertLayoutRaw parses content as TOML into CertLayoutFile,
+// then writes the raw text back.  Returns the parsed layout and any error.
 func ValidateAndSaveCertLayoutRaw(content string) (CertLayoutFile, error) {
 	var layout CertLayoutFile
-	if err := json.Unmarshal([]byte(content), &layout); err != nil {
-		return CertLayoutFile{}, fmt.Errorf("Ungültiges JSON: %w", err)
+	if _, err := toml.Decode(content, &layout); err != nil {
+		return CertLayoutFile{}, fmt.Errorf("Ungültiges TOML: %w", err)
 	}
-	if err := SaveCertLayout(layout); err != nil {
+	if err := os.WriteFile(certLayoutFile, []byte(content), 0644); err != nil {
 		return CertLayoutFile{}, err
 	}
 	return layout, nil
@@ -346,7 +732,11 @@ func renderTextCell(pdf *gofpdf.Fpdf, theme PDFTheme, el CertLayoutElement, text
 		pdf.Ln(el.SpaceBefore)
 	}
 
-	pdf.SetFont(theme.FontFamily, el.FontStyle, el.FontSize)
+	family := theme.FontFamily
+	if el.FontFamily != "" {
+		family = el.FontFamily
+	}
+	pdf.SetFont(family, el.FontStyle, el.FontSize)
 	pdf.SetTextColor(el.Color[0], el.Color[1], el.Color[2])
 
 	h := el.Height

@@ -23,6 +23,8 @@ export function GenerateParticipantCertificates():Promise<Record<string, any>>;
 
 export function GetAllGroups():Promise<Record<string, any>>;
 
+export function GetCertLayoutJSON():Promise<Record<string, any>>;
+
 export function GetCertLayoutRaw():Promise<Record<string, any>>;
 
 export function GetConfig():Promise<Record<string, any>>;
@@ -31,9 +33,13 @@ export function GetConfigRaw():Promise<Record<string, any>>;
 
 export function GetGroupEvaluations():Promise<Record<string, any>>;
 
+export function GetImageAsBase64(arg1:string):Promise<Record<string, any>>;
+
 export function GetOrtsverbandEvaluations():Promise<Record<string, any>>;
 
 export function HasScores():Promise<boolean>;
+
+export function ListBackgroundImages():Promise<Record<string, any>>;
 
 export function ListBackups():Promise<Record<string, any>>;
 
@@ -42,6 +48,8 @@ export function LoadFile():Promise<Record<string, any>>;
 export function ResetToFreshDB():Promise<Record<string, any>>;
 
 export function RestoreDatabase(arg1:string):Promise<Record<string, any>>;
+
+export function SaveCertLayoutJSON(arg1:string):Promise<Record<string, any>>;
 
 export function SaveCertLayoutRaw(arg1:string):Promise<Record<string, any>>;
 

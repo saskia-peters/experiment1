@@ -1,6 +1,11 @@
 package handlers
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"os"
+	"strings"
+
 	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/io"
 )
@@ -39,7 +44,7 @@ func SaveConfigRaw(content string) (config.Config, map[string]interface{}) {
 	}
 }
 
-// GetCertLayoutRaw returns the raw JSON content of certificate_layout.json.
+// GetCertLayoutRaw returns the raw TOML content of certificate_layout.toml.
 // If the file does not exist the defaults are written and returned.
 func GetCertLayoutRaw() map[string]interface{} {
 	content, err := io.ReadCertLayoutRaw()
@@ -49,7 +54,7 @@ func GetCertLayoutRaw() map[string]interface{} {
 	return map[string]interface{}{"status": "ok", "content": content}
 }
 
-// SaveCertLayoutRaw validates content as JSON and writes certificate_layout.json.
+// SaveCertLayoutRaw validates content as TOML and writes certificate_layout.toml.
 func SaveCertLayoutRaw(content string) map[string]interface{} {
 	if _, err := io.ValidateAndSaveCertLayoutRaw(content); err != nil {
 		return map[string]interface{}{"status": "error", "message": err.Error()}
@@ -57,5 +62,73 @@ func SaveCertLayoutRaw(content string) map[string]interface{} {
 	return map[string]interface{}{
 		"status":  "ok",
 		"message": "Zertifikats-Layout gespeichert. Wirksam bei der nächsten PDF-Generierung.",
+	}
+}
+
+// GetCertLayoutJSON returns the cert layout as structured JSON data (for the graphical editor).
+func GetCertLayoutJSON() map[string]interface{} {
+	layout, err := io.LoadCertLayout()
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	return map[string]interface{}{"status": "ok", "data": layout}
+}
+
+// SaveCertLayoutJSON accepts JSON-encoded layout data from the graphical editor,
+// validates it, and saves as certificate_layout.toml.
+func SaveCertLayoutJSON(jsonData string) map[string]interface{} {
+	var layout io.CertLayoutFile
+	if err := json.Unmarshal([]byte(jsonData), &layout); err != nil {
+		return map[string]interface{}{"status": "error", "message": "Ung\u00fcltiges JSON: " + err.Error()}
+	}
+	if err := io.SaveCertLayout(layout); err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	return map[string]interface{}{
+		"status":  "ok",
+		"message": "Zertifikats-Layout gespeichert. Wirksam bei der n\u00e4chsten PDF-Generierung.",
+	}
+}
+
+// ListBackgroundImages returns names of PNG/JPG files in the current working directory.
+func ListBackgroundImages() map[string]interface{} {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	var files []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		lower := strings.ToLower(e.Name())
+		if strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") {
+			files = append(files, e.Name())
+		}
+	}
+	return map[string]interface{}{"status": "ok", "files": files}
+}
+
+// GetImageAsBase64 reads a PNG/JPG from the working directory and returns it as a data URL.
+// Rejects paths with directory separators or non-image extensions for security.
+func GetImageAsBase64(filename string) map[string]interface{} {
+	if strings.ContainsAny(filename, "/\\") || strings.HasPrefix(filename, ".") {
+		return map[string]interface{}{"status": "error", "message": "Ung\u00fcltiger Dateiname"}
+	}
+	lower := strings.ToLower(filename)
+	if !strings.HasSuffix(lower, ".png") && !strings.HasSuffix(lower, ".jpg") && !strings.HasSuffix(lower, ".jpeg") {
+		return map[string]interface{}{"status": "error", "message": "Nur PNG/JPG erlaubt"}
+	}
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	mime := "image/png"
+	if strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") {
+		mime = "image/jpeg"
+	}
+	return map[string]interface{}{
+		"status":  "ok",
+		"dataURL": "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(data),
 	}
 }

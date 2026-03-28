@@ -32,6 +32,22 @@ func (a *App) SaveCertLayoutRaw(content string) map[string]interface{} {
 	return handlers.SaveCertLayoutRaw(content)
 }
 
+func (a *App) GetCertLayoutJSON() map[string]interface{} {
+	return handlers.GetCertLayoutJSON()
+}
+
+func (a *App) SaveCertLayoutJSON(jsonData string) map[string]interface{} {
+	return handlers.SaveCertLayoutJSON(jsonData)
+}
+
+func (a *App) ListBackgroundImages() map[string]interface{} {
+	return handlers.ListBackgroundImages()
+}
+
+func (a *App) GetImageAsBase64(filename string) map[string]interface{} {
+	return handlers.GetImageAsBase64(filename)
+}
+
 // --- Files / Startup ---
 
 func (a *App) CheckStartup() map[string]interface{} {

@@ -17,7 +17,7 @@ import (
 // certStyle: "text" (default) shows a group members table; "picture" embeds a group photo.
 // pictureDir: directory containing group photos named group_picture_XXX.jpg.
 // If certificate_template.png exists in the working directory it is used as background.
-// Layout positions are loaded from certificate_layout.json (created with defaults on first run).
+// Layout positions are loaded from certificate_layout.toml (created with defaults on first run).
 func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string, pictureDir string) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
@@ -41,14 +41,21 @@ func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string
 		groupRanks[eval.GroupID] = i + 1
 	}
 
-	_, err = os.Stat("certificate_template.png")
-	useTemplate := err == nil
-	const templateFile = "certificate_template.png"
-
 	certLayout, err := LoadCertLayout()
 	if err != nil {
-		return fmt.Errorf("certificate_layout.json: %w", err)
+		return fmt.Errorf("certificate_layout.toml: %w", err)
 	}
+
+	// Background image: use layout's setting, fall back to legacy filename for existing installs
+	bgFile := certLayout.Participant.BackgroundImage
+	if certStyle == "picture" {
+		bgFile = certLayout.ParticipantPicture.BackgroundImage
+	}
+	if bgFile == "" {
+		bgFile = "certificate_template.png"
+	}
+	_, bgStatErr := os.Stat(bgFile)
+	useBg := bgStatErr == nil
 
 	theme := DefaultTheme
 	pdf := gofpdf.New("P", "mm", "A4", "")
@@ -67,8 +74,8 @@ func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string
 
 		for _, participant := range group.Teilnehmende {
 			pdf.AddPage()
-			if useTemplate {
-				pdf.Image(templateFile, 0, 0, 210, 297, false, imageTypeFromFile(templateFile), 0, "")
+			if useBg {
+				pdf.Image(bgFile, 0, 0, 210, 297, false, imageTypeFromFile(bgFile), 0, "")
 			}
 			ctx := CertContext{
 				EventName:   "Jugendolympiade",

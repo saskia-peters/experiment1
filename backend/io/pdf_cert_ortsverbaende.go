@@ -23,7 +23,7 @@ const ovMarginLR = 15.0
 //
 // If cert_background_ov.png exists in the working directory it is rendered as a
 // full-page background on every certificate page before the text content.
-// Layout positions are loaded from certificate_layout.json.
+// Layout positions are loaded from certificate_layout.toml.
 func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
@@ -51,7 +51,7 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string
 
 	certLayout, err := LoadCertLayout()
 	if err != nil {
-		return fmt.Errorf("certificate_layout.json: %w", err)
+		return fmt.Errorf("certificate_layout.toml: %w", err)
 	}
 
 	theme := DefaultTheme
@@ -59,9 +59,21 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string
 	pdf.SetMargins(ovMarginLR, ovMarginLR, ovMarginLR)
 	pdf.SetAutoPageBreak(false, 0) // absolute positioning throughout
 
-	const bgFile = "cert_background_ov.png"
-	_, statErr := os.Stat(bgFile)
-	useBg := statErr == nil
+	// Background images per variant: use layout settings, fall back to legacy filename
+	bgWinner := certLayout.OVWinner.BackgroundImage
+	if bgWinner == "" {
+		bgWinner = "cert_background_ov.png"
+	}
+	bgParticipant := certLayout.OVParticipant.BackgroundImage
+	if bgParticipant == "" {
+		bgParticipant = "cert_background_ov.png"
+	}
+	if _, err := os.Stat(bgWinner); err != nil {
+		bgWinner = ""
+	}
+	if _, err := os.Stat(bgParticipant); err != nil {
+		bgParticipant = ""
+	}
 
 	currentYear := eventYear
 	if currentYear == 0 {
@@ -71,8 +83,12 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string
 	topScore := evaluations[0].AverageScore
 	for _, eval := range evaluations {
 		pdf.AddPage()
-		if useBg {
-			pdf.Image(bgFile, 0, 0, 210, 297, false, imageTypeFromFile(bgFile), 0, "")
+		bg := bgParticipant
+		if eval.AverageScore == topScore {
+			bg = bgWinner
+		}
+		if bg != "" {
+			pdf.Image(bg, 0, 0, 210, 297, false, imageTypeFromFile(bg), 0, "")
 		}
 		ctx := CertContext{
 			EventName:   eventName,
