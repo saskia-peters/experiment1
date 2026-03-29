@@ -10,7 +10,7 @@ import (
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/models"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 // GenerateParticipantCertificates creates a PDF with one certificate per participant.
@@ -58,7 +58,7 @@ func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string
 	useBg := bgStatErr == nil
 
 	theme := DefaultTheme
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(15, 15, 15)
 	pdf.SetAutoPageBreak(true, 15)
 
@@ -111,7 +111,7 @@ func certRankLabel(rank int) string {
 
 // certMembersTable renders the group members table.
 // Pass startY >= 0 to position absolutely; pass -1 to use the current cursor.
-func certMembersTable(pdf *gofpdf.Fpdf, theme PDFTheme, members []models.Teilnehmende, left, width, startY float64) {
+func certMembersTable(pdf *fpdf.Fpdf, theme PDFTheme, members []models.Teilnehmende, left, width, startY float64) {
 	colWidths := []float64{width / 2, width / 2}
 
 	if startY >= 0 {
@@ -155,7 +155,7 @@ func groupPicturePath(pictureDir string, groupID int) string {
 // certDrawGroupPicture embeds the group photo centred on the page.
 // If the photo file does not exist a placeholder rectangle with a label is drawn instead.
 // Pass startY >= 0 for absolute positioning; -1 uses the current cursor Y.
-func certDrawGroupPicture(pdf *gofpdf.Fpdf, theme PDFTheme, picturePath string, left, width, startY float64) {
+func certDrawGroupPicture(pdf *fpdf.Fpdf, theme PDFTheme, picturePath string, left, width, startY float64) {
 	const imgW = 120.0
 	const imgH = 80.0 // placeholder height; actual image scales by aspect ratio
 	imgX := left + (width-imgW)/2

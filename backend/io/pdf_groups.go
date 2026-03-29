@@ -7,7 +7,7 @@ import (
 
 	"THW-JugendOlympiade/backend/database"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 // GeneratePDFReport creates a PDF report with one group per page.
@@ -25,7 +25,7 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int) error {
 	}
 
 	theme := DefaultTheme
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(15, 15, 15)
 	pdf.SetAutoPageBreak(true, 15)
 

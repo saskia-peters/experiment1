@@ -9,7 +9,7 @@ import (
 
 	"THW-JugendOlympiade/backend/database"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 // ovMarginLR is the left/right page margin (mm) for ortsverband certificates.
@@ -55,7 +55,7 @@ func GenerateOrtsverbandCertificates(db *sql.DB, eventYear int, eventName string
 	}
 
 	theme := DefaultTheme
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(ovMarginLR, ovMarginLR, ovMarginLR)
 	pdf.SetAutoPageBreak(false, 0) // absolute positioning throughout
 

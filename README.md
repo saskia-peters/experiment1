@@ -240,7 +240,7 @@ Built with:
 - [Wails](https://wails.io/) - Desktop application framework
 - [Go](https://golang.org/) - Backend language
 - [excelize](https://github.com/qax-os/excelize) - Excel processing
-- [gofpdf](https://github.com/jung-kurt/gofpdf) - PDF generation
+- [gofpdf](https://github.com/go-pdf/fpdf) - PDF generation
 
 ---
 

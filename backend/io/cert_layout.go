@@ -16,7 +16,7 @@ import (
 	"THW-JugendOlympiade/backend/models"
 
 	"github.com/BurntSushi/toml"
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 const certLayoutFile = "certificate_layout.toml"
@@ -650,7 +650,7 @@ type CertContext struct {
 // RenderCertPage renders all elements of a CertPageLayout onto the current
 // pdf page using the given theme and context.
 // The layout's ContentArea is used to resolve element x=-1 and width=0 sentinels.
-func RenderCertPage(pdf *gofpdf.Fpdf, theme PDFTheme, layout CertPageLayout, ctx CertContext) {
+func RenderCertPage(pdf *fpdf.Fpdf, theme PDFTheme, layout CertPageLayout, ctx CertContext) {
 	area := layout.Area
 	// Safety: if area is unset (old JSON without content_area), fall back to
 	// standard margins so existing absolute-coordinate elements still work.
@@ -677,7 +677,7 @@ func resolveElementBounds(el CertLayoutElement, area ContentArea) (x, width floa
 	return
 }
 
-func renderElement(pdf *gofpdf.Fpdf, theme PDFTheme, el CertLayoutElement, ctx CertContext, area ContentArea) {
+func renderElement(pdf *fpdf.Fpdf, theme PDFTheme, el CertLayoutElement, ctx CertContext, area ContentArea) {
 	x, width := resolveElementBounds(el, area)
 
 	switch el.Type {
@@ -731,7 +731,7 @@ func renderElement(pdf *gofpdf.Fpdf, theme PDFTheme, el CertLayoutElement, ctx C
 
 // renderTextCell positions and draws a single text cell.
 // x and width are the already-resolved values (sentinel substitution already applied).
-func renderTextCell(pdf *gofpdf.Fpdf, theme PDFTheme, el CertLayoutElement, text string, x, width float64) {
+func renderTextCell(pdf *fpdf.Fpdf, theme PDFTheme, el CertLayoutElement, text string, x, width float64) {
 	if el.SpaceBefore > 0 {
 		pdf.Ln(el.SpaceBefore)
 	}
@@ -781,7 +781,7 @@ func resolveDynamicField(field string, ctx CertContext) string {
 
 // certDrawGroupPictureAt draws a group photo at an explicit position.
 // If the file is missing a placeholder rectangle is drawn.
-func certDrawGroupPictureAt(pdf *gofpdf.Fpdf, theme PDFTheme, picturePath string, imgX, startY, imgW float64) {
+func certDrawGroupPictureAt(pdf *fpdf.Fpdf, theme PDFTheme, picturePath string, imgX, startY, imgW float64) {
 	const imgH = 80.0
 	if _, err := os.Stat(picturePath); err == nil {
 		pdf.Image(picturePath, imgX, startY, imgW, 0, false, "", 0, "")
@@ -798,7 +798,7 @@ func certDrawGroupPictureAt(pdf *gofpdf.Fpdf, theme PDFTheme, picturePath string
 
 // renderOVMembersList renders names for OV certs when using JSON layout
 // (the members_table element in an OV layout uses OVNames, not Members).
-func renderOVMembersList(pdf *gofpdf.Fpdf, theme PDFTheme, el CertLayoutElement, names []string, x, width float64) {
+func renderOVMembersList(pdf *fpdf.Fpdf, theme PDFTheme, el CertLayoutElement, names []string, x, width float64) {
 	if el.Y >= 0 {
 		pdf.SetXY(x, el.Y)
 	}

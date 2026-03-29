@@ -8,7 +8,7 @@ import (
 
 	"THW-JugendOlympiade/backend/database"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 // GenerateGroupEvaluationPDF creates a PDF report with group rankings and scores.
@@ -26,7 +26,7 @@ func GenerateGroupEvaluationPDF(db *sql.DB) error {
 	}
 
 	theme := DefaultTheme
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(15, 15, 15)
 	pdf.SetAutoPageBreak(true, 15)
 	pdf.AddPage()
@@ -110,7 +110,7 @@ func GenerateOrtsverbandEvaluationPDF(db *sql.DB) error {
 	}
 
 	theme := DefaultTheme
-	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(15, 15, 15)
 	pdf.SetAutoPageBreak(true, 15)
 	pdf.AddPage()

@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 // imageTypeFromFile returns the gofpdf image-type string ("PNG" or "JPEG") by
@@ -119,16 +119,16 @@ var DefaultTheme = PDFTheme{
 }
 
 // Font sets the font on pdf using this theme's font family.
-func (t PDFTheme) Font(pdf *gofpdf.Fpdf, style string, size float64) {
+func (t PDFTheme) Font(pdf *fpdf.Fpdf, style string, size float64) {
 	pdf.SetFont(t.FontFamily, style, size)
 }
 
 // TextColor sets the active text color on pdf.
-func (t PDFTheme) TextColor(pdf *gofpdf.Fpdf, c [3]int) {
+func (t PDFTheme) TextColor(pdf *fpdf.Fpdf, c [3]int) {
 	pdf.SetTextColor(c[0], c[1], c[2])
 }
 
 // FillColor sets the active fill color on pdf.
-func (t PDFTheme) FillColor(pdf *gofpdf.Fpdf, c [3]int) {
+func (t PDFTheme) FillColor(pdf *fpdf.Fpdf, c [3]int) {
 	pdf.SetFillColor(c[0], c[1], c[2])
 }

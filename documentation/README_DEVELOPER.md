@@ -41,7 +41,7 @@ go mod download
 Key dependencies automatically installed:
 - `github.com/wailsapp/wails/v2` - Desktop framework
 - `github.com/xuri/excelize/v2` - Excel processing
-- `github.com/jung-kurt/gofpdf` - PDF generation
+- `github.com/go-pdf/fpdf` - PDF generation
 - `modernc.org/sqlite` - Pure Go SQLite driver
 - `github.com/BurntSushi/toml` - TOML config parsing
 
@@ -928,7 +928,7 @@ func DoSomething(input *Data) error {
 - **Wails Documentation**: https://wails.io/docs/
 - **Go Documentation**: https://go.dev/doc/
 - **excelize Documentation**: https://xuri.me/excelize/
-- **gofpdf Documentation**: https://github.com/jung-kurt/gofpdf
+- **gofpdf Documentation**: https://github.com/go-pdf/fpdf
 
 ## Future Improvements
 
