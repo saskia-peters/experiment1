@@ -259,3 +259,89 @@ func TestCreateBalancedGroups_ReroutingClearsOldGroups(t *testing.T) {
 			countAfterFirst, countAfterSecond)
 	}
 }
+
+// TestCreateBalancedGroups_PreGroupExceedsMaxSize_ReturnsError verifies that an
+// error is returned when a PreGroup tag has more members than maxGroupSize.
+func TestCreateBalancedGroups_PreGroupExceedsMaxSize_ReturnsError(t *testing.T) {
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	// Insert 3 participants all sharing PreGroup "Trio" with maxGroupSize=2.
+	if err := database.InsertData(db, [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "25", "W", "Trio"},
+		{"Bob", "Hamburg", "22", "M", "Trio"},
+		{"Carol", "München", "20", "W", "Trio"},
+	}); err != nil {
+		t.Fatalf("InsertData failed: %v", err)
+	}
+
+	_, err := services.CreateBalancedGroups(db, 2)
+	if err == nil {
+		t.Fatal("expected error when PreGroup size exceeds maxGroupSize, got nil")
+	}
+}
+
+// TestCreateBalancedGroups_AllParticipantsAssigned verifies that every participant
+// inserted into the database is placed into exactly one group.
+func TestCreateBalancedGroups_AllParticipantsAssigned(t *testing.T) {
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	const n = 19 // odd number to stress the last group
+	rows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+	for i := 1; i <= n; i++ {
+		rows = append(rows, []string{"P", "Berlin", "20", "M", ""})
+	}
+	if err := database.InsertData(db, rows); err != nil {
+		t.Fatalf("InsertData failed: %v", err)
+	}
+
+	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize); err != nil {
+		t.Fatalf("CreateBalancedGroups failed: %v", err)
+	}
+
+	groups, err := database.GetGroupsForReport(db)
+	if err != nil {
+		t.Fatalf("GetGroupsForReport failed: %v", err)
+	}
+
+	total := 0
+	for _, g := range groups {
+		total += len(g.Teilnehmende)
+	}
+	if total != n {
+		t.Errorf("expected all %d participants assigned, got %d", n, total)
+	}
+}
+
+// TestCreateBalancedGroups_FewerLicensedDriversThanGroups_ReturnsWarning checks
+// that a non-empty warning is returned when there are not enough licensed drivers
+// to cover every group with one.
+func TestCreateBalancedGroups_FewerLicensedDriversThanGroups_ReturnsWarning(t *testing.T) {
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	// 9 participants → 2 groups (maxGroupSize=8), but only 1 licensed driver.
+	rows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+	for i := 1; i <= 9; i++ {
+		rows = append(rows, []string{"P", "Berlin", "20", "M", ""})
+	}
+	if err := database.InsertData(db, rows); err != nil {
+		t.Fatalf("InsertData failed: %v", err)
+	}
+	if err := database.InsertBetreuende(db, [][]string{
+		{"Name", "Ortsverband", "Fahrerlaubnis"},
+		{"Trainer A", "Berlin", "ja"}, // only one licensed driver for two groups
+	}); err != nil {
+		t.Fatalf("InsertBetreuende failed: %v", err)
+	}
+
+	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize)
+	if err != nil {
+		t.Fatalf("CreateBalancedGroups failed: %v", err)
+	}
+	if warning == "" {
+		t.Error("expected a non-empty warning when licensed drivers < number of groups")
+	}
+}
