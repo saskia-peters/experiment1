@@ -4,6 +4,7 @@ const (
 	SheetName           = "Teilnehmende"
 	BetreuendeSheetName = "Betreuende"
 	StationsSheetName   = "Stationen"
+	FahrzeugeSheetName  = "Fahrzeuge"
 	TableName           = "teilnehmende"
 )
 
@@ -30,11 +31,22 @@ type Betreuende struct {
 	Fahrerlaubnis bool // true = "ja" in the Excel sheet
 }
 
+// Fahrzeug represents a vehicle used to transport a group
+type Fahrzeug struct {
+	ID          int
+	Bezeichnung string // Name/description of the vehicle
+	Ortsverband string
+	Funkrufname string // Radio callsign
+	FahrerName  string // Name of the driver (must be a Betreuende with Fahrerlaubnis)
+	Sitzplaetze int    // Total seat count including the driver
+}
+
 // Group represents a group of participants
 type Group struct {
 	GroupID      int
 	Teilnehmende []Teilnehmende
 	Betreuende   []Betreuende
+	Fahrzeuge    []Fahrzeug
 	Ortsverbands map[string]int
 	Geschlechts  map[string]int
 	AlterSum     int

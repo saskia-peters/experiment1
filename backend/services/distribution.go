@@ -14,7 +14,7 @@ import (
 // CreateBalancedGroups creates groups with balanced distribution.
 // maxGroupSize controls the maximum number of participants per group.
 // Returns a non-empty warning string when distribution succeeded but the
-// Fahrerlaubnis constraint could not be fully satisfied.
+// Fahrerlaubnis or vehicle-capacity constraint could not be fully satisfied.
 func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 	// Read all participants from database
 	teilnehmende, err := database.GetAllTeilnehmende(db)
@@ -31,27 +31,111 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 		return "", err
 	}
 
-	// Create balanced groups using the distribution algorithm
-	groups := distributeIntoGroups(teilnehmende, maxGroupSize)
-
-	// Save groups to database
-	if err := database.SaveGroups(db, groups); err != nil {
-		return "", fmt.Errorf("failed to save groups: %w", err)
-	}
-
-	// Distribute betreuende across groups
 	betreuende, err := database.GetAllBetreuende(db)
 	if err != nil {
 		return "", fmt.Errorf("failed to read betreuende: %w", err)
 	}
-	var warning string
-	if len(betreuende) > 0 {
-		warning, err = distributeBetreuende(groups, betreuende)
-		if err != nil {
-			return "", err
+
+	fahrzeuge, err := database.GetAllFahrzeuge(db)
+	if err != nil {
+		return "", fmt.Errorf("failed to read fahrzeuge: %w", err)
+	}
+
+	var groups []models.Group
+	var warnings []string
+
+	if len(fahrzeuge) == 0 {
+		// ── Original path (no vehicles) ────────────────────────────────────────────
+		groups = distributeIntoGroups(teilnehmende, maxGroupSize)
+
+		if err := database.SaveGroups(db, groups); err != nil {
+			return "", fmt.Errorf("failed to save groups: %w", err)
+		}
+
+		if len(betreuende) > 0 {
+			w, err := distributeBetreuende(groups, betreuende)
+			if err != nil {
+				return "", err
+			}
+			if w != "" {
+				warnings = append(warnings, w)
+			}
+			if err := database.SaveGroupBetreuende(db, groups); err != nil {
+				return "", fmt.Errorf("failed to save group betreuende: %w", err)
+			}
+		}
+	} else {
+		// ── Vehicle-aware path ─────────────────────────────────────────────────────
+		// Phase 0: determine group count and create empty group shells.
+		preGroupMap, unassigned := separateByPreGroup(teilnehmende)
+		numPreGroups := len(preGroupMap)
+		numAdditional := int(math.Ceil(float64(len(unassigned)) / float64(maxGroupSize)))
+		numGroups := numPreGroups + numAdditional
+		if numGroups < 1 {
+			numGroups = 1
+		}
+		groups = make([]models.Group, numGroups)
+		for i := range groups {
+			groups[i] = models.Group{
+				GroupID:      i + 1,
+				Teilnehmende: make([]models.Teilnehmende, 0, maxGroupSize),
+				Ortsverbands: make(map[string]int),
+				Geschlechts:  make(map[string]int),
+			}
+		}
+
+		// Phase 1: assign vehicles and their drivers to groups.
+		vehicleWarn, usedAsDriver := distributeVehicles(groups, fahrzeuge, betreuende)
+		if vehicleWarn != "" {
+			warnings = append(warnings, vehicleWarn)
+		}
+
+		// Phase 2: assign remaining Betreuende (those not already driving a vehicle).
+		var remainingBetreuende []models.Betreuende
+		for _, b := range betreuende {
+			if !usedAsDriver[b.ID] {
+				remainingBetreuende = append(remainingBetreuende, b)
+			}
+		}
+		if len(remainingBetreuende) > 0 {
+			bWarn, err := distributeBetreuende(groups, remainingBetreuende)
+			if err != nil {
+				return "", err
+			}
+			if bWarn != "" {
+				warnings = append(warnings, bWarn)
+			}
+		}
+
+		// Phase 3: upfront capacity check — warn before filling if total seats
+		// cannot accommodate all Betreuende + Teilnehmende.
+		totalSeats := 0
+		for _, f := range fahrzeuge {
+			totalSeats += f.Sitzplaetze
+		}
+		totalPeople := len(betreuende) + len(teilnehmende)
+		if totalSeats < totalPeople {
+			warnings = append(warnings, fmt.Sprintf(
+				"⚠️ Kapazitätsengpass: %d Personen (inkl. Betreuende), aber nur %d Sitzplätze verfügbar – %d Person(en) können nicht alle untergebracht werden",
+				totalPeople, totalSeats, totalPeople-totalSeats))
+		}
+
+		// Phase 4: fill participants, respecting vehicle seat capacity as hard limit.
+		fillParticipants(groups, preGroupMap, unassigned, maxGroupSize)
+
+		// Phase 5: per-group capacity check (detail for the operator).
+		if capWarn := checkCapacityWarnings(groups); capWarn != "" {
+			warnings = append(warnings, capWarn)
+		}
+
+		if err := database.SaveGroups(db, groups); err != nil {
+			return "", fmt.Errorf("failed to save groups: %w", err)
 		}
 		if err := database.SaveGroupBetreuende(db, groups); err != nil {
 			return "", fmt.Errorf("failed to save group betreuende: %w", err)
+		}
+		if err := database.SaveGroupFahrzeuge(db, groups); err != nil {
+			return "", fmt.Errorf("failed to save group fahrzeuge: %w", err)
 		}
 	}
 
@@ -60,7 +144,7 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 		fmt.Printf("  Group %d: %d participants\n", i+1, len(group.Teilnehmende))
 	}
 
-	return warning, nil
+	return strings.Join(warnings, "\n"), nil
 }
 
 // validatePreGroups returns an error if any PreGroup tag has more members than
@@ -227,6 +311,234 @@ func addTeilnehmendeToGroup(g *models.Group, t models.Teilnehmende) {
 	g.Ortsverbands[t.Ortsverband]++
 	g.Geschlechts[t.Geschlecht]++
 	g.AlterSum += t.Alter
+}
+
+// separateByPreGroup splits participants into a map of pre-group name → members
+// and a flat slice of participants without a pre-group assignment.
+func separateByPreGroup(teilnehmende []models.Teilnehmende) (map[string][]models.Teilnehmende, []models.Teilnehmende) {
+	preGroupMap := make(map[string][]models.Teilnehmende)
+	var unassigned []models.Teilnehmende
+	for _, t := range teilnehmende {
+		if t.PreGroup != "" {
+			preGroupMap[t.PreGroup] = append(preGroupMap[t.PreGroup], t)
+		} else {
+			unassigned = append(unassigned, t)
+		}
+	}
+	return preGroupMap, unassigned
+}
+
+// groupTotalSeats returns the total seat count across all vehicles in a group.
+// Returns 0 when the group has no vehicles.
+func groupTotalSeats(g models.Group) int {
+	total := 0
+	for _, f := range g.Fahrzeuge {
+		total += f.Sitzplaetze
+	}
+	return total
+}
+
+// checkCapacityWarnings returns a warning string for any group whose total
+// headcount (Teilnehmende + Betreuende) exceeds its vehicle seat capacity.
+// Groups without vehicles are skipped here — missing-vehicle warnings are
+// already emitted by distributeVehicles.
+func checkCapacityWarnings(groups []models.Group) string {
+	var overloaded []string
+	for _, g := range groups {
+		seats := groupTotalSeats(g)
+		if seats == 0 {
+			continue // no vehicle assigned; covered by driver/vehicle warnings
+		}
+		total := len(g.Teilnehmende) + len(g.Betreuende)
+		if total > seats {
+			overloaded = append(overloaded, fmt.Sprintf(
+				"Gruppe %d: %d Personen, aber nur %d Sitzplätze (%d zu viele)",
+				g.GroupID, total, seats, total-seats))
+		}
+	}
+	if len(overloaded) == 0 {
+		return ""
+	}
+	sort.Strings(overloaded)
+	return "Fahrzeugkapazität überschritten – folgende Gruppen sind übervoll:\n" + strings.Join(overloaded, "\n")
+}
+
+// distributeVehicles assigns vehicles to groups before participants are added.
+// Each vehicle's driver (matched by FahrerName + Ortsverband in the betreuende
+// list, requiring Fahrerlaubnis=true) is added to the group as a Betreuende.
+// Returns a warning string for any vehicle whose driver could not be found, and
+// a set of betreuende IDs that were assigned as drivers (so the caller can skip
+// them during the regular Betreuende distribution step).
+func distributeVehicles(groups []models.Group, fahrzeuge []models.Fahrzeug, betreuende []models.Betreuende) (string, map[int]bool) {
+	usedAsDriver := make(map[int]bool)
+
+	// Build a lookup: (lower-case name, lower-case OV) → licensed Betreuende.
+	type driverKey struct{ name, ov string }
+	driverMap := make(map[driverKey]*models.Betreuende)
+	for i := range betreuende {
+		if betreuende[i].Fahrerlaubnis {
+			k := driverKey{
+				name: strings.ToLower(strings.TrimSpace(betreuende[i].Name)),
+				ov:   strings.ToLower(strings.TrimSpace(betreuende[i].Ortsverband)),
+			}
+			driverMap[k] = &betreuende[i]
+		}
+	}
+
+	// Sort vehicles deterministically: by OV then by Bezeichnung.
+	sorted := make([]models.Fahrzeug, len(fahrzeuge))
+	copy(sorted, fahrzeuge)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].Ortsverband != sorted[j].Ortsverband {
+			return sorted[i].Ortsverband < sorted[j].Ortsverband
+		}
+		return sorted[i].Bezeichnung < sorted[j].Bezeichnung
+	})
+
+	var warnParts []string
+	for _, v := range sorted {
+		// Assign vehicle to the group with the fewest total seats so far
+		// (balances capacity). OV participant count breaks ties.
+		idx := findGroupForVehicle(groups, v.Ortsverband)
+		groups[idx].Fahrzeuge = append(groups[idx].Fahrzeuge, v)
+
+		// Attach the driver as a Betreuende if they can be resolved.
+		if v.FahrerName == "" {
+			continue
+		}
+		k := driverKey{
+			name: strings.ToLower(strings.TrimSpace(v.FahrerName)),
+			ov:   strings.ToLower(strings.TrimSpace(v.Ortsverband)),
+		}
+		driver, found := driverMap[k]
+		if !found {
+			warnParts = append(warnParts, fmt.Sprintf(
+				"Fahrzeug %q: Fahrer %q (OV %q) nicht in der Betreuende-Liste gefunden",
+				v.Bezeichnung, v.FahrerName, v.Ortsverband))
+			continue
+		}
+		if usedAsDriver[driver.ID] {
+			// Driver is already assigned to another vehicle – this is unusual
+			// (one person can only drive one vehicle); skip silently.
+			continue
+		}
+		groups[idx].Betreuende = append(groups[idx].Betreuende, *driver)
+		usedAsDriver[driver.ID] = true
+	}
+
+	return strings.Join(warnParts, "\n"), usedAsDriver
+}
+
+// findGroupForVehicle returns the index of the group that should receive the
+// next vehicle.  Primary criterion: fewest total vehicle seats so far (balances
+// load).  Tiebreak: most existing participants from the vehicle's OV.
+func findGroupForVehicle(groups []models.Group, ov string) int {
+	bestIdx := 0
+	bestSeats := math.MaxInt64
+	bestOVCount := -1
+	for i, g := range groups {
+		seats := groupTotalSeats(g)
+		ovc := g.Ortsverbands[ov]
+		if seats < bestSeats || (seats == bestSeats && ovc > bestOVCount) {
+			bestIdx = i
+			bestSeats = seats
+			bestOVCount = ovc
+		}
+	}
+	return bestIdx
+}
+
+// fillParticipants distributes teilnehmende into the already-initialized groups
+// (which may already contain Betreuende and Fahrzeuge).  Pre-grouped
+// participants are placed first; the remainder are spread using diversity
+// scoring.  Each group's effective capacity is:
+//
+//	min(maxGroupSize, totalSeats − len(Betreuende))
+//
+// where totalSeats is the sum of all vehicle seats in that group.  Groups
+// without vehicles use maxGroupSize as the sole cap.
+func fillParticipants(groups []models.Group, preGroupMap map[string][]models.Teilnehmende, unassigned []models.Teilnehmende, maxGroupSize int) {
+	// Step 1: assign pre-grouped members in sorted key order (deterministic).
+	preGroupKeys := make([]string, 0, len(preGroupMap))
+	for k := range preGroupMap {
+		preGroupKeys = append(preGroupKeys, k)
+	}
+	sort.Strings(preGroupKeys)
+
+	groupIdx := 0
+	for _, key := range preGroupKeys {
+		for _, t := range preGroupMap[key] {
+			addTeilnehmendeToGroup(&groups[groupIdx], t)
+		}
+		groupIdx++
+	}
+
+	// Step 2: sort unassigned for better diversity.
+	sort.Slice(unassigned, func(i, j int) bool {
+		if unassigned[i].Ortsverband != unassigned[j].Ortsverband {
+			return unassigned[i].Ortsverband < unassigned[j].Ortsverband
+		}
+		if unassigned[i].Geschlecht != unassigned[j].Geschlecht {
+			return unassigned[i].Geschlecht < unassigned[j].Geschlecht
+		}
+		return unassigned[i].Alter < unassigned[j].Alter
+	})
+
+	// Step 3: distribute using diversity scoring with capacity awareness.
+	for _, tn := range unassigned {
+		idx := findBestGroupWithCapacity(groups, tn, maxGroupSize)
+		addTeilnehmendeToGroup(&groups[idx], tn)
+	}
+}
+
+// findBestGroupWithCapacity finds the best group for a participant, respecting
+// vehicle seat capacity when vehicles are present.
+func findBestGroupWithCapacity(groups []models.Group, tn models.Teilnehmende, maxGroupSize int) int {
+	bestIdx := -1
+	bestScore := math.MaxFloat64
+
+	for i, group := range groups {
+		// Determine effective capacity for this group.
+		seats := groupTotalSeats(group)
+		var cap int
+		if seats > 0 {
+			// Vehicle-constrained: remaining seats after Betreuende are seated.
+			cap = seats - len(group.Betreuende)
+			if cap < 0 {
+				cap = 0
+			}
+		} else {
+			cap = maxGroupSize
+		}
+
+		if len(group.Teilnehmende) >= cap || len(group.Teilnehmende) >= maxGroupSize {
+			continue
+		}
+
+		score := calculateDiversityScore(group, tn)
+		sizeBonus := float64(len(group.Teilnehmende)) * 0.5
+		total := score + sizeBonus
+
+		if total < bestScore {
+			bestScore = total
+			bestIdx = i
+		}
+	}
+
+	// Fallback: all groups are at capacity (vehicles too small for the total
+	// headcount). Place in the least-full group so no participant is lost; the
+	// capacity warning will surface the overload to the operator.
+	if bestIdx < 0 {
+		leastFull := 0
+		for i, g := range groups {
+			if len(g.Teilnehmende) < len(groups[leastFull].Teilnehmende) {
+				leastFull = i
+			}
+		}
+		return leastFull
+	}
+
+	return bestIdx
 }
 
 // distributeBetreuende assigns caretakers to groups.

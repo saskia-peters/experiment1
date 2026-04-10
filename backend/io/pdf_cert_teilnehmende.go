@@ -111,11 +111,12 @@ func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string
 }
 
 // certRankLabel returns the formatted rank string.
+// rank == 0 means no evaluation recorded; returns a participation label.
 func certRankLabel(rank int) string {
-	if rank >= 1 && rank <= 3 {
-		return fmt.Sprintf("%d. Platz", rank)
+	if rank <= 0 {
+		return "Teilnahme"
 	}
-	return fmt.Sprintf("Platz %d", rank)
+	return fmt.Sprintf("%d. Platz", rank)
 }
 
 // certMembersTable renders the group members table.

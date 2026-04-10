@@ -140,6 +140,57 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int) error {
 				pdf.Ln(-1)
 			}
 		}
+
+		// Fahrzeuge section
+		if len(group.Fahrzeuge) > 0 {
+			pdf.Ln(6)
+			theme.Font(pdf, "B", theme.SizeTableHeader)
+			theme.TextColor(pdf, theme.ColorText)
+			theme.FillColor(pdf, theme.ColorTableHeader)
+			pdf.CellFormat(50, 10, enc("Fahrzeug"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(40, 10, enc("Funkrufname"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(55, 10, enc("Fahrer"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(35, 10, enc("Sitzpl\u00e4tze"), "1", 0, "C", true, 0, "")
+			pdf.Ln(-1)
+
+			theme.Font(pdf, "", theme.SizeBody)
+			totalSeats := 0
+			for i, f := range group.Fahrzeuge {
+				fill := i%2 == 0
+				theme.FillColor(pdf, theme.ColorTableRowAlt)
+				pdf.CellFormat(50, 9, enc(f.Bezeichnung), "1", 0, "L", fill, 0, "")
+				pdf.CellFormat(40, 9, enc(f.Funkrufname), "1", 0, "L", fill, 0, "")
+				pdf.CellFormat(55, 9, enc(f.FahrerName), "1", 0, "L", fill, 0, "")
+				pdf.CellFormat(35, 9, fmt.Sprintf("%d", f.Sitzplaetze), "1", 0, "C", fill, 0, "")
+				pdf.Ln(-1)
+				totalSeats += f.Sitzplaetze
+			}
+
+			totalPeople := len(group.Teilnehmende) + len(group.Betreuende)
+			pdf.Ln(3)
+			if totalPeople > totalSeats {
+				theme.Font(pdf, "B", theme.SizeBody)
+				pdf.SetTextColor(200, 0, 0)
+				pdf.CellFormat(0, 8, enc(fmt.Sprintf(
+					"Zu wenig Sitzpl\u00e4tze f\u00fcr Anzahl Gruppenmitglieder (%d Personen, %d Sitzpl\u00e4tze)",
+					totalPeople, totalSeats,
+				)), "", 1, "L", false, 0, "")
+				theme.TextColor(pdf, theme.ColorText)
+			} else {
+				theme.Font(pdf, "", theme.SizeSmall)
+				theme.TextColor(pdf, theme.ColorSubtext)
+				pdf.CellFormat(0, 6, enc(fmt.Sprintf(
+					"Gesamt: %d Personen, %d Sitzpl\u00e4tze",
+					totalPeople, totalSeats,
+				)), "", 1, "L", false, 0, "")
+			}
+		} else {
+			pdf.Ln(6)
+			theme.Font(pdf, "B", theme.SizeBody)
+			pdf.SetTextColor(200, 0, 0)
+			pdf.CellFormat(0, 8, enc("Kein Fahrzeug dieser Gruppe zugewiesen"), "", 1, "L", false, 0, "")
+			theme.TextColor(pdf, theme.ColorText)
+		}
 	}
 
 	if err = pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Gruppeneinteilung.pdf")); err != nil {

@@ -101,6 +101,33 @@ function formatGroupContent(group) {
         html += '</tbody></table>';
     }
 
+    // Fahrzeuge section
+    if (group.Fahrzeuge && group.Fahrzeuge.length > 0) {
+        const totalSeats = group.Fahrzeuge.reduce((sum, f) => sum + f.Sitzplaetze, 0);
+        const totalPeople = (group.Teilnehmende ? group.Teilnehmende.length : 0)
+                          + (group.Betreuende ? group.Betreuende.length : 0);
+        const seatsClass = totalPeople > totalSeats ? 'seats-overloaded' : 'seats-ok';
+        html += '<h3 style="margin: 20px 0 10px 0; color: #555;">🚗 Fahrzeuge</h3>';
+        html += '<table class="group-table fahrzeuge-table">';
+        html += '<thead><tr><th>Bezeichnung</th><th>Funkrufname</th><th>Fahrer</th><th>Ortsverband</th><th>Sitzplätze</th></tr></thead><tbody>';
+        group.Fahrzeuge.forEach(f => {
+            html += '<tr class="fahrzeuge-row">';
+            html += '<td>' + escapeHtml(f.Bezeichnung) + '</td>';
+            html += '<td>' + escapeHtml(f.Funkrufname) + '</td>';
+            html += '<td>' + escapeHtml(f.FahrerName) + '</td>';
+            html += '<td>' + escapeHtml(f.Ortsverband) + '</td>';
+            html += '<td>' + f.Sitzplaetze + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        html += '<div class="seats-summary ' + seatsClass + '">';
+        html += 'Gesamt: ' + totalPeople + ' Personen / ' + totalSeats + ' Sitzplätze';
+        if (totalPeople > totalSeats) {
+            html += ' ⚠️ Übervoll um ' + (totalPeople - totalSeats);
+        }
+        html += '</div>';
+    }
+
     // Statistics panel
     html += '<div class="stats-panel">';
     html += '<h3>📊 Gruppenstatistik</h3>';

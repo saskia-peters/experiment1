@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"THW-JugendOlympiade/backend/models"
@@ -236,4 +237,88 @@ func SaveGroups(db *sql.DB, groups []models.Group) error {
 	}
 
 	return nil
+}
+
+// InsertFahrzeuge inserts vehicle rows from XLSX into the database
+func InsertFahrzeuge(db *sql.DB, rows [][]string) error {
+	if len(rows) == 0 {
+		return nil
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("INSERT INTO fahrzeuge (bezeichnung, ortsverband, funkrufname, fahrer_name, sitzplaetze) VALUES (?, ?, ?, ?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	for i, row := range rows {
+		if i == 0 {
+			continue // skip header
+		}
+		bezeichnung, ortsverband, funkrufname, fahrerName := "", "", "", ""
+		sitzplaetze := 1
+		if len(row) > 0 {
+			bezeichnung = trimSpace(row[0])
+		}
+		if len(row) > 1 {
+			ortsverband = trimSpace(row[1])
+		}
+		if len(row) > 2 {
+			funkrufname = trimSpace(row[2])
+		}
+		if len(row) > 3 {
+			fahrerName = trimSpace(row[3])
+		}
+		if len(row) > 4 {
+			if s := trimSpace(row[4]); s != "" {
+				n, err := strconv.Atoi(s)
+				if err == nil && n >= 1 {
+					sitzplaetze = n
+				}
+			}
+		}
+		if bezeichnung == "" {
+			continue
+		}
+		if _, err = stmt.Exec(bezeichnung, ortsverband, funkrufname, fahrerName, sitzplaetze); err != nil {
+			return fmt.Errorf("failed to insert fahrzeuge row %d: %w", i, err)
+		}
+	}
+
+	return tx.Commit()
+}
+
+// SaveGroupFahrzeuge saves the vehicle-to-group assignments to the database
+func SaveGroupFahrzeuge(db *sql.DB, groups []models.Group) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec("DELETE FROM gruppe_fahrzeuge"); err != nil {
+		return fmt.Errorf("failed to clear gruppe_fahrzeuge: %w", err)
+	}
+
+	stmt, err := tx.Prepare("INSERT INTO gruppe_fahrzeuge (group_id, fahrzeug_id) VALUES (?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare gruppe_fahrzeuge statement: %w", err)
+	}
+	defer stmt.Close()
+
+	for _, group := range groups {
+		for _, f := range group.Fahrzeuge {
+			if _, err = stmt.Exec(group.GroupID, f.ID); err != nil {
+				return fmt.Errorf("failed to insert gruppe_fahrzeuge: %w", err)
+			}
+		}
+	}
+
+	return tx.Commit()
 }

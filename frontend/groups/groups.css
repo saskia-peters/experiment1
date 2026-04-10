@@ -12,4 +12,25 @@
 
 /* Participant table styles are in main styles.css (group-table) */
 
+/* Fahrzeuge table row styling */
+.fahrzeuge-row {
+    background-color: #f0f7ff;
+}
+
+/* Capacity summary line below the Fahrzeuge table */
+.seats-summary {
+    margin-top: 6px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.seats-ok {
+    color: #2e7d32;
+}
+
+.seats-overloaded {
+    color: #c62828;
+    font-weight: bold;
+}
+
 /* Statistics specific to groups are shared with evaluations */

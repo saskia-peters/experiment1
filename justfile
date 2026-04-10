@@ -23,12 +23,13 @@ default:
 dev:
     {{wails}} dev
 
-# Build a production binary (output: build/bin/)
+# Build a development binary with console window (output: build/bin/)
 build:
     {{wails}} build
 
-# Build without a console window (Windows only)
-build-noconsole:
+# Build the distributable single-file binary (no console window, Windows GUI)
+# Hand this .exe to anyone — all assets, templates and default configs are embedded.
+dist:
     {{wails}} build -ldflags "-H windowsgui"
 
 # Run all Go tests with verbose output

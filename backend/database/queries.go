@@ -118,6 +118,31 @@ func GetGroupsForReport(db *sql.DB) ([]models.Group, error) {
 		return nil, err
 	}
 
+	// Load fahrzeuge for each group
+	fRows, err := db.Query(`
+		SELECT gf.group_id, f.id, f.bezeichnung, f.ortsverband, f.funkrufname, f.fahrer_name, f.sitzplaetze
+		FROM gruppe_fahrzeuge gf
+		INNER JOIN fahrzeuge f ON f.id = gf.fahrzeug_id
+		ORDER BY gf.group_id, f.bezeichnung
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer fRows.Close()
+	for fRows.Next() {
+		var groupID int
+		var f models.Fahrzeug
+		if err := fRows.Scan(&groupID, &f.ID, &f.Bezeichnung, &f.Ortsverband, &f.Funkrufname, &f.FahrerName, &f.Sitzplaetze); err != nil {
+			return nil, err
+		}
+		if g, ok := groupMap[groupID]; ok {
+			g.Fahrzeuge = append(g.Fahrzeuge, f)
+		}
+	}
+	if err := fRows.Err(); err != nil {
+		return nil, err
+	}
+
 	// Convert map to slice in correct order
 	groups := make([]models.Group, 0, len(groupMap))
 	for _, groupID := range groupOrder {
@@ -144,6 +169,25 @@ func GetAllBetreuende(db *sql.DB) ([]models.Betreuende, error) {
 		}
 		b.Fahrerlaubnis = fahrerlaubnis != 0
 		result = append(result, b)
+	}
+	return result, rows.Err()
+}
+
+// GetAllFahrzeuge returns all vehicles from the database
+func GetAllFahrzeuge(db *sql.DB) ([]models.Fahrzeug, error) {
+	rows, err := db.Query("SELECT id, bezeichnung, ortsverband, funkrufname, fahrer_name, sitzplaetze FROM fahrzeuge ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []models.Fahrzeug
+	for rows.Next() {
+		var f models.Fahrzeug
+		if err := rows.Scan(&f.ID, &f.Bezeichnung, &f.Ortsverband, &f.Funkrufname, &f.FahrerName, &f.Sitzplaetze); err != nil {
+			return nil, err
+		}
+		result = append(result, f)
 	}
 	return result, rows.Err()
 }

@@ -106,12 +106,29 @@ func InitDatabase() (retDB *sql.DB, retErr error) {
 			FOREIGN KEY (betreuende_id) REFERENCES betreuende(id),
 			UNIQUE(group_id, betreuende_id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS fahrzeuge (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			bezeichnung TEXT NOT NULL,
+			ortsverband TEXT,
+			funkrufname TEXT,
+			fahrer_name TEXT,
+			sitzplaetze INTEGER NOT NULL DEFAULT 1
+		)`,
+		`CREATE TABLE IF NOT EXISTS gruppe_fahrzeuge (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			group_id INTEGER NOT NULL,
+			fahrzeug_id INTEGER NOT NULL,
+			FOREIGN KEY (fahrzeug_id) REFERENCES fahrzeuge(id),
+			UNIQUE(fahrzeug_id)
+		)`,
 		// --- wipe existing data ---
+		`DELETE FROM gruppe_fahrzeuge`,
 		`DELETE FROM gruppe_betreuende`,
 		`DELETE FROM group_station_scores`,
 		`DELETE FROM stations`,
 		`DELETE FROM gruppe`,
 		`DELETE FROM betreuende`,
+		`DELETE FROM fahrzeuge`,
 		`DELETE FROM teilnehmende`,
 		// --- indexes ---
 		`CREATE INDEX IF NOT EXISTS idx_gruppe_group_id ON gruppe(group_id)`,

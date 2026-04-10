@@ -243,6 +243,20 @@ func LoadFile(ctx context.Context, db **sql.DB) map[string]interface{} {
 		}
 	}
 
+	fahrzeugeRows, err := io.ReadFahrzeugeFromXLSX(filePath)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Fahrzeuge konnten nicht gelesen werden: %v", err),
+		}
+	}
+	if err := database.InsertFahrzeuge(*db, fahrzeugeRows); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Fahrzeuge konnten nicht eingefügt werden: %v", err),
+		}
+	}
+
 	participantCount := len(rows) - 1
 	return map[string]interface{}{
 		"status":  "success",
