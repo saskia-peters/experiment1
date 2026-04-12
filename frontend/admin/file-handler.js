@@ -1,5 +1,5 @@
 // File loading and management
-import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnOverview, btnPDF, sectionAusgabe, ausgabeDropdown, btnBackup, setEvalButtonsEnabled } from '../shared/dom.js';
+import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnOverview, btnPDF, sectionAusgabe, ausgabeDropdown, btnBackup, btnConvert, setEvalButtonsEnabled } from '../shared/dom.js';
 
 export async function openFileDialog() {
     try {
@@ -28,6 +28,7 @@ export async function openFileDialog() {
             btnShow.disabled = true;
             btnStations.disabled = true;
             if (btnOverview) btnOverview.disabled = true;
+            if (btnConvert) btnConvert.disabled = true;
             setEvalButtonsEnabled(false);
             btnPDF.disabled = true;
             output.style.display = 'block';
@@ -242,6 +243,30 @@ export async function handleDistributeGroups() {
 
         const ausgabeDropdown = document.querySelector('.button-section:nth-child(3) .category-dropdown');
         if (ausgabeDropdown) ausgabeDropdown.setAttribute('open', 'open');
+    } catch (err) {
+        setStatus('FEHLER: ' + err, 'error');
+    }
+}
+
+export async function handleConvertMasterExcel() {
+    setStatus('Master-Excel wird konvertiert...', 'info');
+    try {
+        const result = await window.go.main.App.ConvertMasterExcel();
+
+        if (result.status === 'cancelled') {
+            setStatus('Bereit.', 'info');
+            return;
+        }
+        if (result.status === 'error') {
+            setStatus('FEHLER: ' + result.message, 'error');
+            output.style.display = 'block';
+            output.textContent = 'Konvertierung fehlgeschlagen:\n' + result.message;
+            return;
+        }
+
+        setStatus('✅ ' + result.message, 'success');
+        output.style.display = 'block';
+        output.textContent = `✔ Master-Excel erfolgreich konvertiert.\n\nGespeichert unter:\n${result.destPath}\n\nNächster Schritt:\n• Klicken Sie auf "Excel einlesen" und wählen Sie die soeben gespeicherte Datei.`;
     } catch (err) {
         setStatus('FEHLER: ' + err, 'error');
     }

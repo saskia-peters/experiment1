@@ -145,6 +145,7 @@ button:disabled {
 }
 
 .btn-load { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-convert { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
 .btn-backup { background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%); color: white; }
 .btn-restore { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; }
 .btn-distribute { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: #333; }

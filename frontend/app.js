@@ -1,5 +1,5 @@
 // Main application orchestrator - imports and wires up all modules
-import { openFileDialog, handleBackupDatabase, handleRestoreDatabase, handleDistributeGroups } from './admin/file-handler.js';
+import { openFileDialog, handleBackupDatabase, handleRestoreDatabase, handleDistributeGroups, handleConvertMasterExcel } from './admin/file-handler.js';
 import { handleEditConfig } from './admin/config-editor.js';
 import { handleShowGroups } from './groups/groups.js';
 import { handleShowStations, handleShowStationsForGroup, handleShowInputOverview } from './stations/stations.js';
@@ -11,7 +11,7 @@ import {
     handleGenerateCertificates,
     handleGenerateOVCertificates
 } from './reports/pdf-handlers.js';
-import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnOverview, btnPDF, btnBackup, sectionAusgabe, ausgabeDropdown, setEvalButtonsEnabled } from './shared/dom.js';
+import { setStatus, output, tabs, btnShow, btnDistribute, btnStations, btnOverview, btnPDF, btnBackup, btnConvert, sectionAusgabe, ausgabeDropdown, setEvalButtonsEnabled } from './shared/dom.js';
 
 // Load configuration and run startup DB check
 (async () => {
@@ -66,6 +66,7 @@ async function _handleStartupDBChoice(dbName) {
         if (result.status === 'ok') {
             setStatus(`Vorhandene Datenbank geladen (${result.count} Teilnehmende).`, 'success');
             // Re-enable buttons that require a loaded DB
+            if (btnConvert) btnConvert.disabled = true;
             if (btnBackup) btnBackup.disabled = false;
             if (btnShow) btnShow.disabled = false;
             if (btnStations) btnStations.disabled = false;
@@ -87,6 +88,7 @@ async function _handleStartupDBChoice(dbName) {
                 ? `Neue Datenbank erstellt. Backup gespeichert unter: ${result.backupPath}`
                 : 'Neue leere Datenbank erstellt.';
             setStatus(msg, 'success');
+            if (btnConvert) btnConvert.disabled = false;
         } else {
             setStatus('FEHLER beim Zurücksetzen: ' + result.message, 'error');
         }
@@ -95,6 +97,7 @@ async function _handleStartupDBChoice(dbName) {
 
 // Expose functions to window object for onclick handlers
 window.openFileDialog = openFileDialog;
+window.handleConvertMasterExcel = handleConvertMasterExcel;
 window.handleBackupDatabase = handleBackupDatabase;
 window.handleRestoreDatabase = handleRestoreDatabase;
 window.handleDistributeGroups = handleDistributeGroups;
