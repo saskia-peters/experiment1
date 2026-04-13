@@ -17,6 +17,7 @@ export const sectionAusgabe = document.getElementById('sectionAusgabe');
 export const ausgabeDropdown = document.getElementById('ausgabeDropdown');
 export const btnBackup = document.getElementById('btnBackup');
 export const btnConvert = document.getElementById('btnConvert');
+export const btnNameEdit = document.getElementById('btnNameEdit');
 
 // Status message handler
 export function setStatus(msg, type = 'info') {

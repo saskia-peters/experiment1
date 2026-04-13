@@ -82,6 +82,20 @@ func (a *App) ConvertMasterExcel(event string) map[string]interface{} {
 	return handlers.ConvertMasterExcel(a.ctx, event)
 }
 
+// --- Name editor ---
+
+func (a *App) GetOrtsverbands() map[string]interface{} {
+	return handlers.GetOrtsverbands(a.db)
+}
+
+func (a *App) GetPersonenByOrtsverband(ortsverband string) map[string]interface{} {
+	return handlers.GetPersonenByOrtsverband(a.db, ortsverband)
+}
+
+func (a *App) UpdatePersonName(kind string, id int, newName string) map[string]interface{} {
+	return handlers.UpdatePersonName(a.db, kind, id, newName)
+}
+
 func (a *App) HasScores() (bool, error) {
 	return handlers.HasScores(a.db)
 }

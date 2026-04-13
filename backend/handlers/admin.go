@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"THW-JugendOlympiade/backend/config"
+	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/io"
 )
 
@@ -225,4 +228,52 @@ func GetGroupPictureAsBase64(pictureDir, filename string) map[string]interface{}
 		"status":  "ok",
 		"dataURL": "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(data),
 	}
+}
+
+// --- Name editor ---
+
+// GetOrtsverbands returns the sorted list of all distinct Ortsverbands.
+func GetOrtsverbands(db *sql.DB) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	ovs, err := database.GetDistinctOrtsverbands(db)
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	if ovs == nil {
+		ovs = []string{}
+	}
+	return map[string]interface{}{"status": "ok", "ortsverbands": ovs}
+}
+
+// GetPersonenByOrtsverband returns all Teilnehmende and Betreuende for the
+// given Ortsverband as a JSON-serialisable slice.
+func GetPersonenByOrtsverband(db *sql.DB, ortsverband string) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	persons, err := database.GetPersonenByOrtsverband(db, ortsverband)
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": err.Error()}
+	}
+	if persons == nil {
+		persons = []database.PersonRecord{}
+	}
+	return map[string]interface{}{"status": "ok", "persons": persons}
+}
+
+// UpdatePersonName updates the name of a single person identified by kind and id.
+func UpdatePersonName(db *sql.DB, kind string, id int, newName string) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	newName = strings.TrimSpace(newName)
+	if newName == "" {
+		return map[string]interface{}{"status": "error", "message": "Name darf nicht leer sein"}
+	}
+	if err := database.UpdatePersonName(db, kind, id, newName); err != nil {
+		return map[string]interface{}{"status": "error", "message": fmt.Sprintf("Name konnte nicht gespeichert werden: %v", err)}
+	}
+	return map[string]interface{}{"status": "ok"}
 }

@@ -41,6 +41,10 @@ export function GetImageAsBase64(arg1:string):Promise<Record<string, any>>;
 
 export function GetOrtsverbandEvaluations():Promise<Record<string, any>>;
 
+export function GetOrtsverbands():Promise<Record<string, any>>;
+
+export function GetPersonenByOrtsverband(arg1:string):Promise<Record<string, any>>;
+
 export function HasScores():Promise<boolean>;
 
 export function ListBackgroundImages():Promise<Record<string, any>>;
@@ -64,5 +68,7 @@ export function SaveConfigRaw(arg1:string):Promise<Record<string, any>>;
 export function ShowGroups():Promise<Record<string, any>>;
 
 export function ShowStations():Promise<Record<string, any>>;
+
+export function UpdatePersonName(arg1:string,arg2:number,arg3:string):Promise<Record<string, any>>;
 
 export function UseExistingDB():Promise<Record<string, any>>;

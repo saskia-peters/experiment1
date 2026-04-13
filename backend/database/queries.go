@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	"THW-JugendOlympiade/backend/models"
 )
@@ -283,4 +284,81 @@ func GetAllGroupIDs(db *sql.DB) ([]int, error) {
 	}
 
 	return groupIDs, rows.Err()
+}
+
+// GetDistinctOrtsverbands returns a sorted list of all Ortsverbands present
+// across both teilnehmende and betreuende tables.
+func GetDistinctOrtsverbands(db *sql.DB) ([]string, error) {
+	query := `
+		SELECT DISTINCT ortsverband FROM teilnehmende WHERE ortsverband != ''
+		UNION
+		SELECT DISTINCT ortsverband FROM betreuende  WHERE ortsverband != ''
+		ORDER BY ortsverband`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []string
+	for rows.Next() {
+		var ov string
+		if err := rows.Scan(&ov); err != nil {
+			return nil, err
+		}
+		result = append(result, ov)
+	}
+	return result, rows.Err()
+}
+
+// PersonRecord is a lightweight row used by the name-editor.
+type PersonRecord struct {
+	ID          int    `json:"id"`
+	Kind        string `json:"kind"` // "teilnehmende" | "betreuende"
+	Name        string `json:"name"`
+	Ortsverband string `json:"ortsverband"`
+}
+
+// GetPersonenByOrtsverband returns all Teilnehmende and Betreuende for the
+// given Ortsverband, sorted by kind then name.
+func GetPersonenByOrtsverband(db *sql.DB, ortsverband string) ([]PersonRecord, error) {
+	query := `
+		SELECT id, 'teilnehmende' AS kind, name, ortsverband
+		FROM teilnehmende
+		WHERE ortsverband = ?
+		UNION ALL
+		SELECT id, 'betreuende' AS kind, name, ortsverband
+		FROM betreuende
+		WHERE ortsverband = ?
+		ORDER BY kind, name`
+	rows, err := db.Query(query, ortsverband, ortsverband)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []PersonRecord
+	for rows.Next() {
+		var p PersonRecord
+		if err := rows.Scan(&p.ID, &p.Kind, &p.Name, &p.Ortsverband); err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	return result, rows.Err()
+}
+
+// UpdatePersonName updates the name field for a single row identified by id
+// and kind ("teilnehmende" or "betreuende").
+// Returns an error for unknown kinds to prevent SQL injection via table name.
+func UpdatePersonName(db *sql.DB, kind string, id int, newName string) error {
+	var table string
+	switch kind {
+	case "teilnehmende":
+		table = "teilnehmende"
+	case "betreuende":
+		table = "betreuende"
+	default:
+		return fmt.Errorf("unbekannte Personenart %q", kind)
+	}
+	_, err := db.Exec("UPDATE "+table+" SET name = ? WHERE id = ?", newName, id)
+	return err
 }

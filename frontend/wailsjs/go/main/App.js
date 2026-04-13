@@ -82,6 +82,14 @@ export function GetOrtsverbandEvaluations() {
   return window['go']['main']['App']['GetOrtsverbandEvaluations']();
 }
 
+export function GetOrtsverbands() {
+  return window['go']['main']['App']['GetOrtsverbands']();
+}
+
+export function GetPersonenByOrtsverband(arg1) {
+  return window['go']['main']['App']['GetPersonenByOrtsverband'](arg1);
+}
+
 export function HasScores() {
   return window['go']['main']['App']['HasScores']();
 }
@@ -128,6 +136,10 @@ export function ShowGroups() {
 
 export function ShowStations() {
   return window['go']['main']['App']['ShowStations']();
+}
+
+export function UpdatePersonName(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UpdatePersonName'](arg1, arg2, arg3);
 }
 
 export function UseExistingDB() {
