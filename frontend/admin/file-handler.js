@@ -249,9 +249,16 @@ export async function handleDistributeGroups() {
 }
 
 export async function handleConvertMasterExcel() {
-    setStatus('Master-Excel wird konvertiert...', 'info');
+    // Ask which event to extract before opening the file dialog
+    const event = await askEventChoice();
+    if (!event) {
+        setStatus('Bereit.', 'info');
+        return;
+    }
+
+    setStatus(`Master-Excel wird konvertiert (${event})...`, 'info');
     try {
-        const result = await window.go.main.App.ConvertMasterExcel();
+        const result = await window.go.main.App.ConvertMasterExcel(event);
 
         if (result.status === 'cancelled') {
             setStatus('Bereit.', 'info');
@@ -266,8 +273,39 @@ export async function handleConvertMasterExcel() {
 
         setStatus('✅ ' + result.message, 'success');
         output.style.display = 'block';
-        output.textContent = `✔ Master-Excel erfolgreich konvertiert.\n\nGespeichert unter:\n${result.destPath}\n\nNächster Schritt:\n• Klicken Sie auf "Excel einlesen" und wählen Sie die soeben gespeicherte Datei.`;
+        output.textContent = `✔ Master-Excel (${event}) erfolgreich konvertiert.\n\nGespeichert unter:\n${result.destPath}\n\nNächster Schritt:\n• Klicken Sie auf "Excel einlesen" und wählen Sie die soeben gespeicherte Datei.`;
     } catch (err) {
         setStatus('FEHLER: ' + err, 'error');
     }
+}
+
+// Show a modal dialog asking the user to choose between Jugend and Mini.
+// Returns "Jugend", "Mini", or null if cancelled.
+function askEventChoice() {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999';
+
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:10px;padding:32px 36px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3);font-family:Arial,sans-serif';
+
+        box.innerHTML = `
+            <h2 style="margin:0 0 12px;font-size:1.2em;color:#333">Veranstaltung auswählen</h2>
+            <p style="margin:0 0 24px;color:#555;line-height:1.5">
+                Welche Veranstaltung soll aus dem Master-Excel extrahiert werden?
+            </p>
+            <div style="display:flex;gap:12px;justify-content:flex-end">
+                <button id="_btnCancel" style="padding:10px 20px;background:#9e9e9e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">Abbrechen</button>
+                <button id="_btnMini"   style="padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">Mini</button>
+                <button id="_btnJugend" style="padding:10px 20px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">Jugend</button>
+            </div>`;
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        const close = (val) => { document.body.removeChild(overlay); resolve(val); };
+        box.querySelector('#_btnJugend').addEventListener('click', () => close('Jugend'));
+        box.querySelector('#_btnMini').addEventListener('click',   () => close('Mini'));
+        box.querySelector('#_btnCancel').addEventListener('click', () => close(null));
+    });
 }

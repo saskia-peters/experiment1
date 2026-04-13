@@ -13,9 +13,15 @@ import (
 // file, transforms it into the standard import format expected by LoadFile,
 // then offers a save dialog for the converted output.
 //
-// The transform step is currently a placeholder (identity) and will be
-// implemented later.
-func ConvertMasterExcel(ctx context.Context) map[string]interface{} {
+// event must be "Jugend" or "Mini" and controls which rows are selected.
+func ConvertMasterExcel(ctx context.Context, event string) map[string]interface{} {
+	ev := io.MasterEvent(event)
+	if ev != io.EventJugend && ev != io.EventMini {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Unbekannte Veranstaltung %q – erlaubt sind \"Jugend\" oder \"Mini\"", event),
+		}
+	}
 	// Step 1: choose source file
 	srcPath, err := runtime.OpenFileDialog(ctx, runtime.OpenDialogOptions{
 		Title: "Master-Excel auswählen",
@@ -49,7 +55,7 @@ func ConvertMasterExcel(ctx context.Context) map[string]interface{} {
 	}
 
 	// Step 3: transform into the typed ConvertedData structure
-	converted := io.TransformMasterExcel(data)
+	converted := io.TransformMasterExcel(data, ev)
 
 	// Step 4: choose destination for the converted file
 	destPath, err := runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{

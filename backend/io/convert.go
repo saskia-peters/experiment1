@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"THW-JugendOlympiade/backend/models"
 
@@ -60,6 +61,14 @@ type ConvertedData struct {
 	Fahrzeuge    []ConvertedFahrzeug
 }
 
+// MasterEvent selects which sub-event to extract from the Master Excel.
+type MasterEvent string
+
+const (
+	EventJugend MasterEvent = "Jugend"
+	EventMini   MasterEvent = "Mini"
+)
+
 // ----------------------------------------------------------------------------
 // Pipeline steps
 // ----------------------------------------------------------------------------
@@ -110,17 +119,162 @@ func ReadMasterExcel(filePath string) (*MasterExcelData, error) {
 // TransformMasterExcel converts the raw source data into a ConvertedData that
 // WriteMasterExcel will serialise into the standard import format.
 //
-// TODO: implement the actual mapping from src sheets to the typed structs.
-// The stub below leaves all slices empty so that WriteMasterExcel still
-// produces a structurally valid (but empty) output file.
-func TransformMasterExcel(src *MasterExcelData) *ConvertedData {
-	// --- placeholder: replace this body with real mapping logic ---
-	return &ConvertedData{
+// The event parameter controls which rows are selected:
+//
+//	EventJugend:
+//	  Betreuende  → Betreuende="x" AND Mini=blank
+//	  Teilnehmende → JuHe="x"
+//
+//	EventMini:
+//	  Betreuende  → Betreuende="x" AND Mini="x"
+//	  Teilnehmende → Mini="x" AND Betreuende=blank
+//
+// Source column "Fahrerlaubnis": any non-empty value other than "/" → true.
+//
+// Source layout:
+//
+//	Sheet "Teilnehmende": Vorname | Name | Betreuende | JuHe | Mini |
+//	                       Alter | Ortsverband | Fahrerlaubnis
+//	Sheet "Fahrzeuge":    Fahrzeug | Ortsverband | Funkrufname |
+//	                       Anzahl Plätze incl. Fahrende
+func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedData {
+	out := &ConvertedData{
 		Teilnehmende: []ConvertedTeilnehmender{},
 		Betreuende:   []ConvertedBetreuender{},
 		Stationen:    []ConvertedStation{},
 		Fahrzeuge:    []ConvertedFahrzeug{},
 	}
+
+	// --- Source "Teilnehmende" sheet ---
+	srcTeiln, ok := src.Sheets["Teilnehmende"]
+	if !ok || len(srcTeiln) < 2 {
+		log.Printf("TransformMasterExcel: sheet 'Teilnehmende' not found or empty")
+	} else {
+		idx := buildHeaderIndex(srcTeiln[0])
+		for rowNum, row := range srcTeiln[1:] {
+			vorname := getCol(row, idx, "Vorname")
+			nachname := getCol(row, idx, "Name")
+			fullName := strings.TrimSpace(vorname + " " + nachname)
+			if fullName == "" {
+				continue
+			}
+
+			ortsverband := getCol(row, idx, "Ortsverband")
+			alterStr := getCol(row, idx, "Alter")
+			alter := 0
+			if alterStr != "" {
+				if v, err := strconv.Atoi(alterStr); err == nil && v > 0 {
+					alter = v
+				} else {
+					log.Printf("TransformMasterExcel: Teilnehmende row %d: invalid Alter %q", rowNum+2, alterStr)
+				}
+			}
+
+			isBetreuende := strings.EqualFold(getCol(row, idx, "Betreuende"), "x")
+			isMini := strings.EqualFold(getCol(row, idx, "Mini"), "x")
+			isJuHe := strings.EqualFold(getCol(row, idx, "JuHe"), "x")
+
+			// Fahrerlaubnis: non-empty value that is not "/" means licensed
+			fahrVal := getCol(row, idx, "Fahrerlaubnis")
+			fahrerlaubnis := fahrVal != "" && fahrVal != "/"
+
+			switch event {
+			case EventJugend:
+				// Betreuende: marked as Betreuende and NOT Mini
+				if isBetreuende && !isMini {
+					out.Betreuende = append(out.Betreuende, ConvertedBetreuender{
+						Name:          fullName,
+						Ortsverband:   ortsverband,
+						Fahrerlaubnis: fahrerlaubnis,
+					})
+				}
+				// Teilnehmende: JuHe marked
+				if isJuHe {
+					out.Teilnehmende = append(out.Teilnehmende, ConvertedTeilnehmender{
+						Name:        fullName,
+						Ortsverband: ortsverband,
+						Alter:       alter,
+						Geschlecht:  "",
+						PreGroup:    "",
+					})
+				}
+			case EventMini:
+				// Betreuende: marked as Betreuende AND Mini
+				if isBetreuende && isMini {
+					out.Betreuende = append(out.Betreuende, ConvertedBetreuender{
+						Name:          fullName,
+						Ortsverband:   ortsverband,
+						Fahrerlaubnis: fahrerlaubnis,
+					})
+				}
+				// Teilnehmende: Mini marked and NOT Betreuende
+				if isMini && !isBetreuende {
+					out.Teilnehmende = append(out.Teilnehmende, ConvertedTeilnehmender{
+						Name:        fullName,
+						Ortsverband: ortsverband,
+						Alter:       alter,
+						Geschlecht:  "",
+						PreGroup:    "",
+					})
+				}
+			}
+		}
+	}
+
+	// --- Source "Fahrzeuge" sheet (Jugend only) ---
+	if event == EventJugend {
+		srcFahr, ok := src.Sheets["Fahrzeuge"]
+		if !ok || len(srcFahr) < 2 {
+			log.Printf("TransformMasterExcel: sheet 'Fahrzeuge' not found or empty")
+		} else {
+			idx := buildHeaderIndex(srcFahr[0])
+			for rowNum, row := range srcFahr[1:] {
+				bezeichnung := getCol(row, idx, "Fahrzeug")
+				if bezeichnung == "" {
+					continue
+				}
+				sitzStr := getCol(row, idx, "Anzahl Plätze incl. Fahrende")
+				sitze := 0
+				if sitzStr != "" {
+					if v, err := strconv.Atoi(sitzStr); err == nil && v > 0 {
+						sitze = v
+					} else {
+						log.Printf("TransformMasterExcel: Fahrzeuge row %d: invalid Sitzplaetze %q", rowNum+2, sitzStr)
+					}
+				}
+				out.Fahrzeuge = append(out.Fahrzeuge, ConvertedFahrzeug{
+					Bezeichnung: bezeichnung,
+					Ortsverband: getCol(row, idx, "Ortsverband"),
+					Funkrufname: getCol(row, idx, "Funkrufname"),
+					Fahrer:      "", // not available in source
+					Sitzplaetze: sitze,
+				})
+			}
+		}
+	}
+
+	return out
+}
+
+// buildHeaderIndex builds a case-insensitive, trimmed name → column-index map
+// from a header row.
+func buildHeaderIndex(headers []string) map[string]int {
+	idx := make(map[string]int, len(headers))
+	for i, h := range headers {
+		idx[strings.ToLower(strings.TrimSpace(h))] = i
+	}
+	return idx
+}
+
+// getCol retrieves and trims the cell value for the given column name
+// (case-insensitive) from a data row.  Returns "" if the column is not
+// present in the header or the row is too short.
+func getCol(row []string, idx map[string]int, col string) string {
+	i, ok := idx[strings.ToLower(strings.TrimSpace(col))]
+	if !ok || i >= len(row) {
+		return ""
+	}
+	return strings.TrimSpace(row[i])
 }
 
 // WriteMasterExcel writes a ConvertedData to destPath as an xlsx with the

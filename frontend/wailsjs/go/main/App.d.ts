@@ -9,6 +9,8 @@ export function CheckDB():Promise<Record<string, any>>;
 
 export function CheckStartup():Promise<Record<string, any>>;
 
+export function ConvertMasterExcel(arg1:string):Promise<Record<string, any>>;
+
 export function DistributeGroups():Promise<Record<string, any>>;
 
 export function GenerateGroupEvaluationPDF():Promise<Record<string, any>>;

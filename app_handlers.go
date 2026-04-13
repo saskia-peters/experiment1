@@ -78,8 +78,8 @@ func (a *App) LoadFile() map[string]interface{} {
 	return handlers.LoadFile(a.ctx, &a.db)
 }
 
-func (a *App) ConvertMasterExcel() map[string]interface{} {
-	return handlers.ConvertMasterExcel(a.ctx)
+func (a *App) ConvertMasterExcel(event string) map[string]interface{} {
+	return handlers.ConvertMasterExcel(a.ctx, event)
 }
 
 func (a *App) HasScores() (bool, error) {

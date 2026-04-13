@@ -18,6 +18,10 @@ export function CheckStartup() {
   return window['go']['main']['App']['CheckStartup']();
 }
 
+export function ConvertMasterExcel(arg1) {
+  return window['go']['main']['App']['ConvertMasterExcel'](arg1);
+}
+
 export function DistributeGroups() {
   return window['go']['main']['App']['DistributeGroups']();
 }
