@@ -135,7 +135,7 @@ func ReadMasterExcel(filePath string) (*MasterExcelData, error) {
 //
 //	Sheet "Teilnehmende": Vorname | Name | Betreuende | JuHe | Mini |
 //	                       Alter | Ortsverband | Fahrerlaubnis
-//	Sheet "Fahrzeuge":    Fahrzeug | Ortsverband | Funkrufname |
+//	Sheet "Fahrzeuge":    Fahrzeug | Ortsverband | Funkrufname | Fahrer |
 //	                       Anzahl Plätze incl. Fahrende
 func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedData {
 	out := &ConvertedData{
@@ -246,7 +246,7 @@ func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedDat
 					Bezeichnung: bezeichnung,
 					Ortsverband: getCol(row, idx, "Ortsverband"),
 					Funkrufname: getCol(row, idx, "Funkrufname"),
-					Fahrer:      "", // not available in source
+					Fahrer:      getCol(row, idx, "Fahrer"),
 					Sitzplaetze: sitze,
 				})
 			}
