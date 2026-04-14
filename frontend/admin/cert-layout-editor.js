@@ -254,19 +254,19 @@ function _gfxElementCard(el, idx) {
     const swatch = (el.color && el.color.length >= 3)
         ? `<div style="width:14px;height:14px;border-radius:3px;border:1px solid #ccc;background:rgb(${el.color[0]},${el.color[1]},${el.color[2]});flex-shrink:0;"></div>`
         : '';
-    const bS  = 'padding:2px 6px;border:1px solid #ddd;border-radius:3px;background:#f5f5f5;cursor:pointer;font-size:11px;';
+    const bS  = 'padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#f5f5f5;cursor:pointer;font-size:10px;line-height:1.4;flex-shrink:0;';
     const exp = _gfxExpanded.has(idx);
     return `<div style="border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;background:#fff;">
-        <div style="display:flex;align-items:center;padding:7px 10px;cursor:pointer;gap:7px;background:#fafafa;user-select:none;"
+        <div style="display:flex;align-items:center;padding:6px 8px;cursor:pointer;gap:4px;background:#fafafa;user-select:none;"
              onclick="window._gfxToggleExpand(${idx})">
-            <span style="font-size:10px;padding:2px 5px;border-radius:3px;background:${badge};color:#fff;flex-shrink:0;font-weight:600;">${el.type}</span>
-            <span style="flex:1;font-size:12px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</span>
-            <span style="font-size:11px;color:#aaa;flex-shrink:0;">y:${el.y}</span>
+            <span style="font-size:10px;padding:2px 4px;border-radius:3px;background:${badge};color:#fff;flex-shrink:0;font-weight:600;">${el.type}</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${label}</span>
+            <span style="font-size:10px;color:#bbb;flex-shrink:0;">y:${el.y}</span>
             ${swatch}
             <button onclick="event.stopPropagation();window._gfxMoveElement(${idx},-1)" style="${bS}" title="Nach oben">\u2191</button>
             <button onclick="event.stopPropagation();window._gfxMoveElement(${idx}, 1)" style="${bS}" title="Nach unten">\u2193</button>
             <button onclick="event.stopPropagation();window._gfxDeleteElement(${idx})" style="${bS}color:#c00;" title="L\u00f6schen">\u2715</button>
-            <span style="font-size:10px;color:#bbb;">${exp ? '\u25b2' : '\u25bc'}</span>
+            <span style="font-size:10px;color:#bbb;flex-shrink:0;">${exp ? '\u25b2' : '\u25bc'}</span>
         </div>
         ${exp ? _gfxElementForm(el, idx) : ''}
     </div>`;
