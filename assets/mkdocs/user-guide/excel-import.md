@@ -66,6 +66,61 @@ Stationsnamen für die Ergebniseingabe. Zeile 1 = Kopfzeile, ab Zeile 2 ein Stat
 2. XLSX-Datei im Dateidialog auswählen.
 3. Grüne Statusmeldung = Erfolg. Rote Meldung = Validierungsfehler mit Zeilenangabe.
 
+---
+
+## Master-Excel umwandeln (Admin)
+
+Liegt die Teilnehmerliste in einem internen Quellformat vor (z. B. direkt aus dem Anmeldesystem), kann der Admin-Bereich sie automatisch in das oben beschriebene Import-Format umwandeln.
+
+### Vorgehen
+
+1. **Admin → „Master-Excel umwandeln"** klicken.
+2. Im Dialog **Veranstaltungstyp** wählen: **Jugend** oder **Mini**.
+3. Quell-XLSX-Datei auswählen.
+4. Speicherort für die erzeugte Ziel-XLSX angeben.
+5. Die erzeugte Datei kann direkt mit **„Excel einlesen"** importiert werden.
+
+### Erwartetes Quellformat
+
+**Tabellenblatt `Teilnehmende`** (Quell-Excel):
+
+| Spalte | Beschreibung |
+|--------|--------------|
+| `Vorname` | Vorname |
+| `Name` | Nachname — wird mit `Vorname` zu einem Vollnamen zusammengeführt |
+| `Betreuende` | `x` = Betreuungsperson |
+| `JuHe` | `x` = Jugend-Teilnehmende (nur für Jugend-Veranstaltung ausgewertet) |
+| `Mini` | `x` = Mini-Teilnehmende oder Mini-Betreuende |
+| `Alter` | Alter als ganze Zahl |
+| `Ortsverband` | Lokale Gliederung |
+| `Fahrerlaubnis` | Jeder nicht-leere Wert außer `"/"` gilt als gültige Fahrerlaubnis |
+
+**Tabellenblatt `Fahrzeuge`** (nur Jugend-Veranstaltung):
+
+| Spalte | Beschreibung |
+|--------|--------------|
+| `Fahrzeug` | Fahrzeugbezeichnung |
+| `Ortsverband` | Lokale Gliederung |
+| `Funkrufname` | Funkrufname |
+| `Fahrer` | Name des Fahrers |
+| `Anzahl Plätze incl. Fahrende` | Sitzplatzanzahl als ganze Zahl |
+
+### Zuordnungsregeln
+
+=== "Jugend"
+    | Quellzeile | Zielblatt |
+    |------------|-----------|
+    | `JuHe = x` | `Teilnehmende` |
+    | `Betreuende = x` UND `Mini` leer | `Betreuende` |
+    | Alle Fahrzeug-Zeilen | `Fahrzeuge` |
+
+=== "Mini"
+    | Quellzeile | Zielblatt |
+    |------------|-----------|
+    | `Mini = x` UND `Betreuende` leer | `Teilnehmende` |
+    | `Betreuende = x` UND `Mini = x` | `Betreuende` |
+    | *(kein Fahrzeugblatt)* | `Fahrzeuge` enthält nur Kopfzeile |
+
 !!! warning "Bestehende Daten werden überschrieben"
     Ein erneuter Import ersetzt **alle** Daten (inkl. Gruppen und Ergebnisse). Vorher Datenbank sichern.
 

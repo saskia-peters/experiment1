@@ -21,7 +21,7 @@ Jede teilnehmende Person erhält eine individuelle Urkunde mit:
 - Veranstaltungsjahr und Ort
 - Name und Ortsverband der Person
 - Gruppennummer
-- Platzierung („1. Platz", „2. Platz", …)
+- Platzierung (`„1. Platz"`, `„2. Platz"`, … oder `„Teilnahme"` wenn keine Auswertung vorliegt)
 - Gruppenmitglieder (Text-Stil) oder Gruppenfoto (Bild-Stil)
 
 ### Stile

@@ -45,7 +45,7 @@ flowchart TB
 | Domain-Handler | `backend/handlers/` | Kombiniert Services + DB + IO, kein Wails-Import |
 | Business-Logik | `backend/services/` | Gruppenverteilungs-Algorithmus |
 | Datenzugriff | `backend/database/` | SQL-Queries, Inserts, Auswertungen |
-| Datei-I/O | `backend/io/` | Excel-Import, PDF-Generierung |
+| Datei-I/O | `backend/io/` | Excel-Import, PDF-Generierung, Master-Excel-Konvertierung (`convert.go`) |
 | Modelle | `backend/models/` | Gemeinsame Datenstrukturen |
 | Konfiguration | `backend/config/` | TOML-Parsing, Validierung |
 
@@ -80,8 +80,10 @@ frontend/
 │   ├── dom.js              DOM-Refs, setStatus(), clearAllTabs()
 │   └── utils.js            escapeHtml(), switchTab()
 ├── admin/
-│   ├── file-handler.js     Datei-laden, Backup, Restore, Gruppenverteilung
-│   └── config-editor.js    In-App TOML-Konfigurations-Editor
+│   ├── file-handler.js     Datei-laden, Backup, Restore, Gruppenverteilung, Master-Excel-Konvertierung
+│   ├── config-editor.js    In-App TOML-Konfigurations-Editor
+│   ├── name-editor.js      Zweistufiger Dialog zur Namenskorrektur (OV-Auswahl → Inline-Editing)
+│   └── cert-layout-editor.js  Zertifikat-Layout-Editor
 ├── groups/
 │   └── groups.js           Gruppen-Anzeige mit Tabs + Statistik
 ├── stations/

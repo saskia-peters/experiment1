@@ -6,6 +6,23 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.3] — 2026-04-14
+
+### Hinzugefügt
+
+- Admin: Schaltfläche „Master-Excel umwandeln" — wandelt eine Quell-Excel-Datei im internen Format in das Format um, das von „Excel einlesen" erwartet wird. Vor der Dateiauswahl erscheint ein Dialog zur Wahl des Veranstaltungstyps (Jugend oder Mini).
+  - Jugend: liest Tabellenblatt `Teilnehmende` (trennt JuHe-Teilnehmende von Betreuenden) und Tabellenblatt `Fahrzeuge`; bildet Spalte `Fahrer` auf die Ausgabe-Fahrzeugliste ab.
+  - Mini: Fahrzeugdaten werden nicht übernommen; das Ausgabe-Tabellenblatt `Fahrzeuge` enthält nur die Kopfzeile.
+  - Quellspalte `Fahrerlaubnis`: jeder nicht-leere Wert außer `„/"` gilt als gültige Fahrerlaubnis.
+- Admin: Schaltfläche „Namen korrigieren" — zweistufiger Dialog zum Korrigieren von Schreibfehlern in Namen direkt in der Datenbank. Ortsverband aus der Dropdown-Liste wählen, Namen zeilenweise bearbeiten, nur geänderte Einträge speichern. Nach dem Speichern wird je Zeile ein Erfolgs- oder Fehlersymbol angezeigt.
+
+### Behoben
+
+- Urkunden: Teilnehmende ohne Auswertungsdaten erhielten bisher fälschlicherweise die Angabe „Platz 0" — korrekt ist jetzt „Teilnahme".
+- Urkunden: Platzierungsanzeige ist nun einheitlich — alle positiven Ränge verwenden das Format `„X. Platz"` (zuvor gab es für Ränge 1–3 einen abweichenden Code-Pfad).
+
+---
+
 ## [0.1.2] — 2026-03-23
 
 ### Geändert

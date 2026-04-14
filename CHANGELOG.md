@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-04-14
+
+### Added
+- Admin: "Master-Excel umwandeln" button — converts a proprietary source Excel into the format required by "Excel einlesen". A dialog asks the user to choose the event type (Jugend or Mini) before the file picker opens.
+  - Jugend: reads the `Teilnehmende` sheet (separating JuHe participants and supervisors) and the `Fahrzeuge` sheet; maps `Fahrer` column to the output vehicle list.
+  - Mini: vehicle data omitted; the output `Fahrzeuge` sheet is written with headers only.
+  - Source `Fahrerlaubnis` column: any non-empty value other than `"/"` is treated as a valid licence.
+- Admin: "Namen korrigieren" button — two-step dialog to fix name typos in the live database. Select an Ortsverband from a dropdown, edit names inline per row, save only changed entries. Per-row success/error indicators are shown after saving.
+
+### Fixed
+- Certificates: participants without recorded evaluation data previously showed "Platz 0" — they now correctly display "Teilnahme".
+- Certificates: rank display is now consistent for all values — every positive rank uses the `"X. Platz"` format (previously ranks 1–3 used a different code path).
+
 ## [0.1.2] - 2026-03-23
 
 ### Changed
