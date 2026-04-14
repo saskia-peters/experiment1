@@ -11,7 +11,7 @@ Alle angemeldeten Teilnehmenden. Die **erste Zeile ist die Kopfzeile**.
 | `Name` | ✅ Ja | Vor- und Nachname |
 | `Ortsverband` | ✅ Ja | Lokale Gliederung |
 | `Alter` | ✅ Ja | Alter als ganze Zahl (1–100) |
-| `Geschlecht` | ✅ Ja | `M`, `W` oder `D` (auch ausgeschrieben) |
+| `Geschlecht` | ✅ Ja | `M`, `W` oder `D` (auch ausgeschrieben) — **muss manuell in der XLSX-Datei eingetragen werden**, da dieser Wert beim Export aus dem Anmeldesystem nicht automatisch übernommen wird |
 | `PreGroup` | ⬜ Optional | Gruppierschlüssel — Personen mit gleichem Code kommen in dieselbe Gruppe |
 
 **PreGroup-Regeln:**
@@ -54,9 +54,12 @@ Alle Betreuungspersonen. Die **erste Zeile ist die Kopfzeile**.
 
 ---
 
-## Tabellenblatt 3: `Stationen` (optional)
+## Tabellenblatt 3: `Stationen` (Pflicht)
 
 Stationsnamen für die Ergebniseingabe. Zeile 1 = Kopfzeile, ab Zeile 2 ein Stationsname pro Zeile.
+
+!!! warning "Stationen erforderlich"
+    Das Tabellenblatt `Stationen` **muss** mindestens einen Eintrag enthalten. Fehlt das Blatt oder ist es leer, wird der Import abgelehnt und eine Fehlermeldung angezeigt.
 
 ---
 

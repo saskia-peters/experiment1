@@ -345,3 +345,80 @@ func TestCreateBalancedGroups_FewerLicensedDriversThanGroups_ReturnsWarning(t *t
 		t.Error("expected a non-empty warning when licensed drivers < number of groups")
 	}
 }
+
+// TestCreateBalancedGroups_DriverAppearsInBetreuendeNotDoubled verifies that when
+// vehicles are present, the vehicle's Fahrer (driver) is listed in the group's
+// Betreuende section exactly once, and the seat capacity check does not
+// double-count that person (driver seat is included in Sitzplaetze AND the
+// driver is counted once in Betreuende, not twice).
+func TestCreateBalancedGroups_DriverAppearsInBetreuendeNotDoubled(t *testing.T) {
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	// 4 participants, 1 driver (also betreuende), 1 non-driver betreuende,
+	// 1 vehicle with 10 seats (includes driver seat).
+	if err := database.InsertData(db, [][]string{
+		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
+		{"Alice", "Berlin", "25", "W", ""},
+		{"Bob", "Berlin", "22", "M", ""},
+		{"Carol", "Berlin", "28", "W", ""},
+		{"Dave", "Berlin", "20", "M", ""},
+	}); err != nil {
+		t.Fatalf("InsertData failed: %v", err)
+	}
+	if err := database.InsertBetreuende(db, [][]string{
+		{"Name", "Ortsverband", "Fahrerlaubnis"},
+		{"Driver Max", "Berlin", "ja"}, // also the vehicle driver
+		{"Helper Anna", "Berlin", "nein"},
+	}); err != nil {
+		t.Fatalf("InsertBetreuende failed: %v", err)
+	}
+	// Vehicle whose FahrerName matches "Driver Max" exactly.
+	if err := database.InsertFahrzeuge(db, [][]string{
+		{"Bezeichnung", "Ortsverband", "Funkrufname", "FahrerName", "Sitzplaetze"},
+		{"Bus 1", "Berlin", "BLN-1", "Driver Max", "10"},
+	}); err != nil {
+		t.Fatalf("InsertFahrzeuge failed: %v", err)
+	}
+
+	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize); err != nil {
+		t.Fatalf("CreateBalancedGroups failed: %v", err)
+	}
+
+	groups, err := database.GetGroupsForReport(db)
+	if err != nil {
+		t.Fatalf("GetGroupsForReport failed: %v", err)
+	}
+	if len(groups) != 1 {
+		t.Fatalf("expected 1 group, got %d", len(groups))
+	}
+	g := groups[0]
+
+	// The driver must appear in the Betreuende list exactly once.
+	driverCount := 0
+	for _, b := range g.Betreuende {
+		if b.Name == "Driver Max" {
+			driverCount++
+		}
+	}
+	if driverCount != 1 {
+		t.Errorf("expected Driver Max to appear exactly once in Betreuende, got %d times", driverCount)
+	}
+
+	// Both betreuende (driver + helper) must be present.
+	if len(g.Betreuende) != 2 {
+		t.Errorf("expected 2 Betreuende (driver + helper), got %d", len(g.Betreuende))
+	}
+
+	// Seat capacity check: totalPeople = Teilnehmende + Betreuende (driver counted once).
+	// The vehicle has 10 seats (including driver's seat), so 4+2=6 people fit fine.
+	totalPeople := len(g.Teilnehmende) + len(g.Betreuende)
+	totalSeats := 0
+	for _, f := range g.Fahrzeuge {
+		totalSeats += f.Sitzplaetze
+	}
+	if totalPeople > totalSeats {
+		t.Errorf("seat capacity exceeded: %d people, %d seats — driver was likely counted twice",
+			totalPeople, totalSeats)
+	}
+}

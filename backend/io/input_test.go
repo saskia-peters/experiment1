@@ -2,6 +2,7 @@ package io_test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	backendio "THW-JugendOlympiade/backend/io"
@@ -440,7 +441,8 @@ func TestReadStationsFromXLSX_ErrorWhenFileAbsent(t *testing.T) {
 
 func TestReadStationsFromXLSX_ReturnsEmptyWhenSheetAbsent(t *testing.T) {
 	dir := t.TempDir()
-	// File with only a Teilnehmende sheet — Stationen is absent, which is fine.
+	// File with only a Teilnehmende sheet — Stationen sheet is absent.
+	// Since stations are now required, this must return an error.
 	path := newXLSX(t, dir, "no_stationen", map[string][][]string{
 		models.SheetName: {
 			{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
@@ -448,11 +450,11 @@ func TestReadStationsFromXLSX_ReturnsEmptyWhenSheetAbsent(t *testing.T) {
 		},
 	})
 
-	rows, err := backendio.ReadStationsFromXLSX(path)
-	if err != nil {
-		t.Fatalf("expected no error when Stationen sheet is absent, got: %v", err)
+	_, err := backendio.ReadStationsFromXLSX(path)
+	if err == nil {
+		t.Fatal("expected error when Stationen sheet is absent, got nil")
 	}
-	if len(rows) != 0 {
-		t.Errorf("expected empty slice, got %d rows", len(rows))
+	if !strings.Contains(err.Error(), "Keine Stationen") {
+		t.Errorf("expected error about missing stations, got: %v", err)
 	}
 }

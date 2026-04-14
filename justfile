@@ -27,6 +27,10 @@ dev:
 build:
     {{wails}} build
 
+# Build a Windows binary without console window (output: build/bin/)
+build-win:
+    {{wails}} build -ldflags "-H windowsgui"
+
 # Build the distributable single-file binary (no console window, Windows GUI)
 # Hand this .exe to anyone — all assets, templates and default configs are embedded.
 dist:

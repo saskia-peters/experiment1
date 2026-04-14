@@ -102,12 +102,12 @@ function formatGroupContent(group) {
     }
 
     // Fahrzeuge section
+    html += '<h3 style="margin: 20px 0 10px 0; color: #555;">🚗 Fahrzeuge</h3>';
     if (group.Fahrzeuge && group.Fahrzeuge.length > 0) {
         const totalSeats = group.Fahrzeuge.reduce((sum, f) => sum + f.Sitzplaetze, 0);
         const totalPeople = (group.Teilnehmende ? group.Teilnehmende.length : 0)
                           + (group.Betreuende ? group.Betreuende.length : 0);
         const seatsClass = totalPeople > totalSeats ? 'seats-overloaded' : 'seats-ok';
-        html += '<h3 style="margin: 20px 0 10px 0; color: #555;">🚗 Fahrzeuge</h3>';
         html += '<table class="group-table fahrzeuge-table">';
         html += '<thead><tr><th>Bezeichnung</th><th>Funkrufname</th><th>Fahrer</th><th>Ortsverband</th><th>Sitzplätze</th></tr></thead><tbody>';
         group.Fahrzeuge.forEach(f => {
@@ -126,6 +126,8 @@ function formatGroupContent(group) {
             html += ' ⚠️ Übervoll um ' + (totalPeople - totalSeats);
         }
         html += '</div>';
+    } else {
+        html += '<p style="text-align: center; font-weight: bold; color: red;">Kein Fahrzeug!</p>';
     }
 
     // Statistics panel

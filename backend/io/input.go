@@ -236,30 +236,24 @@ func ReadStationsFromXLSX(filePath string) ([][]string, error) {
 	// Read all rows from the "Stationen" sheet
 	rows, err := f.GetRows(models.StationsSheetName)
 	if err != nil {
-		// If sheet doesn't exist, return empty slice (stations are optional)
-		log.Printf("Sheet '%s' not found or error reading: %v - stations are optional", models.StationsSheetName, err)
-		return [][]string{}, nil
+		return nil, fmt.Errorf("Keine Stationen vorhanden, bitte im XLSX einfügen.")
 	}
 
-	// Validate stations if present
-	if len(rows) > 0 {
-		// Check if there's at least a header
-		if len(rows) < 2 {
-			log.Printf("Warning: sheet '%s' has only header row, no station data", models.StationsSheetName)
-			return [][]string{}, nil
-		}
-
-		// Validate that each row has at least one column (station name)
-		validStationCount := 0
-		for i := 1; i < len(rows); i++ {
-			if len(rows[i]) > 0 && strings.TrimSpace(rows[i][0]) != "" {
-				validStationCount++
-			}
-		}
-
-		log.Printf("Successfully validated %d station rows", validStationCount)
+	if len(rows) < 2 {
+		return nil, fmt.Errorf("Keine Stationen vorhanden, bitte im XLSX einfügen.")
 	}
 
+	validStationCount := 0
+	for i := 1; i < len(rows); i++ {
+		if len(rows[i]) > 0 && strings.TrimSpace(rows[i][0]) != "" {
+			validStationCount++
+		}
+	}
+	if validStationCount == 0 {
+		return nil, fmt.Errorf("Keine Stationen vorhanden, bitte im XLSX einfügen.")
+	}
+
+	log.Printf("Successfully validated %d station rows", validStationCount)
 	return rows, nil
 }
 

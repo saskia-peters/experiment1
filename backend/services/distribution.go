@@ -571,11 +571,6 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 		return "", nil
 	}
 
-	// Reset betreuende lists
-	for i := range groups {
-		groups[i].Betreuende = nil
-	}
-
 	// Split into licensed / unlicensed, sorted for deterministic output
 	var licensed, unlicensed []models.Betreuende
 	for _, b := range betreuende {
@@ -598,8 +593,18 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 		return unlicensed[i].Name < unlicensed[j].Name
 	})
 
-	// licCount tracks how many licensed drivers are in each group
+	// licCount tracks how many licensed drivers are in each group.
+	// Pre-populate from existing Betreuende so that drivers already assigned
+	// by distributeVehicles (vehicle-aware path) are accounted for, preventing
+	// the phase-1 spread from piling an extra licensed person on top of a driver.
 	licCount := make([]int, len(groups))
+	for i, g := range groups {
+		for _, b := range g.Betreuende {
+			if b.Fahrerlaubnis {
+				licCount[i]++
+			}
+		}
+	}
 
 	// --- Phase 1: Spread licensed drivers one-per-group ---
 	for _, b := range licensed {

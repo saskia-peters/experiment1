@@ -17,6 +17,7 @@ export async function openFileDialog() {
         const uploadResult = await window.go.main.App.LoadFile();
         
         if (uploadResult.status === 'error') {
+            alert(uploadResult.message);
             setStatus('FEHLER: ' + uploadResult.message, 'error');
             output.style.display = 'block';
             tabs.style.display = 'none';

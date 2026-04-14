@@ -175,6 +175,16 @@ func LoadFile(ctx context.Context, db **sql.DB) map[string]interface{} {
 		}
 	}
 
+	// Validate stations before touching the database so that a missing Stationen
+	// sheet is reported immediately without destroying the existing data.
+	stationRows, err := io.ReadStationsFromXLSX(filePath)
+	if err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": err.Error(),
+		}
+	}
+
 	if *db != nil {
 		(*db).Close()
 		*db = nil
@@ -215,13 +225,6 @@ func LoadFile(ctx context.Context, db **sql.DB) map[string]interface{} {
 		}
 	}
 
-	stationRows, err := io.ReadStationsFromXLSX(filePath)
-	if err != nil {
-		return map[string]interface{}{
-			"status":  "error",
-			"message": fmt.Sprintf("Stationen konnten nicht gelesen werden: %v", err),
-		}
-	}
 	if err := database.InsertStations(*db, stationRows); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
