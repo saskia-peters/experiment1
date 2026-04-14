@@ -36,8 +36,8 @@ func TestDefault_ReturnsExpectedValues(t *testing.T) {
 	if cfg.Ausgabe.DBName != "data.db" {
 		t.Errorf("Ausgabe.DBName: want %q, got %q", "data.db", cfg.Ausgabe.DBName)
 	}
-	if cfg.Ausgabe.UrkunderStil != "text" {
-		t.Errorf("Ausgabe.UrkunderStil: want %q, got %q", "text", cfg.Ausgabe.UrkunderStil)
+	if cfg.Ausgabe.UrkunderStil != "picture" {
+		t.Errorf("Ausgabe.UrkunderStil: want %q, got %q", "picture", cfg.Ausgabe.UrkunderStil)
 	}
 }
 

@@ -558,7 +558,14 @@ window._gfxMoveElement = function (idx, dir) {
     if (!vd || !vd.elements) return;
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= vd.elements.length) return;
+    // Swap elements in the array
     [vd.elements[idx], vd.elements[newIdx]] = [vd.elements[newIdx], vd.elements[idx]];
+    // Also swap their y-coordinates so the spatial position on the preview (and in
+    // the generated PDF) reflects the move — otherwise both elements stay at their
+    // original y-positions and the preview looks unchanged.
+    const tempY = vd.elements[idx].y;
+    vd.elements[idx].y    = vd.elements[newIdx].y;
+    vd.elements[newIdx].y = tempY;
     const wasA = _gfxExpanded.has(idx), wasB = _gfxExpanded.has(newIdx);
     _gfxExpanded.delete(idx); _gfxExpanded.delete(newIdx);
     if (wasA) _gfxExpanded.add(newIdx);

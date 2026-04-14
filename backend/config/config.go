@@ -36,7 +36,7 @@ type AusgabeConfig struct {
 	PDFOrdner string `toml:"pdf_ordner"`
 	DBName    string `toml:"db_name"`
 	// UrkunderStil controls the participant certificate style.
-	// "text" (default): group members table. "picture": group photo.
+	// "picture" (default): group photo. "text": group members table.
 	UrkunderStil string `toml:"urkunden_stil"`
 	BilderOrdner string `toml:"bilder_ordner"`
 }
@@ -59,7 +59,7 @@ func Default() Config {
 		Ausgabe: AusgabeConfig{
 			PDFOrdner:    "pdfdocs",
 			DBName:       "data.db",
-			UrkunderStil: "text",
+			UrkunderStil: "picture",
 			BilderOrdner: "pictures",
 		},
 	}
@@ -112,7 +112,7 @@ pdf_ordner = "pdfdocs"
 # Nützlich, um verschiedene Veranstaltungen getrennt zu halten.
 db_name = "data.db"
 # Stil der Teilnehmer-Urkunden: "text" (Mitgliedertabelle) oder "picture" (Gruppenfoto)
-urkunden_stil = "text"
+urkunden_stil = "picture"
 # Unterordner mit Gruppenfotos (nur relevant bei urkunden_stil = "picture")
 # Dateinamen: group_picture_001.jpg, group_picture_002.jpg, ...
 bilder_ordner = "pictures"
