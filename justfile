@@ -58,9 +58,9 @@ docs-install:
 docs: docs-install
     {{uv}} run --project assets mkdocs build --config-file assets/mkdocs.yml --strict
 
-# Start a local live-reload documentation server (http://localhost:8000)
+# Start a local live-reload documentation server (http://localhost:7000)
 docs-serve: docs-install
-    {{uv}} run --project assets mkdocs serve --config-file assets/mkdocs.yml
+    {{uv}} run --project assets mkdocs serve --config-file assets/mkdocs.yml --dev-addr localhost:7000
 
 # Build docs and report any warnings
 docs-check: docs-install
