@@ -1254,7 +1254,7 @@
 <tr>
 <td>Datei-I/O</td>
 <td><code>backend/io/</code></td>
-<td>Excel-Import, PDF-Generierung</td>
+<td>Excel-Import, PDF-Generierung, Master-Excel-Konvertierung (<code>convert.go</code>)</td>
 </tr>
 <tr>
 <td>Modelle</td>
@@ -1290,17 +1290,19 @@
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>│   ├── dom.js              DOM-Refs, setStatus(), clearAllTabs()
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>│   └── utils.js            escapeHtml(), switchTab()
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>├── admin/
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>│   ├── file-handler.js     Datei-laden, Backup, Restore, Gruppenverteilung
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>│   └── config-editor.js    In-App TOML-Konfigurations-Editor
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>├── groups/
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>│   └── groups.js           Gruppen-Anzeige mit Tabs + Statistik
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>├── stations/
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>│   ├── stations.js         Ergebniseingabe, Dirty-Tracking, Matrix
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>│   └── scores.js           Einzelstation-Hilfsklassen
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>├── evaluations/
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>│   └── evaluations.js      Gruppen- + OV-Rankings
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>└── reports/
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    └── pdf-handlers.js     PDF-Generierungs-Wrapper
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>│   ├── file-handler.js     Datei-laden, Backup, Restore, Gruppenverteilung, Master-Excel-Konvertierung
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>│   ├── config-editor.js    In-App TOML-Konfigurations-Editor
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>│   ├── name-editor.js      Zweistufiger Dialog zur Namenskorrektur (OV-Auswahl → Inline-Editing)
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>│   └── cert-layout-editor.js  Zertifikat-Layout-Editor
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>├── groups/
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>│   └── groups.js           Gruppen-Anzeige mit Tabs + Statistik
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>├── stations/
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>│   ├── stations.js         Ergebniseingabe, Dirty-Tracking, Matrix
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>│   └── scores.js           Einzelstation-Hilfsklassen
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>├── evaluations/
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>│   └── evaluations.js      Gruppen- + OV-Rankings
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>└── reports/
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    └── pdf-handlers.js     PDF-Generierungs-Wrapper
 </span></code></pre></div>
 <p><strong>Abhängigkeitsfluss:</strong> Core (<code>dom</code>, <code>utils</code>) → Feature-Module → <code>app.js</code>-Orchestrator.</p>
 <p>Funktionen werden via <code>window.*</code> für <code>onclick</code>-Handler exponiert. Kein Bundler nötig — nativer ES6-Modulsupport des Browsers.</p>

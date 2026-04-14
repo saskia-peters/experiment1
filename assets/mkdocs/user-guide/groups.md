@@ -19,9 +19,17 @@ Nach erfolgreichem Excel-Import **"Gruppen zusammenstellen"** klicken.
 
     Jede Person kommt in die Gruppe mit dem **niedrigsten Malus**.
 
+### Fahrzeug-Verteilung
+
+Wenn Fahrzeuge importiert wurden, läuft vor der Betreuenden-Verteilung ein zusätzlicher Schritt:
+
+1. Fahrzeuge werden den Gruppen mit den wenigsten Gesamtsitzplätzen zugeordnet (Lastausgleich).
+2. Der Fahrer jedes Fahrzeugs (muss in der Betreuenden-Liste mit Fahrerlaubnis vorhanden sein) wird automatisch als Betreuende/r der Gruppe eingetragen.
+3. Anschließend werden die verbleibenden Betreuenden (ohne Fahrzeugzuweisung) wie unten beschrieben verteilt.
+
 ### Betreuende-Verteilung (vier Phasen)
 
-1. **Phase 1** — Personen mit Fahrerlaubnis gleichmäßig verteilen: eine Person pro Gruppe in Prioritätsreihenfolge.
+1. **Phase 1** — Personen mit Fahrerlaubnis gleichmäßig verteilen: eine Person pro Gruppe in Prioritätsreihenfolge. Bereits als Fahrer zugewiesene Personen werden dabei berücksichtigt.
 2. **Phase 2** — Personen ohne Fahrerlaubnis folgen ihrem Ortsverband: bevorzugt die Gruppe, die bereits eine Person mit FL aus demselben OV hat.
 3. **Phase 2b** — Neuausgleich: Personen ohne FL von der größten in die kleinste Gruppe verschieben, bis der Unterschied ≤ 1 ist.
 4. **Phase 3 (Sicherheitsnetz)** — Gruppen ohne Betreuende erhalten eine Person aus der größten Gruppe.
@@ -42,7 +50,8 @@ Die Verteilung wird trotzdem gespeichert. Durch Hinzufügen weiterer Betreuender
 **"Gruppen anzeigen"** öffnet die Tabellen-Ansicht. Jeder Tab zeigt:
 
 - Teilnehmende mit Alter, Geschlecht, Ortsverband
-- Betreuende mit Fahrerlaubnis-Status
+- Betreuende mit Fahrerlaubnis-Status (Fahrer eines Fahrzeugs erscheinen hier ebenfalls)
+- Fahrzeuge mit Fahrer, Sitzplätzen und Kapazitätsanzeige; bei fehlender Fahrzeugzuweisung: **„Kein Fahrzeug!"** (roter Hinweis)
 - Gruppenstatistik (Anzahl, Geschlechterverteilung, OV-Verteilung)
 
 ### Eingabeübersicht (Ergebnismatrix)

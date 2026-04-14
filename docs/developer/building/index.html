@@ -1272,9 +1272,10 @@
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nb">cd</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>go<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-v<span class="w"> </span>./...
 </span></code></pre></div>
 <h2 id="produktions-build">Produktions-Build<a class="headerlink" href="#produktions-build" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>just<span class="w"> </span>build
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># oder direkt:</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>wails<span class="w"> </span>build
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>just<span class="w"> </span>build<span class="w">        </span><span class="c1"># Entwicklungs-Binary mit Konsolenfenster</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>just<span class="w"> </span>build-win<span class="w">    </span><span class="c1"># Windows-Binary ohne Konsolenfenster (-H windowsgui)</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># oder direkt:</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>wails<span class="w"> </span>build
 </span></code></pre></div>
 <p>Ausgabe in <code>build/bin/</code>:</p>
 <table>
@@ -1299,6 +1300,10 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition tip">
+<p class="admonition-title">Windows ohne Konsolenfenster</p>
+<p>Für die Weitergabe an Endnutzer <code>just build-win</code> verwenden — das erzeugte <code>.exe</code> öffnet kein Konsolenfenster.</p>
+</div>
 <h2 id="dokumentation-generieren">Dokumentation generieren<a class="headerlink" href="#dokumentation-generieren" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>just<span class="w"> </span>docs<span class="w">          </span><span class="c1"># Dokumentation bauen (Ausgabe → docs/)</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>just<span class="w"> </span>docs-serve<span class="w">    </span><span class="c1"># Lokalen Dev-Server starten (http://localhost:8000)</span>

@@ -6,6 +6,25 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.4] — 2026-04-14
+
+### Hinzugefügt
+
+- Gruppen-Ansicht: Fahrzeug-Abschnitt wird jetzt **immer** angezeigt; bei Gruppen ohne zugewiesenes Fahrzeug erscheint der Hinweis **„Kein Fahrzeug!"** (rot, fett, zentriert).
+- justfile: Neues Build-Ziel `build-win` — erstellt ein Windows-Binary ohne Konsolenfenster (`-H windowsgui`).
+
+### Geändert
+
+- Excel-Import: Das Tabellenblatt `Stationen` ist jetzt **Pflicht**. Fehlt das Blatt oder enthält es keine Einträge, wird der Import abgelehnt und die Fehlermeldung „Keine Stationen vorhanden, bitte im XLSX einfügen." angezeigt — bevor die Datenbank verändert wird.
+- Excel-Import: Bei einem Ladefehler erscheint zusätzlich ein Modal-Fenster mit dem genauen Fehlertext.
+- Dokumentation: Spalte `Geschlecht` im Blatt `Teilnehmende` als manuell ausfüllbar gekennzeichnet (wird nicht automatisch aus dem Anmeldesystem übernommen).
+
+### Behoben
+
+- Gruppenverteilung (Fahrzeug-Pfad): Der Fahrer eines Fahrzeugs wurde nach der Fahrzeugzuweisung aus der Betreuenden-Liste entfernt. Grund war ein Reset der Betreuenden-Liste zu Beginn von `distributeBetreuende`. Der Fahrer erscheint nun korrekt in der Betreuenden-Sektion der Gruppe und wird bei der Sitzplatz-Prüfung genau einmal gezählt.
+
+---
+
 ## [0.1.3] — 2026-04-14
 
 ### Hinzugefügt

@@ -59,19 +59,21 @@ just test
 | `TestValidateHeaders_Valid` | Korrekte Header (positiv) |
 | `TestValidateHeaders_Invalid` | Falsche Header (negativ) |
 | `TestValidateParticipantRow` | Vollständige Zeilen-Validierung |
+| `TestReadStationsFromXLSX_NoStationsSheet` | Fehler bei fehlendem Stationen-Blatt |
 
-### Gruppenverteilung (`distribution_test.go`) — ~90 % Coverage
+### Gruppenverteilung (`services_test.go`) — ~90 % Coverage
 
 | Test | Szenario |
 |------|----------|
-| `TestDistribution_BasicFunctionality` | Standardverteilung |
-| `TestDistribution_EmptyParticipants` | Leere Eingabe |
-| `TestDistribution_GroupSizeLimit` | Einhaltung von `max_groesse` |
-| `TestDistribution_SingleParticipant` | Edge Case: 1 Person |
-| `TestDistribution_ExactlyMaxSize` | Edge Case: genau 8 Personen |
-| `TestDistribution_StatisticsTracking` | Statistikgenauigkeit |
-| `TestDistribution_DiversityScoring` | Diversity-Algorithmus |
-| `TestDistribution_ConsistentOutput` | Deterministische Ergebnisse |
+| `TestCreateBalancedGroups_EmptyDB` | Leere Datenbank |
+| `TestCreateBalancedGroups_GroupCountCorrect` | Korrekte Gruppenanzahl |
+| `TestCreateBalancedGroups_NoGroupExceedsMaxSize` | Einhaltung von `max_groesse` |
+| `TestCreateBalancedGroups_PreGroupMembersStayTogether` | PreGroup-Zusammenhalt |
+| `TestCreateBalancedGroups_WithBetreuende` | Betreuenden-Zuweisung |
+| `TestCreateBalancedGroups_ReroutingClearsOldGroups` | Neuverteilung ersetzt alte Gruppen |
+| `TestCreateBalancedGroups_AllParticipantsAssigned` | Vollständige Zuweisung |
+| `TestCreateBalancedGroups_FewerLicensedDriversThanGroups_ReturnsWarning` | Warnmeldung bei zu wenig FL |
+| `TestCreateBalancedGroups_DriverAppearsInBetreuendeNotDoubled` | Fahrer nur einmal in Betreuenden, kein doppelter Sitzplatzentzug |
 
 ## Neue Tests schreiben
 

@@ -875,10 +875,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#gruppenverteilung-distribution_testgo-90-coverage" class="md-nav__link">
+  <a href="#gruppenverteilung-services_testgo-90-coverage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gruppenverteilung (distribution_test.go) — ~90 % Coverage
+        Gruppenverteilung (services_test.go) — ~90 % Coverage
       
     </span>
   </a>
@@ -1072,10 +1072,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#gruppenverteilung-distribution_testgo-90-coverage" class="md-nav__link">
+  <a href="#gruppenverteilung-services_testgo-90-coverage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gruppenverteilung (distribution_test.go) — ~90 % Coverage
+        Gruppenverteilung (services_test.go) — ~90 % Coverage
       
     </span>
   </a>
@@ -1201,9 +1201,13 @@
 <td><code>TestValidateParticipantRow</code></td>
 <td>Vollständige Zeilen-Validierung</td>
 </tr>
+<tr>
+<td><code>TestReadStationsFromXLSX_NoStationsSheet</code></td>
+<td>Fehler bei fehlendem Stationen-Blatt</td>
+</tr>
 </tbody>
 </table>
-<h3 id="gruppenverteilung-distribution_testgo-90-coverage">Gruppenverteilung (<code>distribution_test.go</code>) — ~90 % Coverage<a class="headerlink" href="#gruppenverteilung-distribution_testgo-90-coverage" title="Permanent link">&para;</a></h3>
+<h3 id="gruppenverteilung-services_testgo-90-coverage">Gruppenverteilung (<code>services_test.go</code>) — ~90 % Coverage<a class="headerlink" href="#gruppenverteilung-services_testgo-90-coverage" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1213,36 +1217,40 @@
 </thead>
 <tbody>
 <tr>
-<td><code>TestDistribution_BasicFunctionality</code></td>
-<td>Standardverteilung</td>
+<td><code>TestCreateBalancedGroups_EmptyDB</code></td>
+<td>Leere Datenbank</td>
 </tr>
 <tr>
-<td><code>TestDistribution_EmptyParticipants</code></td>
-<td>Leere Eingabe</td>
+<td><code>TestCreateBalancedGroups_GroupCountCorrect</code></td>
+<td>Korrekte Gruppenanzahl</td>
 </tr>
 <tr>
-<td><code>TestDistribution_GroupSizeLimit</code></td>
+<td><code>TestCreateBalancedGroups_NoGroupExceedsMaxSize</code></td>
 <td>Einhaltung von <code>max_groesse</code></td>
 </tr>
 <tr>
-<td><code>TestDistribution_SingleParticipant</code></td>
-<td>Edge Case: 1 Person</td>
+<td><code>TestCreateBalancedGroups_PreGroupMembersStayTogether</code></td>
+<td>PreGroup-Zusammenhalt</td>
 </tr>
 <tr>
-<td><code>TestDistribution_ExactlyMaxSize</code></td>
-<td>Edge Case: genau 8 Personen</td>
+<td><code>TestCreateBalancedGroups_WithBetreuende</code></td>
+<td>Betreuenden-Zuweisung</td>
 </tr>
 <tr>
-<td><code>TestDistribution_StatisticsTracking</code></td>
-<td>Statistikgenauigkeit</td>
+<td><code>TestCreateBalancedGroups_ReroutingClearsOldGroups</code></td>
+<td>Neuverteilung ersetzt alte Gruppen</td>
 </tr>
 <tr>
-<td><code>TestDistribution_DiversityScoring</code></td>
-<td>Diversity-Algorithmus</td>
+<td><code>TestCreateBalancedGroups_AllParticipantsAssigned</code></td>
+<td>Vollständige Zuweisung</td>
 </tr>
 <tr>
-<td><code>TestDistribution_ConsistentOutput</code></td>
-<td>Deterministische Ergebnisse</td>
+<td><code>TestCreateBalancedGroups_FewerLicensedDriversThanGroups_ReturnsWarning</code></td>
+<td>Warnmeldung bei zu wenig FL</td>
+</tr>
+<tr>
+<td><code>TestCreateBalancedGroups_DriverAppearsInBetreuendeNotDoubled</code></td>
+<td>Fahrer nur einmal in Betreuenden, kein doppelter Sitzplatzentzug</td>
 </tr>
 </tbody>
 </table>

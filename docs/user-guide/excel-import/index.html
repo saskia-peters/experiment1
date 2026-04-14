@@ -567,10 +567,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tabellenblatt-3-stationen-optional" class="md-nav__link">
+  <a href="#tabellenblatt-3-stationen-pflicht" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tabellenblatt 3: Stationen (optional)
+        Tabellenblatt 3: Stationen (Pflicht)
       
     </span>
   </a>
@@ -585,6 +585,56 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#master-excel-umwandeln-admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Master-Excel umwandeln (Admin)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Master-Excel umwandeln (Admin)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vorgehen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vorgehen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erwartetes-quellformat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Erwartetes Quellformat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zuordnungsregeln" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zuordnungsregeln
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1043,10 +1093,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tabellenblatt-3-stationen-optional" class="md-nav__link">
+  <a href="#tabellenblatt-3-stationen-pflicht" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tabellenblatt 3: Stationen (optional)
+        Tabellenblatt 3: Stationen (Pflicht)
       
     </span>
   </a>
@@ -1061,6 +1111,56 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#master-excel-umwandeln-admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Master-Excel umwandeln (Admin)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Master-Excel umwandeln (Admin)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vorgehen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vorgehen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erwartetes-quellformat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Erwartetes Quellformat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zuordnungsregeln" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zuordnungsregeln
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1137,7 +1237,7 @@
 <tr>
 <td><code>Geschlecht</code></td>
 <td>✅ Ja</td>
-<td><code>M</code>, <code>W</code> oder <code>D</code> (auch ausgeschrieben)</td>
+<td><code>M</code>, <code>W</code> oder <code>D</code> (auch ausgeschrieben) — <strong>muss manuell in der XLSX-Datei eingetragen werden</strong>, da dieser Wert beim Export aus dem Anmeldesystem nicht automatisch übernommen wird</td>
 </tr>
 <tr>
 <td><code>PreGroup</code></td>
@@ -1255,8 +1355,12 @@
 </tbody>
 </table>
 <hr />
-<h2 id="tabellenblatt-3-stationen-optional">Tabellenblatt 3: <code>Stationen</code> (optional)<a class="headerlink" href="#tabellenblatt-3-stationen-optional" title="Permanent link">&para;</a></h2>
+<h2 id="tabellenblatt-3-stationen-pflicht">Tabellenblatt 3: <code>Stationen</code> (Pflicht)<a class="headerlink" href="#tabellenblatt-3-stationen-pflicht" title="Permanent link">&para;</a></h2>
 <p>Stationsnamen für die Ergebniseingabe. Zeile 1 = Kopfzeile, ab Zeile 2 ein Stationsname pro Zeile.</p>
+<div class="admonition warning">
+<p class="admonition-title">Stationen erforderlich</p>
+<p>Das Tabellenblatt <code>Stationen</code> <strong>muss</strong> mindestens einen Eintrag enthalten. Fehlt das Blatt oder ist es leer, wird der Import abgelehnt und eine Fehlermeldung angezeigt.</p>
+</div>
 <hr />
 <h2 id="import-durchfuhren">Import durchführen<a class="headerlink" href="#import-durchfuhren" title="Permanent link">&para;</a></h2>
 <ol>
@@ -1264,6 +1368,145 @@
 <li>XLSX-Datei im Dateidialog auswählen.</li>
 <li>Grüne Statusmeldung = Erfolg. Rote Meldung = Validierungsfehler mit Zeilenangabe.</li>
 </ol>
+<hr />
+<h2 id="master-excel-umwandeln-admin">Master-Excel umwandeln (Admin)<a class="headerlink" href="#master-excel-umwandeln-admin" title="Permanent link">&para;</a></h2>
+<p>Liegt die Teilnehmerliste in einem internen Quellformat vor (z. B. direkt aus dem Anmeldesystem), kann der Admin-Bereich sie automatisch in das oben beschriebene Import-Format umwandeln.</p>
+<h3 id="vorgehen">Vorgehen<a class="headerlink" href="#vorgehen" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Admin → „Master-Excel umwandeln"</strong> klicken.</li>
+<li>Im Dialog <strong>Veranstaltungstyp</strong> wählen: <strong>Jugend</strong> oder <strong>Mini</strong>.</li>
+<li>Quell-XLSX-Datei auswählen.</li>
+<li>Speicherort für die erzeugte Ziel-XLSX angeben.</li>
+<li>Die erzeugte Datei kann direkt mit <strong>„Excel einlesen"</strong> importiert werden.</li>
+</ol>
+<h3 id="erwartetes-quellformat">Erwartetes Quellformat<a class="headerlink" href="#erwartetes-quellformat" title="Permanent link">&para;</a></h3>
+<p><strong>Tabellenblatt <code>Teilnehmende</code></strong> (Quell-Excel):</p>
+<table>
+<thead>
+<tr>
+<th>Spalte</th>
+<th>Beschreibung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Vorname</code></td>
+<td>Vorname</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td>Nachname — wird mit <code>Vorname</code> zu einem Vollnamen zusammengeführt</td>
+</tr>
+<tr>
+<td><code>Betreuende</code></td>
+<td><code>x</code> = Betreuungsperson</td>
+</tr>
+<tr>
+<td><code>JuHe</code></td>
+<td><code>x</code> = Jugend-Teilnehmende (nur für Jugend-Veranstaltung ausgewertet)</td>
+</tr>
+<tr>
+<td><code>Mini</code></td>
+<td><code>x</code> = Mini-Teilnehmende oder Mini-Betreuende</td>
+</tr>
+<tr>
+<td><code>Alter</code></td>
+<td>Alter als ganze Zahl</td>
+</tr>
+<tr>
+<td><code>Ortsverband</code></td>
+<td>Lokale Gliederung</td>
+</tr>
+<tr>
+<td><code>Fahrerlaubnis</code></td>
+<td>Jeder nicht-leere Wert außer <code>"/"</code> gilt als gültige Fahrerlaubnis</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabellenblatt <code>Fahrzeuge</code></strong> (nur Jugend-Veranstaltung):</p>
+<table>
+<thead>
+<tr>
+<th>Spalte</th>
+<th>Beschreibung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Fahrzeug</code></td>
+<td>Fahrzeugbezeichnung</td>
+</tr>
+<tr>
+<td><code>Ortsverband</code></td>
+<td>Lokale Gliederung</td>
+</tr>
+<tr>
+<td><code>Funkrufname</code></td>
+<td>Funkrufname</td>
+</tr>
+<tr>
+<td><code>Fahrer</code></td>
+<td>Name des Fahrers</td>
+</tr>
+<tr>
+<td><code>Anzahl Plätze incl. Fahrende</code></td>
+<td>Sitzplatzanzahl als ganze Zahl</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zuordnungsregeln">Zuordnungsregeln<a class="headerlink" href="#zuordnungsregeln" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Jugend</label><label for="__tabbed_1_2">Mini</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<table>
+<thead>
+<tr>
+<th>Quellzeile</th>
+<th>Zielblatt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JuHe = x</code></td>
+<td><code>Teilnehmende</code></td>
+</tr>
+<tr>
+<td><code>Betreuende = x</code> UND <code>Mini</code> leer</td>
+<td><code>Betreuende</code></td>
+</tr>
+<tr>
+<td>Alle Fahrzeug-Zeilen</td>
+<td><code>Fahrzeuge</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tabbed-block">
+<table>
+<thead>
+<tr>
+<th>Quellzeile</th>
+<th>Zielblatt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Mini = x</code> UND <code>Betreuende</code> leer</td>
+<td><code>Teilnehmende</code></td>
+</tr>
+<tr>
+<td><code>Betreuende = x</code> UND <code>Mini = x</code></td>
+<td><code>Betreuende</code></td>
+</tr>
+<tr>
+<td><em>(kein Fahrzeugblatt)</em></td>
+<td><code>Fahrzeuge</code> enthält nur Kopfzeile</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Bestehende Daten werden überschrieben</p>
 <p>Ein erneuter Import ersetzt <strong>alle</strong> Daten (inkl. Gruppen und Ergebnisse). Vorher Datenbank sichern.</p>

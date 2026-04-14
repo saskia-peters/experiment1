@@ -64,7 +64,8 @@ cd test && go test -v ./...
 ## Produktions-Build
 
 ```bash
-just build
+just build        # Entwicklungs-Binary mit Konsolenfenster
+just build-win    # Windows-Binary ohne Konsolenfenster (-H windowsgui)
 # oder direkt:
 wails build
 ```
@@ -72,10 +73,13 @@ wails build
 Ausgabe in `build/bin/`:
 
 | Plattform | Ausgabe |
-|-----------|---------|
+|-----------|--------|
 | Windows | `build/bin/THW-JugendOlympiade.exe` |
 | macOS | `build/bin/THW-JugendOlympiade.app` |
 | Linux | `build/bin/THW-JugendOlympiade` |
+
+!!! tip "Windows ohne Konsolenfenster"
+    Für die Weitergabe an Endnutzer `just build-win` verwenden — das erzeugte `.exe` öffnet kein Konsolenfenster.
 
 ## Dokumentation generieren
 
