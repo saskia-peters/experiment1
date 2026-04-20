@@ -24,7 +24,27 @@ type VeranstaltungConfig struct {
 }
 
 type GruppenConfig struct {
-	MaxGroesse int `toml:"max_groesse"`
+	MaxGroesse   int      `toml:"max_groesse"`
+	Gruppennamen []string `toml:"gruppennamen"`
+}
+
+// DefaultGruppennamen contains the standard list of group names used when no
+// custom names are configured.
+var DefaultGruppennamen = []string{
+	"Hebekissen", "Rüstholz", "Tauchpumpe", "Schmiege", "Zimmermannswinkel",
+	"Pressluftflasche", "Vorschlaghammer", "Beil", "Zahnstangenwinde", "Stativ",
+	"Rundschlinge", "Bandschlinge", "Latthammer", "Abbruchhammer", "Steckleiter",
+	"Bergetuch", "Schleifkorb", "Rettungsweste", "Pylone", "Leitungsroller",
+	"Stangenschlangenbohrer", "Handkärrele",
+}
+
+// GetGroupName resolves the display name for a given 1-based group number.
+// Falls back to "Gruppe N" if the group number exceeds the name list length.
+func GetGroupName(groupID int, names []string) string {
+	if groupID >= 1 && groupID <= len(names) {
+		return names[groupID-1]
+	}
+	return fmt.Sprintf("Gruppe %d", groupID)
 }
 
 type ErgebnisseConfig struct {
@@ -50,7 +70,8 @@ func Default() Config {
 			Ort:  "",
 		},
 		Gruppen: GruppenConfig{
-			MaxGroesse: 8,
+			MaxGroesse:   8,
+			Gruppennamen: DefaultGruppennamen,
 		},
 		Ergebnisse: ErgebnisseConfig{
 			MinPunkte: 100,
@@ -98,6 +119,16 @@ ort = ""
 [gruppen]
 # Maximale Anzahl Teilnehmende pro Gruppe
 max_groesse = 8
+# Namen der Gruppen (in Reihenfolge: Gruppe 1, Gruppe 2, …)
+# Diese Namen werden in der Anwendung und auf Urkunden angezeigt.
+# Wenn weniger Namen als Gruppen vorhanden sind, wird "Gruppe N" als Fallback verwendet.
+gruppennamen = [
+  "Hebekissen", "Rüstholz", "Tauchpumpe", "Schmiege", "Zimmermannswinkel",
+  "Pressluftflasche", "Vorschlaghammer", "Beil", "Zahnstangenwinde", "Stativ",
+  "Rundschlinge", "Bandschlinge", "Latthammer", "Abbruchhammer", "Steckleiter",
+  "Bergetuch", "Schleifkorb", "Rettungsweste", "Pylone", "Leitungsroller",
+  "Stangenschlangenbohrer", "Handkärrele",
+]
 
 [ergebnisse]
 # Kleinstes erlaubtes Ergebnis pro Station

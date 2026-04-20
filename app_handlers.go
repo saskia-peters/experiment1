@@ -107,7 +107,7 @@ func (a *App) DistributeGroups() map[string]interface{} {
 // --- Queries ---
 
 func (a *App) ShowGroups() map[string]interface{} {
-	return handlers.ShowGroups(a.db)
+	return handlers.ShowGroups(a.db, a.cfg.Gruppen.Gruppennamen)
 }
 
 func (a *App) ShowStations() map[string]interface{} {
@@ -115,7 +115,7 @@ func (a *App) ShowStations() map[string]interface{} {
 }
 
 func (a *App) GetAllGroups() map[string]interface{} {
-	return handlers.GetAllGroups(a.db)
+	return handlers.GetAllGroups(a.db, a.cfg.Gruppen.Gruppennamen)
 }
 
 func (a *App) AssignScore(groupID int, stationID int, score int) map[string]interface{} {
@@ -123,7 +123,7 @@ func (a *App) AssignScore(groupID int, stationID int, score int) map[string]inte
 }
 
 func (a *App) GetGroupEvaluations() map[string]interface{} {
-	return handlers.GetGroupEvaluations(a.db)
+	return handlers.GetGroupEvaluations(a.db, a.cfg.Gruppen.Gruppennamen)
 }
 
 func (a *App) GetOrtsverbandEvaluations() map[string]interface{} {
@@ -147,7 +147,7 @@ func (a *App) GenerateOrtsverbandEvaluationPDF() map[string]interface{} {
 // --- Certificates ---
 
 func (a *App) GenerateParticipantCertificates() map[string]interface{} {
-	return handlers.GenerateParticipantCertificates(a.db, a.cfg.Veranstaltung.Jahr, a.cfg.Ausgabe.UrkunderStil, a.cfg.Ausgabe.BilderOrdner, a.cfg.Veranstaltung.Ort)
+	return handlers.GenerateParticipantCertificates(a.db, a.cfg.Veranstaltung.Jahr, a.cfg.Ausgabe.UrkunderStil, a.cfg.Ausgabe.BilderOrdner, a.cfg.Veranstaltung.Ort, a.cfg.Gruppen.Gruppennamen)
 }
 
 func (a *App) GenerateOrtsverbandCertificates() map[string]interface{} {

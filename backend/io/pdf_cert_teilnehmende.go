@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/models"
 
@@ -18,7 +19,7 @@ import (
 // pictureDir: directory containing group photos named group_picture_XXX.jpg.
 // If templates/background_urkunde_teilnehmende.png exists it is used as background.
 // Layout positions are loaded from certificate_layout.toml (created with defaults on first run).
-func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string, pictureDir string, eventLocation string) error {
+func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string, pictureDir string, eventLocation string, groupNames []string) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
 	}
@@ -78,6 +79,7 @@ func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string
 		rank := groupRanks[group.GroupID]
 		rankText := certRankLabel(rank)
 		picturePath := groupPicturePath(pictureDir, group.GroupID)
+		groupName := config.GetGroupName(group.GroupID, groupNames)
 
 		for _, participant := range group.Teilnehmende {
 			pdf.AddPage()
@@ -90,6 +92,7 @@ func GenerateParticipantCertificates(db *sql.DB, eventYear int, certStyle string
 				Name:          participant.Name,
 				Ortsverband:   participant.Ortsverband,
 				GroupID:       group.GroupID,
+				GroupName:     groupName,
 				RankText:      rankText,
 				PicturePath:   picturePath,
 				Members:       group.Teilnehmende,

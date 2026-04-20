@@ -44,6 +44,7 @@ type Fahrzeug struct {
 // Group represents a group of participants
 type Group struct {
 	GroupID      int
+	GroupName    string
 	Teilnehmende []Teilnehmende
 	Betreuende   []Betreuende
 	Fahrzeuge    []Fahrzeug
@@ -68,6 +69,7 @@ type Station struct {
 // GroupEvaluation represents a group's total score across all stations
 type GroupEvaluation struct {
 	GroupID      int
+	GroupName    string
 	TotalScore   int
 	StationCount int
 }

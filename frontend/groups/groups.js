@@ -44,7 +44,7 @@ function renderGroupTabs(groups) {
         // Create tab button
         const button = document.createElement('button');
         button.className = 'tab-button' + (index === 0 ? ' active' : '');
-        button.textContent = 'Gruppe ' + group.GroupID;
+        button.textContent = group.GroupName ? group.GroupName + ' (Gr. ' + group.GroupID + ')' : 'Gruppe ' + group.GroupID;
         button.onclick = () => switchTab(index, tabButtons, tabContents);
         tabButtons.appendChild(button);
         
@@ -57,8 +57,9 @@ function renderGroupTabs(groups) {
 }
 
 function formatGroupContent(group) {
+    const groupLabel = group.GroupName ? group.GroupName + ' (Gruppe ' + group.GroupID + ')' : 'Gruppe ' + group.GroupID;
     let html = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">';
-    html += '<h2 class="group-title" style="margin: 0;">Gruppe ' + group.GroupID + '</h2>';
+    html += '<h2 class="group-title" style="margin: 0;">' + escapeHtml(groupLabel) + '</h2>';
     html += '<button onclick="window.handleShowStationsForGroup(' + group.GroupID + ')" class="btn-stations">📝 Ergebniseingabe</button>';
     html += '</div>';
     

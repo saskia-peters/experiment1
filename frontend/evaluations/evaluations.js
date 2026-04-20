@@ -87,9 +87,10 @@ function renderGroupEvaluations(evaluations) {
     evaluations.forEach((evalItem, index) => {
         const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
         const rowClass = index < 3 ? 'podium-row' : '';
+        const groupLabel = evalItem.GroupName ? evalItem.GroupName + ' (Gr. ' + evalItem.GroupID + ')' : 'Gruppe ' + evalItem.GroupID;
         html += '<tr class="' + rowClass + '">';
         html += '<td class="rank-cell">' + rankEmoji + '</td>';
-        html += '<td class="group-cell">Gruppe ' + evalItem.GroupID + '</td>';
+        html += '<td class="group-cell">' + escapeHtml(groupLabel) + '</td>';
         html += '<td class="station-count-cell">' + evalItem.StationCount + '</td>';
         html += '<td class="total-score-cell">' + evalItem.TotalScore + '</td>';
         html += '</tr>';
@@ -116,17 +117,18 @@ function renderGroupEvaluations(evaluations) {
     html += '</div>';
     
     // Highest score
+    const topLabel = evaluations[0].GroupName ? evaluations[0].GroupName + ' (Gr. ' + evaluations[0].GroupID + ')' : 'Gruppe ' + evaluations[0].GroupID;
     html += '<div class="stat-item">';
     html += '<strong>Höchstes Ergebnis</strong>';
-    html += '<span>' + evaluations[0].TotalScore + ' (Gruppe ' + evaluations[0].GroupID + ')</span>';
+    html += '<span>' + evaluations[0].TotalScore + ' (' + escapeHtml(topLabel) + ')</span>';
     html += '</div>';
-    
+
     // Lowest score
     const lastEval = evaluations[evaluations.length - 1];
+    const bottomLabel = lastEval.GroupName ? lastEval.GroupName + ' (Gr. ' + lastEval.GroupID + ')' : 'Gruppe ' + lastEval.GroupID;
     html += '<div class="stat-item">';
     html += '<strong>Niedrigstes Ergebnis</strong>';
-    html += '<span>' + lastEval.TotalScore + ' (Gruppe ' + lastEval.GroupID + ')</span>';
-    html += '</div>';
+    html += '<span>' + lastEval.TotalScore + ' (' + escapeHtml(bottomLabel) + ')</span>';
     
     html += '</div></div>';
     

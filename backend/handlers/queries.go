@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 )
 
 // ShowGroups retrieves and returns groups from the database.
-func ShowGroups(db *sql.DB) map[string]interface{} {
+func ShowGroups(db *sql.DB, groupNames []string) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -27,6 +28,9 @@ func ShowGroups(db *sql.DB) map[string]interface{} {
 			"status":  "error",
 			"message": "Keine Gruppen gefunden. Bitte zuerst eine Datei laden.",
 		}
+	}
+	for i := range groups {
+		groups[i].GroupName = config.GetGroupName(groups[i].GroupID, groupNames)
 	}
 	return map[string]interface{}{
 		"status": "success",
@@ -63,8 +67,14 @@ func ShowStations(db *sql.DB) map[string]interface{} {
 	}
 }
 
-// GetAllGroups retrieves all group IDs from the database.
-func GetAllGroups(db *sql.DB) map[string]interface{} {
+// GroupInfo bundles a group ID with its display name for the frontend.
+type GroupInfo struct {
+	GroupID   int    `json:"GroupID"`
+	GroupName string `json:"GroupName"`
+}
+
+// GetAllGroups retrieves all group IDs from the database and attaches display names.
+func GetAllGroups(db *sql.DB, groupNames []string) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -78,9 +88,16 @@ func GetAllGroups(db *sql.DB) map[string]interface{} {
 			"message": fmt.Sprintf("Gruppen konnten nicht abgerufen werden: %v", err),
 		}
 	}
+	infos := make([]GroupInfo, len(groupIDs))
+	for i, id := range groupIDs {
+		infos[i] = GroupInfo{
+			GroupID:   id,
+			GroupName: config.GetGroupName(id, groupNames),
+		}
+	}
 	return map[string]interface{}{
 		"status": "success",
-		"groups": groupIDs,
+		"groups": infos,
 	}
 }
 
@@ -111,7 +128,7 @@ func AssignScore(db *sql.DB, groupID, stationID, score, minPunkte, maxPunkte int
 }
 
 // GetGroupEvaluations retrieves all groups with their total scores ranked high to low.
-func GetGroupEvaluations(db *sql.DB) map[string]interface{} {
+func GetGroupEvaluations(db *sql.DB, groupNames []string) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -130,6 +147,9 @@ func GetGroupEvaluations(db *sql.DB) map[string]interface{} {
 			"status":  "error",
 			"message": "Keine Gruppen mit Ergebnissen gefunden.",
 		}
+	}
+	for i := range evaluations {
+		evaluations[i].GroupName = config.GetGroupName(evaluations[i].GroupID, groupNames)
 	}
 	return map[string]interface{}{
 		"status":      "success",

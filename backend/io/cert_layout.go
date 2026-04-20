@@ -666,6 +666,7 @@ type CertContext struct {
 	Name          string // participant name (empty for OV certs)
 	Ortsverband   string
 	GroupID       int
+	GroupName     string                // display name for the group (e.g. "Hebekissen")
 	RankText      string
 	PicturePath   string                // group photo path (picture style)
 	Members       []models.Teilnehmende // group members (text style)
@@ -797,6 +798,9 @@ func resolveDynamicField(field string, ctx CertContext) string {
 	case "ortsverband":
 		return enc(fmt.Sprintf("Ortsverband %s", ctx.Ortsverband))
 	case "group":
+		if ctx.GroupName != "" {
+			return enc(ctx.GroupName)
+		}
 		return fmt.Sprintf("Gruppe %d", ctx.GroupID)
 	case "rank":
 		return enc(ctx.RankText)

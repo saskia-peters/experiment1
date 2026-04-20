@@ -13,6 +13,16 @@ ort = "Singen am Hohentwiel"
 [gruppen]
 # Maximale Anzahl Teilnehmende pro Gruppe
 max_groesse = 8
+# Namen der Gruppen (in Reihenfolge: Gruppe 1, Gruppe 2, …)
+# Diese Namen werden in der Anwendung und auf Urkunden angezeigt.
+# Wenn weniger Namen als Gruppen vorhanden sind, wird "Gruppe N" als Fallback verwendet.
+gruppennamen = [
+  "Hebekissen", "Rüstholz", "Tauchpumpe", "Schmiege", "Zimmermannswinkel",
+  "Pressluftflasche", "Vorschlaghammer", "Beil", "Zahnstangenwinde", "Stativ",
+  "Rundschlinge", "Bandschlinge", "Latthammer", "Abbruchhammer", "Steckleiter",
+  "Bergetuch", "Schleifkorb", "Rettungsweste", "Pylone", "Leitungsroller",
+  "Stangenschlangenbohrer", "Handkärrele",
+]
 
 [ergebnisse]
 # Kleinstes erlaubtes Ergebnis pro Station

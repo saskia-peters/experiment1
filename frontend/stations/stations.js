@@ -95,6 +95,12 @@ function renderGroupBasedEntry(stations, groups, preselectedGroupID = null, focu
     window.currentStations = stations;
     window.currentGroups = groups;
     
+    // Helper: look up the display label for a group ID
+    function groupLabel(groupID) {
+        const g = groups.find(x => x.GroupID === groupID);
+        return g && g.GroupName ? g.GroupName + ' (Gr. ' + groupID + ')' : 'Gruppe ' + groupID;
+    }
+    
     // Create main container
     const container = document.createElement('div');
     container.className = 'results-entry-container';
@@ -106,9 +112,10 @@ function renderGroupBasedEntry(stations, groups, preselectedGroupID = null, focu
     html += '<label class="group-selector-label">Gruppe auswählen:</label>';
     html += '<select id="group-selector" class="group-selector">';
     html += '<option value="">Bitte wählen...</option>';
-    groups.forEach(groupID => {
-        const selected = groupID === preselectedGroupID ? ' selected' : '';
-        html += '<option value="' + groupID + '"' + selected + '>Gruppe ' + groupID + '</option>';
+    groups.forEach(g => {
+        const selected = g.GroupID === preselectedGroupID ? ' selected' : '';
+        const label = g.GroupName ? g.GroupName + ' (Gr. ' + g.GroupID + ')' : 'Gruppe ' + g.GroupID;
+        html += '<option value="' + g.GroupID + '"' + selected + '>' + label + '</option>';
     });
     html += '</select>';
     html += '</div>';
@@ -148,11 +155,14 @@ function renderGroupBasedEntry(stations, groups, preselectedGroupID = null, focu
 function renderStationTable(groupID, stations) {
     currentGroupID = groupID;
     savedScoreMap = {};
-    setStatus('Gruppe ' + groupID + ' – Ergebnisse eingeben', 'info');
+    const groups = window.currentGroups || [];
+    const g = groups.find(x => x.GroupID === groupID);
+    const label = g && g.GroupName ? g.GroupName + ' (Gruppe ' + groupID + ')' : 'Gruppe ' + groupID;
+    setStatus(label + ' – Ergebnisse eingeben', 'info');
     const container = document.getElementById('results-table-container');
     if (!container) return;
     
-    let html = '<h3 class="results-table-header">🏆 Ergebnisse für Gruppe ' + groupID + '</h3>';
+    let html = '<h3 class="results-table-header">🏆 Ergebnisse für ' + escapeHtml(label) + '</h3>';
     
     // Create table
     html += '<table class="group-table results-table">';
@@ -327,7 +337,10 @@ window.saveAllScores = async function(groupID) {
     }
     if (count === 0) { alert('Keine Ergebnisse zum Speichern eingegeben.'); return; }
 
-    const confirmed = confirm('Möchten Sie ' + count + ' Ergebnis(se) für Gruppe ' + groupID + ' speichern?');
+    const _groups = window.currentGroups || [];
+    const _g = _groups.find(x => x.GroupID === groupID);
+    const _label = _g && _g.GroupName ? _g.GroupName + ' (Gruppe ' + groupID + ')' : 'Gruppe ' + groupID;
+    const confirmed = confirm('Möchten Sie ' + count + ' Ergebnis(se) für ' + _label + ' speichern?');
     if (!confirmed) return;
 
     setStatus('Speichere alle Ergebnisse...', 'info');
@@ -369,10 +382,13 @@ function showUnsavedWarning(groupSelector, stations) {
 
     const overlay = document.createElement('div');
     overlay.className = 'unsaved-modal-overlay';
+    const groups = window.currentGroups || [];
+    const g = groups.find(x => x.GroupID === currentGroupID);
+    const unsavedLabel = g && g.GroupName ? g.GroupName + ' (Gruppe ' + currentGroupID + ')' : 'Gruppe ' + currentGroupID;
     overlay.innerHTML =
         '<div class="unsaved-modal">' +
             '<h3>&#9888;&#65039; Ungespeicherte Ergebnisse</h3>' +
-            '<p>Für <strong>Gruppe ' + currentGroupID + '</strong> gibt es Ergebnisse, die noch nicht ' +
+            '<p>Für <strong>' + escapeHtml(unsavedLabel) + '</strong> gibt es Ergebnisse, die noch nicht ' +
             'gespeichert wurden. Möchten Sie trotzdem wechseln oder zuerst alle Ergebnisse speichern?</p>' +
             '<div class="unsaved-modal-buttons">' +
                 '<button class="btn-modal-discard" id="modal-discard">Ohne Speichern wechseln</button>' +
@@ -479,8 +495,9 @@ function renderInputOverview(stations, groups) {
     html += '<th class="overview-th-gruppe-label" colspan="' + groups.length + '">Gruppe</th>';
     html += '</tr>';
     html += '<tr><th class="overview-th-station">Station</th>';
-    groups.forEach(groupID => {
-        html += '<th class="overview-th-group">' + groupID + '</th>';
+    groups.forEach(g => {
+        const shortLabel = g.GroupName ? g.GroupName : ('Gr. ' + g.GroupID);
+        html += '<th class="overview-th-group" title="' + escapeHtml(shortLabel + ' (Gruppe ' + g.GroupID + ')') + '">' + escapeHtml(shortLabel) + '</th>';
     });
     html += '</tr></thead><tbody>';
 
@@ -488,13 +505,14 @@ function renderInputOverview(stations, groups) {
     stations.forEach(station => {
         html += '<tr>';
         html += '<td class="overview-station-name">' + escapeHtml(station.StationName) + '</td>';
-        groups.forEach(groupID => {
-            const hasScore = station.GroupScores && station.GroupScores.some(gs => gs.GroupID === groupID);
+        groups.forEach(g => {
+            const hasScore = station.GroupScores && station.GroupScores.some(gs => gs.GroupID === g.GroupID);
             const cls = hasScore ? 'overview-cell overview-cell--ok' : 'overview-cell overview-cell--missing';
             const icon = hasScore ? '&#10003;' : '&#10007;';
-            const title = 'Gruppe ' + groupID + ' \u2013 ' + station.StationName;
+            const groupLabel = g.GroupName ? g.GroupName + ' (Gruppe ' + g.GroupID + ')' : 'Gruppe ' + g.GroupID;
+            const title = groupLabel + ' \u2013 ' + station.StationName;
             html += '<td class="' + cls + '" title="' + escapeHtml(title) + '" ';
-            html += 'onclick="window.handleShowStationsForGroup(' + groupID + ', ' + station.StationID + ')">';
+            html += 'onclick="window.handleShowStationsForGroup(' + g.GroupID + ', ' + station.StationID + ')">';
             html += icon + '</td>';
         });
         html += '</tr>';
