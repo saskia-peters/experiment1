@@ -684,6 +684,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#gruppennamen-anpassen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gruppennamen anpassen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#gruppen-pdf-erzeugen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1188,6 +1199,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#gruppennamen-anpassen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gruppennamen anpassen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#gruppen-pdf-erzeugen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1290,6 +1312,12 @@
 <p><strong>"Eingabeübersicht"</strong> zeigt eine Matrix aller Gruppen × Stationen. Klick auf eine Zelle springt direkt zur Ergebniseingabe für diese Kombination.</p>
 <h2 id="gruppengroe-andern">Gruppengröße ändern<a class="headerlink" href="#gruppengroe-andern" title="Permanent link">&para;</a></h2>
 <p><code>max_groesse</code> in <code>config.toml</code> anpassen, danach <strong>"Gruppen zusammenstellen"</strong> erneut klicken.</p>
+<h2 id="gruppennamen-anpassen">Gruppennamen anpassen<a class="headerlink" href="#gruppennamen-anpassen" title="Permanent link">&para;</a></h2>
+<p>Über <code>gruppen.gruppennamen</code> in <code>config.toml</code> können benutzerdefinierte Gruppenbezeichnungen vergeben werden (z. B. Gerätegattungen wie „Hebekissen", „Steckleiter", …). Die Namen erscheinen in der Gruppen-Ansicht, der Ergebniseingabe, der Auswertung und auf Teilnehmer-Urkunden.</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[gruppen]</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">gruppennamen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Hebekissen&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Rüstholz&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Tauchpumpe&quot;</span><span class="p">]</span>
+</span></code></pre></div>
+<p>Sind weniger Namen als Gruppen vorhanden, wird für fehlende Einträge automatisch <strong>„Gruppe N"</strong> verwendet.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Neuverteilung ist nur möglich, <strong>bevor das erste Ergebnis gespeichert wurde</strong>. Danach ist die Schaltfläche gesperrt.</p>

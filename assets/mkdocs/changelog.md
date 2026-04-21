@@ -6,6 +6,20 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.5] — 2026-04-20
+
+### Hinzugefügt
+
+- Gruppen: Benutzerdefinierte Gruppennamen über `gruppen.gruppennamen` in `config.toml` — werden in der Gruppen-Ansicht, der Ergebniseingabe, der Auswertung und auf Teilnehmer-Urkunden angezeigt. Sind weniger Namen als Gruppen eingetragen, wird „Gruppe N" als Fallback verwendet.
+
+### Geändert
+
+- Urkunden-Editor: Standardwert für `urkunden_stil` auf `picture` gesetzt.
+- Urkunden-Editor: Element-Tausch-Logik verbessert; Layoutelement-Karten optisch überarbeitet.
+- justfile: Build-Ziel `build-win` (ohne Konsolenfenster) entfernt.
+
+---
+
 ## [0.1.4] — 2026-04-14
 
 ### Hinzugefügt

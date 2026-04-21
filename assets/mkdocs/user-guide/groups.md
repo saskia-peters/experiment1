@@ -62,6 +62,17 @@ Die Verteilung wird trotzdem gespeichert. Durch Hinzufügen weiterer Betreuender
 
 `max_groesse` in `config.toml` anpassen, danach **"Gruppen zusammenstellen"** erneut klicken.
 
+## Gruppennamen anpassen
+
+Über `gruppen.gruppennamen` in `config.toml` können benutzerdefinierte Gruppenbezeichnungen vergeben werden (z. B. Gerätegattungen wie „Hebekissen", „Steckleiter", …). Die Namen erscheinen in der Gruppen-Ansicht, der Ergebniseingabe, der Auswertung und auf Teilnehmer-Urkunden.
+
+```toml
+[gruppen]
+gruppennamen = ["Hebekissen", "Rüstholz", "Tauchpumpe"]
+```
+
+Sind weniger Namen als Gruppen vorhanden, wird für fehlende Einträge automatisch **„Gruppe N"** verwendet.
+
 !!! warning
     Neuverteilung ist nur möglich, **bevor das erste Ergebnis gespeichert wurde**. Danach ist die Schaltfläche gesperrt.
 
