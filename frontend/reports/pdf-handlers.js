@@ -2,7 +2,7 @@
 import { setStatus } from '../shared/dom.js';
 
 export async function handleGeneratePDF() {
-    setStatus('Gruppen-PDF wird erstellt...', 'info');
+    setStatus('PDFs werden erstellt...', 'info');
     
     try {
         const result = await window.go.main.App.GeneratePDF();
@@ -10,7 +10,7 @@ export async function handleGeneratePDF() {
         if (result.status === 'error') {
             setStatus('FEHLER: ' + result.message, 'error');
         } else {
-            setStatus('✅ Gruppen-PDF erfolgreich erstellt!', 'success');
+            setStatus('✅ Gruppen-PDF und Stationslaufzettel erfolgreich erstellt!', 'success');
         }
     } catch (err) {
         setStatus('FEHLER: ' + err, 'error');

@@ -133,7 +133,7 @@ func (a *App) GetOrtsverbandEvaluations() map[string]interface{} {
 // --- Reports ---
 
 func (a *App) GeneratePDF() map[string]interface{} {
-	return handlers.GeneratePDF(a.db, a.cfg.Veranstaltung.Name, a.cfg.Veranstaltung.Jahr)
+	return handlers.GeneratePDF(a.db, a.cfg.Veranstaltung.Name, a.cfg.Veranstaltung.Jahr, a.cfg.Gruppen.Gruppennamen)
 }
 
 func (a *App) GenerateGroupEvaluationPDF() map[string]interface{} {

@@ -286,6 +286,26 @@ func GetAllGroupIDs(db *sql.DB) ([]int, error) {
 	return groupIDs, rows.Err()
 }
 
+// GetStationNamesOrdered retrieves all station names ordered alphabetically.
+// GroupScores is left empty — use GetStationsForReport when scores are needed.
+func GetStationNamesOrdered(db *sql.DB) ([]models.Station, error) {
+	rows, err := db.Query("SELECT station_id, station_name FROM stations ORDER BY station_name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stations []models.Station
+	for rows.Next() {
+		var s models.Station
+		if err := rows.Scan(&s.StationID, &s.StationName); err != nil {
+			return nil, err
+		}
+		stations = append(stations, s)
+	}
+	return stations, rows.Err()
+}
+
 // GetDistinctOrtsverbands returns a sorted list of all Ortsverbands present
 // across both teilnehmende and betreuende tables.
 func GetDistinctOrtsverbands(db *sql.DB) ([]string, error) {

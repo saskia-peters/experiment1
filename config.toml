@@ -12,7 +12,7 @@ ort = "Singen am Hohentwiel"
 
 [gruppen]
 # Maximale Anzahl Teilnehmende pro Gruppe
-max_groesse = 8
+max_groesse = 7
 # Namen der Gruppen (in Reihenfolge: Gruppe 1, Gruppe 2, …)
 # Diese Namen werden in der Anwendung und auf Urkunden angezeigt.
 # Wenn weniger Namen als Gruppen vorhanden sind, wird "Gruppe N" als Fallback verwendet.

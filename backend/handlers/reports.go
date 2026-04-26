@@ -8,8 +8,8 @@ import (
 	"THW-JugendOlympiade/backend/io"
 )
 
-// GeneratePDF generates a groups PDF report.
-func GeneratePDF(db *sql.DB, eventName string, eventYear int) map[string]interface{} {
+// GeneratePDF generates the groups PDF report and the station recording sheets PDF.
+func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []string) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -22,12 +22,21 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int) map[string]interfa
 			"message": fmt.Sprintf("Gruppen-PDF konnte nicht erstellt werden: %v", err),
 		}
 	}
+	if err := io.GenerateStationSheetsPDF(db, eventName, eventYear, groupNames); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Stationslaufzettel-PDF konnte nicht erstellt werden: %v", err),
+		}
+	}
 	absPath, _ := os.Getwd()
+	sep := string(os.PathSeparator)
 	return map[string]interface{}{
 		"status":  "success",
-		"message": "Gruppen-PDF erfolgreich erstellt",
+		"message": "Gruppen-PDF und Stationslaufzettel erfolgreich erstellt",
 		"file":    "Gruppeneinteilung.pdf",
-		"path":    absPath + string(os.PathSeparator) + "pdfdocs" + string(os.PathSeparator) + "Gruppeneinteilung.pdf",
+		"path":    absPath + sep + "pdfdocs" + sep + "Gruppeneinteilung.pdf",
+		"file2":   "Stationslaufzettel.pdf",
+		"path2":   absPath + sep + "pdfdocs" + sep + "Stationslaufzettel.pdf",
 	}
 }
 
