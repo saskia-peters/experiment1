@@ -34,3 +34,7 @@ __pycache__/
 *.pyc
 *.pyo
 main.py
+
+# MkDocs build output — never commit, CI deploys via GitHub Actions
+site/
+docs/

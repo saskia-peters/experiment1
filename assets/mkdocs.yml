@@ -2,7 +2,7 @@ site_name: Jugendolympiade Verwaltung
 site_description: Plattformübergreifende Desktop-Anwendung für die Organisation von Jugendolympiaden — gebaut mit Go und Wails v2.
 site_author: THW Jugendolympiade Team
 docs_dir: mkdocs
-site_dir: ../docs
+site_dir: ../site
 
 repo_url: https://github.com/saskia/experiment1
 repo_name: experiment1

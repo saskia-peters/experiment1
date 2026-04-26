@@ -5,8 +5,7 @@
 #   just           → list all available recipes
 #   just build     → production build
 #   just test      → run all Go tests
-#   just docs      → build documentation into docs/
-#   just docs-serve → start live-reload docs server
+#   just docs-serve → start live-reload docs server (http://localhost:7000)
 
 set windows-shell := ["cmd.exe", "/c"]
 
@@ -42,24 +41,13 @@ deps:
 
 # ─── Documentation ────────────────────────────────────────────────────────────
 
-# Install/sync Python documentation dependencies
-docs-install:
-    {{uv}} sync --project assets
-
-# Build documentation from assets/mkdocs/ → docs/
-docs: docs-install
-    {{uv}} run --project assets mkdocs build --config-file assets/mkdocs.yml --strict
-
 # Start a local live-reload documentation server (http://localhost:7000)
-docs-serve: docs-install
+docs-serve:
+    {{uv}} sync --project assets
     {{uv}} run --project assets mkdocs serve --config-file assets/mkdocs.yml --dev-addr localhost:7000
-
-# Build docs and report any warnings
-docs-check: docs-install
-    {{uv}} run --project assets mkdocs build --config-file assets/mkdocs.yml --strict --verbose
 
 # ─── Combined ─────────────────────────────────────────────────────────────────
 
-# Run tests and build everything (app + docs)
-all: test build docs
+# Run tests and build the app
+all: test build
     @echo "All done."
