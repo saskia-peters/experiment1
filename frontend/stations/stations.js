@@ -492,24 +492,23 @@ function renderInputOverview(stations, groups) {
     // Header row
     html += '<thead>';
     html += '<tr><th class="overview-th-station"></th>';
-    html += '<th class="overview-th-gruppe-label" colspan="' + groups.length + '">Gruppe</th>';
+    html += '<th class="overview-th-gruppe-label" colspan="' + stations.length + '">Station</th>';
     html += '</tr>';
-    html += '<tr><th class="overview-th-station">Station</th>';
-    groups.forEach(g => {
-        const shortLabel = g.GroupName ? g.GroupName : ('Gr. ' + g.GroupID);
-        html += '<th class="overview-th-group" title="' + escapeHtml(shortLabel + ' (Gruppe ' + g.GroupID + ')') + '">' + escapeHtml(shortLabel) + '</th>';
+    html += '<tr><th class="overview-th-station">Gruppe</th>';
+    stations.forEach(station => {
+        html += '<th class="overview-th-group" title="' + escapeHtml(station.StationName) + '">' + escapeHtml(station.StationName) + '</th>';
     });
     html += '</tr></thead><tbody>';
 
-    // One row per station
-    stations.forEach(station => {
+    // One row per group
+    groups.forEach(g => {
+        const groupLabel = g.GroupName ? g.GroupName + ' (Gruppe ' + g.GroupID + ')' : 'Gruppe ' + g.GroupID;
         html += '<tr>';
-        html += '<td class="overview-station-name">' + escapeHtml(station.StationName) + '</td>';
-        groups.forEach(g => {
+        html += '<td class="overview-station-name">' + escapeHtml(groupLabel) + '</td>';
+        stations.forEach(station => {
             const hasScore = station.GroupScores && station.GroupScores.some(gs => gs.GroupID === g.GroupID);
             const cls = hasScore ? 'overview-cell overview-cell--ok' : 'overview-cell overview-cell--missing';
             const icon = hasScore ? '&#10003;' : '&#10007;';
-            const groupLabel = g.GroupName ? g.GroupName + ' (Gruppe ' + g.GroupID + ')' : 'Gruppe ' + g.GroupID;
             const title = groupLabel + ' \u2013 ' + station.StationName;
             html += '<td class="' + cls + '" title="' + escapeHtml(title) + '" ';
             html += 'onclick="window.handleShowStationsForGroup(' + g.GroupID + ', ' + station.StationID + ')">';
