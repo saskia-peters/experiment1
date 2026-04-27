@@ -14,6 +14,9 @@ Alle angemeldeten Teilnehmenden. Die **erste Zeile ist die Kopfzeile**.
 | `Geschlecht` | ✅ Ja | `M`, `W` oder `D` (auch ausgeschrieben) — **muss manuell in der XLSX-Datei eingetragen werden**, da dieser Wert beim Export aus dem Anmeldesystem nicht automatisch übernommen wird |
 | `PreGroup` | ⬜ Optional | Gruppierschlüssel — Personen mit gleichem Code kommen in dieselbe Gruppe |
 
+!!! info "📸 Screenshot: `xlsx-sheet-teilnehmende.png`"
+    _Tabellenblatt „Teilnehmende" — Kopfzeile und erste Datenzeilen in Excel/LibreOffice_
+
 **PreGroup-Regeln:**
 
 - Nur Buchstaben und Ziffern — keine Sonderzeichen oder Leerzeichen.
@@ -41,6 +44,9 @@ Alle Betreuungspersonen. Die **erste Zeile ist die Kopfzeile**.
 | `Ortsverband` | ✅ Ja | Lokale Gliederung |
 | `Fahrerlaubnis` | ✅ Ja | `ja` oder `nein` (Groß-/Kleinschreibung irrelevant) |
 
+!!! info "📸 Screenshot: `xlsx-sheet-betreuende.png`"
+    _Tabellenblatt „Betreuende" — Kopfzeile und erste Datenzeilen in Excel/LibreOffice_
+
 !!! note "Fahrerlaubnis"
     Der Verteilungsalgorithmus garantiert **mindestens eine Person mit Fahrerlaubnis pro Gruppe**. Sind nicht genug solcher Personen vorhanden, erscheint nach der Verteilung eine Warnmeldung.
 
@@ -58,8 +64,35 @@ Alle Betreuungspersonen. Die **erste Zeile ist die Kopfzeile**.
 
 Stationsnamen für die Ergebniseingabe. Zeile 1 = Kopfzeile, ab Zeile 2 ein Stationsname pro Zeile.
 
+!!! info "📸 Screenshot: `xlsx-sheet-stationen.png`"
+    _Tabellenblatt „Stationen" — Kopfzeile und Stationsnamen in Excel/LibreOffice_
+
 !!! warning "Stationen erforderlich"
     Das Tabellenblatt `Stationen` **muss** mindestens einen Eintrag enthalten. Fehlt das Blatt oder ist es leer, wird der Import abgelehnt und eine Fehlermeldung angezeigt.
+
+---
+
+## Tabellenblatt 4: `Fahrzeuge` (Optional)
+
+Fahrzeuge für den Transport der Gruppen. Die **erste Zeile ist die Kopfzeile**. Das Blatt kann weggelassen werden — Gruppen erhalten dann keinen Fahrzeug-Eintrag.
+
+| Spalte | Pflichtfeld | Beschreibung |
+|--------|-------------|--------------|
+| `Bezeichnung` | ✅ Ja | Name/Beschreibung des Fahrzeugs |
+| `Ortsverband` | ✅ Ja | Lokale Gliederung |
+| `Funkrufname` | ✅ Ja | Funkrufname des Fahrzeugs |
+| `Fahrer` | ✅ Ja | Name des Fahrers — muss in der Betreuenden-Liste mit Fahrerlaubnis vorhanden sein |
+| `Sitzplaetze` | ✅ Ja | Gesamtzahl Sitzplätze inkl. Fahrer (positive ganze Zahl) |
+
+!!! info "📸 Screenshot: `xlsx-sheet-fahrzeuge.png`"
+    _Tabellenblatt „Fahrzeuge" — Kopfzeile und erste Datenzeilen in Excel/LibreOffice_
+
+**Beispiel:**
+
+| Bezeichnung | Ortsverband | Funkrufname | Fahrer | Sitzplaetze |
+|-------------|-------------|-------------|--------|-------------|
+| THW-Transporter | Berlin-Mitte | BER-TH 1 | Klaus Bauer | 9 |
+| Mannschaftsbus | Hamburg-Nord | HH-TH 3 | Maria Koch | 16 |
 
 ---
 
@@ -68,6 +101,9 @@ Stationsnamen für die Ergebniseingabe. Zeile 1 = Kopfzeile, ab Zeile 2 ein Stat
 1. **📝 Daten → "Excel einlesen"** klicken.
 2. XLSX-Datei im Dateidialog auswählen.
 3. Grüne Statusmeldung = Erfolg. Rote Meldung = Validierungsfehler mit Zeilenangabe.
+
+!!! info "📸 Screenshot: `excel-import-success.png`"
+    _Grüne Statusmeldung nach erfolgreichem Import_
 
 ---
 

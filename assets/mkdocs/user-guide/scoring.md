@@ -13,6 +13,9 @@ Alternativ aus der **Eingabeübersicht**: Beliebige Zelle anklicken, um direkt z
 3. Punktzahl je Station eingeben (gültiger Bereich: `min_punkte`–`max_punkte`, Standard **100–1200**).
 4. **"Speichern"** klicken (oder die Einzelspeicher-Schaltfläche pro Station).
 
+!!! info "📸 Screenshot: `scoring-form.png`"
+    _Ergebniseingabe — Gruppenauswahl und Stationstabelle mit Punktfeldern_
+
 !!! info "Dirty Tracking"
     Nicht gespeicherte Änderungen werden verfolgt. Beim Gruppenwechsel mit ungespeicherten Änderungen erscheint ein Modal zum Speichern oder Verwerfen.
 

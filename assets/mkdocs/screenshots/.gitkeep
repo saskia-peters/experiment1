@@ -1,0 +1,5 @@
+Screenshots go here. Place PNG files in this folder and replace the corresponding placeholder admonitions in the Markdown files with:
+
+![Beschreibung](../screenshots/dateiname.png){ loading=lazy }
+
+(use screenshots/dateiname.png — without ../ — for root-level pages like getting-started.md)

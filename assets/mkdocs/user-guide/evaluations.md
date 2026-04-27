@@ -6,6 +6,9 @@ Auswertungsansichten sind ab dem ersten gespeicherten Ergebnis unter **📊 Ausg
 
 Zeigt das Ranking aller Gruppen nach Gesamtpunktzahl aller Stationen (absteigend).
 
+!!! info "📸 Screenshot: `evaluations-groups.png`"
+    _Gruppenwertung — Rangliste mit Gesamtpunktzahl_
+
 | Spalte | Beschreibung |
 |--------|--------------|
 | Platz | Position (1., 2., …) |

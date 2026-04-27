@@ -2,6 +2,9 @@
 
 Alle erzeugten PDFs werden in `pdf_ordner` gespeichert (Standard: `pdfdocs/`).
 
+!!! info "📸 Screenshot: `pdf-buttons.png`"
+    _Ausgabe-Bereich — Übersicht aller PDF-Schaltflächen_
+
 ## Verfügbare PDFs
 
 | PDF | Schaltfläche | Beschreibung |

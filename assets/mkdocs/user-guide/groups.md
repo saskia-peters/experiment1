@@ -54,9 +54,15 @@ Die Verteilung wird trotzdem gespeichert. Durch Hinzufügen weiterer Betreuender
 - Fahrzeuge mit Fahrer, Sitzplätzen und Kapazitätsanzeige; bei fehlender Fahrzeugzuweisung: **„Kein Fahrzeug!"** (roter Hinweis)
 - Gruppenstatistik (Anzahl, Geschlechterverteilung, OV-Verteilung)
 
+!!! info "📸 Screenshot: `groups-view.png`"
+    _Gruppenansicht — Tabs mit Teilnehmenden, Betreuenden und Fahrzeugen_
+
 ### Eingabeübersicht (Ergebnismatrix)
 
 **"Eingabeübersicht"** zeigt eine Matrix aller Gruppen × Stationen. Klick auf eine Zelle springt direkt zur Ergebniseingabe für diese Kombination.
+
+!!! info "📸 Screenshot: `eingabe-uebersicht.png`"
+    _Eingabeübersicht — Gruppen × Stationen Matrix mit ✓/✗ Status_
 
 ## Gruppengröße ändern
 

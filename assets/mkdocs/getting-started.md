@@ -30,6 +30,10 @@ Aktuelle Version von der GitHub-Releases-Seite herunterladen:
 2. Falls eine bestehende Datenbank (`data.db`) vorhanden ist, erscheint ein Dialog:
     - **"Weiterarbeiten"** — öffnet die vorhandene Datenbank.
     - **"Neu starten"** — sichert die alte Datenbank und beginnt neu.
+
+!!! info "📸 Screenshot: `startup-dialog.png`"
+    _Startdialog — „Weiterarbeiten" oder „Neu starten"_
+
 3. Das Anwendungsfenster öffnet sich. Der Ausgabeordner (`pdfdocs/`) und Beispieldaten werden automatisch angelegt.
 
 ## Vollständiger Ablauf
@@ -44,6 +48,9 @@ flowchart TD
     F --> G[Auswertung anzeigen]
     G --> H[PDFs & Urkunden erzeugen]
 ```
+
+!!! info "📸 Screenshot: `main-window.png`"
+    _Hauptfenster der Anwendung nach dem Start_
 
 ### Schritt 1 — Excel-Datei vorbereiten
 
