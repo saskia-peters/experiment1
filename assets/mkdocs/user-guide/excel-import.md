@@ -1,6 +1,6 @@
 # Excel-Import
 
-Die Anwendung liest alle Veranstaltungsdaten aus einer einzigen XLSX-Datei. Die Datei muss **zwei Pflicht-Tabellenblätter** enthalten und kann ein optionales drittes Blatt besitzen.
+Die Anwendung liest alle Veranstaltungsdaten aus einer einzigen XLSX-Datei. Die Datei muss **zwei Pflicht-Tabellenblätter** (`Teilnehmende` und `Stationen`) enthalten. Die Blätter `Betreuende` und `Fahrzeuge` sind optional — fehlen sie, wird der Import trotzdem akzeptiert.
 
 ## Tabellenblatt 1: `Teilnehmende`
 
@@ -10,7 +10,7 @@ Alle angemeldeten Teilnehmenden. Die **erste Zeile ist die Kopfzeile**.
 |--------|-------------|--------------|
 | `Name` | ✅ Ja | Vor- und Nachname |
 | `Ortsverband` | ✅ Ja | Lokale Gliederung |
-| `Alter` | ✅ Ja | Alter als ganze Zahl (1–100) |
+| `Alter` | ✅ Ja | Alter als ganze Zahl (0–150) |
 | `Geschlecht` | ✅ Ja | `M`, `W` oder `D` (auch ausgeschrieben) — **muss manuell in der XLSX-Datei eingetragen werden**, da dieser Wert beim Export aus dem Anmeldesystem nicht automatisch übernommen wird |
 | `PreGroup` | ⬜ Optional | Gruppierschlüssel — Personen mit gleichem Code kommen in dieselbe Gruppe |
 

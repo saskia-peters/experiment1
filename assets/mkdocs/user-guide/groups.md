@@ -59,7 +59,7 @@ flowchart TD
     subgraph P1 ["Phase 1 – Fahrzeuge & Fahrer zuweisen"]
         direction TB
         V1A[Fahrzeug i → Gruppe i\n1:1-Zuweisung]
-        V1B{FahrerName in\nBetreuende-Liste?}
+        V1B{"Fahrer in Betreuende-Liste?\n(Name + OV übereinstimmend,\nFahrerlaubnis = ja)"}
         V1A --> V1B
         V1B -- Ja --> V1C[Fahrer als Betreuende\nin Gruppe eintragen]
         V1B -- Nein --> V1D[Warnung: Fahrer nicht gefunden]

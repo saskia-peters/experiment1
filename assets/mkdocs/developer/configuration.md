@@ -50,8 +50,8 @@ pdf_ordner = "pdfdocs"
 db_name = "data.db"
 
 # Urkundenstil für Teilnehmer-Urkunden:
-#   "text"    — Mitgliedertabelle (Standard)
-#   "picture" — Gruppenfoto
+#   "picture" — Gruppenfoto (Standard)
+#   "text"    — Mitgliedertabelle
 urkunden_stil = "picture"
 
 # Unterordner mit Gruppenfotos (nur bei urkunden_stil = "picture")
