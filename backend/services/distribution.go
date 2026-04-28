@@ -13,9 +13,11 @@ import (
 
 // CreateBalancedGroups creates groups with balanced distribution.
 // maxGroupSize controls the maximum number of participants per group.
+// minGroupSize controls the minimum: vehicles where seats-1 < minGroupSize are
+// excluded from distribution (0 = disabled).
 // Returns a non-empty warning string when distribution succeeded but the
 // Fahrerlaubnis or vehicle-capacity constraint could not be fully satisfied.
-func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
+func CreateBalancedGroups(db *sql.DB, maxGroupSize int, minGroupSize int) (string, error) {
 	// Read all participants from database
 	teilnehmende, err := database.GetAllTeilnehmende(db)
 	if err != nil {
@@ -46,6 +48,11 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 
 	if len(fahrzeuge) == 0 {
 		// ── Original path (no vehicles) ────────────────────────────────────────────
+		if minGroupSize > 0 {
+			warnings = append(warnings, fmt.Sprintf(
+				"ℹ️ Keine Fahrzeuge vorhanden – min_groesse=%d wird ignoriert, Gruppen werden nach max_groesse=%d gebildet",
+				minGroupSize, maxGroupSize))
+		}
 		groups = distributeIntoGroups(teilnehmende, maxGroupSize)
 
 		if err := database.SaveGroups(db, groups); err != nil {
@@ -65,15 +72,50 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 			}
 		}
 	} else {
-		// ── Vehicle-aware path ─────────────────────────────────────────────────────
-		// Phase 0: determine group count and create empty group shells.
+		// ── Vehicle-first path ─────────────────────────────────────────────────────
 		preGroupMap, unassigned := separateByPreGroup(teilnehmende)
-		numPreGroups := len(preGroupMap)
-		numAdditional := int(math.Ceil(float64(len(unassigned)) / float64(maxGroupSize)))
-		numGroups := numPreGroups + numAdditional
-		if numGroups < 1 {
-			numGroups = 1
+
+		// Phase 0: sort vehicles, split into eligible / excluded.
+		sorted := make([]models.Fahrzeug, len(fahrzeuge))
+		copy(sorted, fahrzeuge)
+		sort.Slice(sorted, func(i, j int) bool {
+			if sorted[i].Ortsverband != sorted[j].Ortsverband {
+				return sorted[i].Ortsverband < sorted[j].Ortsverband
+			}
+			return sorted[i].Bezeichnung < sorted[j].Bezeichnung
+		})
+
+		var eligibleFahrzeuge, excludedFahrzeuge []models.Fahrzeug
+		for _, f := range sorted {
+			if minGroupSize > 0 && f.Sitzplaetze-1 < minGroupSize {
+				excludedFahrzeuge = append(excludedFahrzeuge, f)
+			} else {
+				eligibleFahrzeuge = append(eligibleFahrzeuge, f)
+			}
 		}
+		if len(eligibleFahrzeuge) == 0 {
+			return "", fmt.Errorf(
+				"alle Fahrzeuge haben zu wenig Sitzplätze (min_groesse=%d) – Verteilung nicht möglich",
+				minGroupSize)
+		}
+
+		numGroups := len(eligibleFahrzeuge)
+
+		// Further cap numGroups so every group can hold at least minGroupSize TN.
+		// Excess eligible vehicles are reported as unused in Phase 6b.
+		var countLimitedFahrzeuge []models.Fahrzeug
+		if minGroupSize > 0 && len(teilnehmende) > 0 {
+			maxGroupsByTN := len(teilnehmende) / minGroupSize
+			if maxGroupsByTN < 1 {
+				maxGroupsByTN = 1
+			}
+			if numGroups > maxGroupsByTN {
+				countLimitedFahrzeuge = eligibleFahrzeuge[maxGroupsByTN:]
+				eligibleFahrzeuge = eligibleFahrzeuge[:maxGroupsByTN]
+				numGroups = maxGroupsByTN
+			}
+		}
+
 		groups = make([]models.Group, numGroups)
 		for i := range groups {
 			groups[i] = models.Group{
@@ -84,13 +126,23 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 			}
 		}
 
-		// Phase 1: assign vehicles and their drivers to groups.
-		vehicleWarn, usedAsDriver := distributeVehicles(groups, fahrzeuge, betreuende)
+		// Phase 1: assign eligible vehicles 1:1 to groups (already sorted).
+		vehicleWarn, usedAsDriver := distributeVehicles(groups, eligibleFahrzeuge, betreuende)
 		if vehicleWarn != "" {
 			warnings = append(warnings, vehicleWarn)
 		}
 
-		// Phase 2: assign remaining Betreuende (those not already driving a vehicle).
+		// Phase 2: fill participants.
+		// At this point each group has at most 1 Betreuende (the driver), so
+		// effectiveCapacity = min(maxGroupSize, seats−1) — the full minGroupSize
+		// worth of TN slots is available.
+		if err := fillParticipants(groups, preGroupMap, unassigned, maxGroupSize, &warnings); err != nil {
+			return "", err
+		}
+
+		// Phase 3: assign remaining Betreuende (non-drivers) AFTER participants.
+		// Moving this after fillParticipants prevents non-driver Betreuende from
+		// consuming TN seats and causing under-sized groups.
 		var remainingBetreuende []models.Betreuende
 		for _, b := range betreuende {
 			if !usedAsDriver[b.ID] {
@@ -107,10 +159,48 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 			}
 		}
 
-		// Phase 3: upfront capacity check — warn before filling if total seats
-		// cannot accommodate all Betreuende + Teilnehmende.
+		// Phase 3b: if a vehicle in a group has no resolved driver, assign the
+		// group's first licensed Betreuende as the driver.
+		for i := range groups {
+			for j := range groups[i].Fahrzeuge {
+				v := &groups[i].Fahrzeuge[j]
+				driverResolved := false
+				if v.FahrerName != "" {
+					for _, b := range groups[i].Betreuende {
+						if strings.EqualFold(strings.TrimSpace(b.Name), strings.TrimSpace(v.FahrerName)) {
+							driverResolved = true
+							break
+						}
+					}
+				}
+				if !driverResolved {
+					// Vehicle has no resolved driver — assign the group's first
+					// licensed Betreuende. When the group has exactly one
+					// Betreuende and no FahrerName was set, this naturally picks
+					// that person (still requires Fahrerlaubnis).
+					for _, b := range groups[i].Betreuende {
+						if b.Fahrerlaubnis {
+							v.FahrerName = b.Name
+							break
+						}
+					}
+				}
+			}
+		}
+
+		// Phase 3c: relieve overloaded groups by moving people to groups that
+		// still have spare seats. Result is silent — no user-facing warning.
+		relieveOverloadedGroups(groups)
+
+		// Phase 3d: swap a non-driver Betreuende from the group with the highest
+		// Betreuende:TN ratio with a TN from the group with the lowest ratio.
+		// Total headcount per group is preserved, so seat capacity is unaffected.
+		// Result is silent — no user-facing warning.
+		rebalanceBetreuendeTNRatio(groups)
+
+		// Phase 4: capacity checks (run after all people are placed).
 		totalSeats := 0
-		for _, f := range fahrzeuge {
+		for _, f := range eligibleFahrzeuge {
 			totalSeats += f.Sitzplaetze
 		}
 		totalPeople := len(betreuende) + len(teilnehmende)
@@ -119,14 +209,54 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int) (string, error) {
 				"⚠️ Kapazitätsengpass: %d Personen (inkl. Betreuende), aber nur %d Sitzplätze verfügbar – %d Person(en) können nicht alle untergebracht werden",
 				totalPeople, totalSeats, totalPeople-totalSeats))
 		}
-
-		// Phase 4: fill participants, respecting vehicle seat capacity as hard limit.
-		fillParticipants(groups, preGroupMap, unassigned, maxGroupSize)
-
-		// Phase 5: per-group capacity check (detail for the operator).
 		if capWarn := checkCapacityWarnings(groups); capWarn != "" {
 			warnings = append(warnings, capWarn)
 		}
+
+		// Phase 6a: report excluded (too-small) vehicles.
+		if len(excludedFahrzeuge) > 0 {
+			var names []string
+			for _, f := range excludedFahrzeuge {
+				names = append(names, fmt.Sprintf("%q (%d Plätze, OV %s)",
+					f.Bezeichnung, f.Sitzplaetze, f.Ortsverband))
+			}
+			warnings = append(warnings, fmt.Sprintf(
+				"ℹ️ Ausgeschlossene Fahrzeuge (zu klein, min_groesse=%d): %s",
+				minGroupSize, strings.Join(names, "; ")))
+		}
+		// Report vehicles not used because too few TN for another full group.
+		if len(countLimitedFahrzeuge) > 0 {
+			var names []string
+			for _, f := range countLimitedFahrzeuge {
+				names = append(names, fmt.Sprintf("%q (OV %s)", f.Bezeichnung, f.Ortsverband))
+			}
+			warnings = append(warnings, fmt.Sprintf(
+				"ℹ️ Nicht verwendete Fahrzeuge (zu wenig Teilnehmende für min_groesse=%d): %s",
+				minGroupSize, strings.Join(names, "; ")))
+		}
+
+		// Phase 6b: filter out groups that got no Teilnehmende; re-number the rest.
+		var activeGroups []models.Group
+		var unusedVehicleNames []string
+		for _, g := range groups {
+			if len(g.Teilnehmende) > 0 {
+				activeGroups = append(activeGroups, g)
+			} else {
+				for _, f := range g.Fahrzeuge {
+					unusedVehicleNames = append(unusedVehicleNames,
+						fmt.Sprintf("%q (OV %s)", f.Bezeichnung, f.Ortsverband))
+				}
+			}
+		}
+		if len(unusedVehicleNames) > 0 {
+			warnings = append(warnings, fmt.Sprintf(
+				"ℹ️ Ungenutzte Fahrzeuge (0 Teilnehmende): %s",
+				strings.Join(unusedVehicleNames, "; ")))
+		}
+		for i := range activeGroups {
+			activeGroups[i].GroupID = i + 1
+		}
+		groups = activeGroups
 
 		if err := database.SaveGroups(db, groups); err != nil {
 			return "", fmt.Errorf("failed to save groups: %w", err)
@@ -328,6 +458,24 @@ func separateByPreGroup(teilnehmende []models.Teilnehmende) (map[string][]models
 	return preGroupMap, unassigned
 }
 
+// effectiveCapacity returns the maximum number of Teilnehmende that can be
+// added to g: the smaller of maxGroupSize and (vehicle seats − Betreuende count).
+// Groups without vehicles use maxGroupSize as the sole cap.
+func effectiveCapacity(g models.Group, maxGroupSize int) int {
+	seats := groupTotalSeats(g)
+	if seats == 0 {
+		return maxGroupSize
+	}
+	cap := seats - len(g.Betreuende)
+	if cap < 0 {
+		cap = 0
+	}
+	if cap < maxGroupSize {
+		return cap
+	}
+	return maxGroupSize
+}
+
 // groupTotalSeats returns the total seat count across all vehicles in a group.
 // Returns 0 when the group has no vehicles.
 func groupTotalSeats(g models.Group) int {
@@ -363,7 +511,8 @@ func checkCapacityWarnings(groups []models.Group) string {
 	return "Fahrzeugkapazität überschritten – folgende Gruppen sind übervoll:\n" + strings.Join(overloaded, "\n")
 }
 
-// distributeVehicles assigns vehicles to groups before participants are added.
+// distributeVehicles assigns vehicles to groups using 1:1 sorted assignment.
+// fahrzeuge must already be sorted (done by Phase 0 in CreateBalancedGroups).
 // Each vehicle's driver (matched by FahrerName + Ortsverband in the betreuende
 // list, requiring Fahrerlaubnis=true) is added to the group as a Betreuende.
 // Returns a warning string for any vehicle whose driver could not be found, and
@@ -385,22 +534,11 @@ func distributeVehicles(groups []models.Group, fahrzeuge []models.Fahrzeug, betr
 		}
 	}
 
-	// Sort vehicles deterministically: by OV then by Bezeichnung.
-	sorted := make([]models.Fahrzeug, len(fahrzeuge))
-	copy(sorted, fahrzeuge)
-	sort.Slice(sorted, func(i, j int) bool {
-		if sorted[i].Ortsverband != sorted[j].Ortsverband {
-			return sorted[i].Ortsverband < sorted[j].Ortsverband
-		}
-		return sorted[i].Bezeichnung < sorted[j].Bezeichnung
-	})
-
+	// Direct 1:1 assignment: vehicle[i] → group[i].
+	// fahrzeuge is pre-sorted by Phase 0 (OV then Bezeichnung).
 	var warnParts []string
-	for _, v := range sorted {
-		// Assign vehicle to the group with the fewest total seats so far
-		// (balances capacity). OV participant count breaks ties.
-		idx := findGroupForVehicle(groups, v.Ortsverband)
-		groups[idx].Fahrzeuge = append(groups[idx].Fahrzeuge, v)
+	for i, v := range fahrzeuge {
+		groups[i].Fahrzeuge = append(groups[i].Fahrzeuge, v)
 
 		// Attach the driver as a Betreuende if they can be resolved.
 		if v.FahrerName == "" {
@@ -418,59 +556,75 @@ func distributeVehicles(groups []models.Group, fahrzeuge []models.Fahrzeug, betr
 			continue
 		}
 		if usedAsDriver[driver.ID] {
-			// Driver is already assigned to another vehicle – this is unusual
-			// (one person can only drive one vehicle); skip silently.
+			// Driver is already assigned to another vehicle – skip silently.
 			continue
 		}
-		groups[idx].Betreuende = append(groups[idx].Betreuende, *driver)
+		groups[i].Betreuende = append(groups[i].Betreuende, *driver)
 		usedAsDriver[driver.ID] = true
 	}
 
 	return strings.Join(warnParts, "\n"), usedAsDriver
 }
 
-// findGroupForVehicle returns the index of the group that should receive the
-// next vehicle.  Primary criterion: fewest total vehicle seats so far (balances
-// load).  Tiebreak: most existing participants from the vehicle's OV.
-func findGroupForVehicle(groups []models.Group, ov string) int {
-	bestIdx := 0
-	bestSeats := math.MaxInt64
-	bestOVCount := -1
-	for i, g := range groups {
-		seats := groupTotalSeats(g)
-		ovc := g.Ortsverbands[ov]
-		if seats < bestSeats || (seats == bestSeats && ovc > bestOVCount) {
-			bestIdx = i
-			bestSeats = seats
-			bestOVCount = ovc
-		}
-	}
-	return bestIdx
-}
-
-// fillParticipants distributes teilnehmende into the already-initialized groups
-// (which may already contain Betreuende and Fahrzeuge).  Pre-grouped
-// participants are placed first; the remainder are spread using diversity
-// scoring.  Each group's effective capacity is:
+// fillParticipants distributes Teilnehmende into the already-initialized groups
+// (which may already contain Betreuende and Fahrzeuge).
 //
-//	min(maxGroupSize, totalSeats − len(Betreuende))
+//   - PreGroups are placed using best-fit: the group with the most remaining
+//     effectiveCap that can fit the entire PreGroup in one placement, preferring
+//     vehicles from the same OV.  Multiple PreGroups may share one vehicle.
+//   - Remaining TN are sorted by OV/Geschlecht/Alter and placed using diversity
+//     scoring.
+//   - If all groups reach effectiveCap, the +1 exception is attempted.  If that
+//     also cannot resolve all overflow, TN are placed in the least-full group
+//     and Phase 5 will emit a per-group overload warning.
 //
-// where totalSeats is the sum of all vehicle seats in that group.  Groups
-// without vehicles use maxGroupSize as the sole cap.
-func fillParticipants(groups []models.Group, preGroupMap map[string][]models.Teilnehmende, unassigned []models.Teilnehmende, maxGroupSize int) {
-	// Step 1: assign pre-grouped members in sorted key order (deterministic).
+// warnings receives any informational/warning messages generated here (e.g. +1
+// exception applied).  Returns a non-nil error only when a PreGroup cannot fit
+// in any vehicle.
+func fillParticipants(
+	groups []models.Group,
+	preGroupMap map[string][]models.Teilnehmende,
+	unassigned []models.Teilnehmende,
+	maxGroupSize int,
+	warnings *[]string,
+) error {
+	// Step 1: PreGroup best-fit placement.
 	preGroupKeys := make([]string, 0, len(preGroupMap))
 	for k := range preGroupMap {
 		preGroupKeys = append(preGroupKeys, k)
 	}
 	sort.Strings(preGroupKeys)
 
-	groupIdx := 0
 	for _, key := range preGroupKeys {
-		for _, t := range preGroupMap[key] {
-			addTeilnehmendeToGroup(&groups[groupIdx], t)
+		members := preGroupMap[key]
+
+		bestIdx := -1
+		bestScore := math.MaxFloat64
+		for i, g := range groups {
+			remaining := effectiveCapacity(g, maxGroupSize) - len(g.Teilnehmende)
+			if remaining < len(members) {
+				continue // won't fit
+			}
+			// Prefer same-OV vehicle; prefer fewer existing TN (smaller sizeBonus).
+			ovBonus := 0.0
+			for _, m := range members {
+				ovBonus += float64(g.Ortsverbands[m.Ortsverband])
+			}
+			score := -ovBonus*2.0 + float64(len(g.Teilnehmende))*0.5
+			if score < bestScore {
+				bestScore = score
+				bestIdx = i
+			}
 		}
-		groupIdx++
+		if bestIdx < 0 {
+			return fmt.Errorf(
+				"Vorgruppe %q (%d Mitglieder) passt in kein verfügbares Fahrzeug — "+
+					"bitte ein größeres Fahrzeug bereitstellen oder die Vorgruppe aufteilen",
+				key, len(members))
+		}
+		for _, t := range members {
+			addTeilnehmendeToGroup(&groups[bestIdx], t)
+		}
 	}
 
 	// Step 2: sort unassigned for better diversity.
@@ -484,58 +638,86 @@ func fillParticipants(groups []models.Group, preGroupMap map[string][]models.Tei
 		return unassigned[i].Alter < unassigned[j].Alter
 	})
 
-	// Step 3: distribute using diversity scoring with capacity awareness.
+	// Step 3: main distribution — collect overflow when all groups are full.
+	var overflow []models.Teilnehmende
 	for _, tn := range unassigned {
 		idx := findBestGroupWithCapacity(groups, tn, maxGroupSize)
-		addTeilnehmendeToGroup(&groups[idx], tn)
+		if idx < 0 {
+			overflow = append(overflow, tn)
+		} else {
+			addTeilnehmendeToGroup(&groups[idx], tn)
+		}
 	}
+
+	if len(overflow) == 0 {
+		return nil
+	}
+
+	// Step 4: +1 exception or plain overflow fallback.
+	type plusOne struct{ idx, headroom int }
+	var eligible []plusOne
+	for i, g := range groups {
+		seats := groupTotalSeats(g)
+		if seats == 0 {
+			continue
+		}
+		vehicleCap := seats - len(g.Betreuende)
+		if vehicleCap > maxGroupSize && len(g.Teilnehmende) == maxGroupSize {
+			eligible = append(eligible, plusOne{i, vehicleCap - maxGroupSize})
+		}
+	}
+	totalHeadroom := 0
+	for _, e := range eligible {
+		totalHeadroom += e.headroom
+	}
+
+	if totalHeadroom >= len(overflow) {
+		// Vehicle seats beyond maxGroupSize absorb all overflow.
+		placed := 0
+		for _, e := range eligible {
+			for h := 0; h < e.headroom && placed < len(overflow); h++ {
+				addTeilnehmendeToGroup(&groups[e.idx], overflow[placed])
+				placed++
+			}
+		}
+		*warnings = append(*warnings, fmt.Sprintf(
+			"ℹ️ +1-Ausnahme angewendet: %d Teilnehmende überschreiten max_groesse=%d, "+
+				"passen aber in die verfügbaren Fahrzeugsitzplätze",
+			len(overflow), maxGroupSize))
+	} else {
+		// Cannot fully resolve — place in least-full group; Phase 5 will warn.
+		for _, tn := range overflow {
+			leastFull := 0
+			for i, g := range groups {
+				if len(g.Teilnehmende) < len(groups[leastFull].Teilnehmende) {
+					leastFull = i
+				}
+			}
+			addTeilnehmendeToGroup(&groups[leastFull], tn)
+		}
+	}
+	return nil
 }
 
 // findBestGroupWithCapacity finds the best group for a participant, respecting
 // vehicle seat capacity when vehicles are present.
+// Returns -1 when all groups are at capacity; the caller handles overflow.
 func findBestGroupWithCapacity(groups []models.Group, tn models.Teilnehmende, maxGroupSize int) int {
 	bestIdx := -1
 	bestScore := math.MaxFloat64
 
 	for i, group := range groups {
-		// Determine effective capacity for this group.
-		seats := groupTotalSeats(group)
-		var cap int
-		if seats > 0 {
-			// Vehicle-constrained: remaining seats after Betreuende are seated.
-			cap = seats - len(group.Betreuende)
-			if cap < 0 {
-				cap = 0
-			}
-		} else {
-			cap = maxGroupSize
-		}
-
-		if len(group.Teilnehmende) >= cap || len(group.Teilnehmende) >= maxGroupSize {
+		cap := effectiveCapacity(group, maxGroupSize)
+		if len(group.Teilnehmende) >= cap {
 			continue
 		}
 
 		score := calculateDiversityScore(group, tn)
 		sizeBonus := float64(len(group.Teilnehmende)) * 0.5
-		total := score + sizeBonus
-
-		if total < bestScore {
-			bestScore = total
+		if score+sizeBonus < bestScore {
+			bestScore = score + sizeBonus
 			bestIdx = i
 		}
-	}
-
-	// Fallback: all groups are at capacity (vehicles too small for the total
-	// headcount). Place in the least-full group so no participant is lost; the
-	// capacity warning will surface the overload to the operator.
-	if bestIdx < 0 {
-		leastFull := 0
-		for i, g := range groups {
-			if len(g.Teilnehmende) < len(groups[leastFull].Teilnehmende) {
-				leastFull = i
-			}
-		}
-		return leastFull
 	}
 
 	return bestIdx
@@ -818,6 +1000,19 @@ func findGroupForUnlicensed(groups []models.Group, ov string) int {
 	return fewestIdx
 }
 
+// groupDriverNames returns the set of lowercased FahrerName values for all
+// vehicles assigned to g. Used to identify which Betreuende are drivers so
+// they are never moved during rebalancing.
+func groupDriverNames(g models.Group) map[string]bool {
+	names := make(map[string]bool)
+	for _, v := range g.Fahrzeuge {
+		if v.FahrerName != "" {
+			names[strings.ToLower(strings.TrimSpace(v.FahrerName))] = true
+		}
+	}
+	return names
+}
+
 // hasLicensedDriver reports whether any Betreuende in the slice has Fahrerlaubnis.
 func hasLicensedDriver(bs []models.Betreuende) bool {
 	for _, b := range bs {
@@ -826,4 +1021,162 @@ func hasLicensedDriver(bs []models.Betreuende) bool {
 		}
 	}
 	return false
+}
+
+// relieveOverloadedGroups attempts to move people from groups where headcount
+// exceeds vehicle seats into groups that still have spare capacity.
+// Teilnehmende are preferred over non-driver Betreuende; drivers are never moved.
+// The function iterates until no further moves are possible or needed.
+func relieveOverloadedGroups(groups []models.Group) {
+	changed := true
+	for changed {
+		changed = false
+		for i := range groups {
+			seats := groupTotalSeats(groups[i])
+			if seats == 0 {
+				continue
+			}
+			total := len(groups[i].Teilnehmende) + len(groups[i].Betreuende)
+			if total <= seats {
+				continue
+			}
+
+			// Find the target group with the most spare capacity.
+			targetIdx := -1
+			maxSpare := 0
+			for j := range groups {
+				if j == i {
+					continue
+				}
+				ts := groupTotalSeats(groups[j])
+				if ts == 0 {
+					continue
+				}
+				spare := ts - len(groups[j].Teilnehmende) - len(groups[j].Betreuende)
+				if spare > maxSpare {
+					maxSpare = spare
+					targetIdx = j
+				}
+			}
+			if targetIdx < 0 {
+				continue // nowhere to move to
+			}
+
+			// Prefer moving a Teilnehmende.
+			if len(groups[i].Teilnehmende) > 0 {
+				tn := groups[i].Teilnehmende[len(groups[i].Teilnehmende)-1]
+				groups[i].Teilnehmende = groups[i].Teilnehmende[:len(groups[i].Teilnehmende)-1]
+				groups[i].Ortsverbands[tn.Ortsverband]--
+				groups[i].Geschlechts[tn.Geschlecht]--
+				groups[i].AlterSum -= tn.Alter
+				addTeilnehmendeToGroup(&groups[targetIdx], tn)
+				changed = true
+				continue
+			}
+
+			// Fall back: move a non-driver Betreuende.
+			driverNames := groupDriverNames(groups[i])
+			for bi, b := range groups[i].Betreuende {
+				if driverNames[strings.ToLower(strings.TrimSpace(b.Name))] {
+					continue // never move a driver
+				}
+				groups[i].Betreuende = append(groups[i].Betreuende[:bi], groups[i].Betreuende[bi+1:]...)
+				groups[targetIdx].Betreuende = append(groups[targetIdx].Betreuende, b)
+				changed = true
+				break
+			}
+		}
+	}
+}
+
+// rebalanceBetreuendeTNRatio swaps a non-driver Betreuende from the group with
+// the highest Betreuende:TN ratio with a Teilnehmende from the group with the
+// lowest ratio, repeating until no swap reduces the maximum ratio further.
+// Because one person moves in each direction per swap, the total headcount per
+// group is unchanged, so vehicle seat capacity is automatically preserved.
+// Drivers (matched via vehicle FahrerName) are never moved; the donating group
+// always retains at least one Betreuende; the receiving group always retains at
+// least one Teilnehmende after the swap.
+func rebalanceBetreuendeTNRatio(groups []models.Group) {
+	// Cap iterations to prevent any accidental infinite loop.
+	maxIter := len(groups)*len(groups)*10 + 10
+	for iter := 0; iter < maxIter; iter++ {
+		bestGain := 0.0
+		bestHi, bestLo := -1, -1
+		bestBi := -1 // Betreuende index in groups[bestHi] to move
+
+		for hi := range groups {
+			tnHi := len(groups[hi].Teilnehmende)
+			bHi := len(groups[hi].Betreuende)
+			if tnHi == 0 || bHi < 2 {
+				continue // need ≥1 TN for ratio; need ≥2 B so one stays behind
+			}
+			ratioHi := float64(bHi) / float64(tnHi)
+
+			// Find a moveable (non-driver) Betreuende in the high-ratio group.
+			driverNames := groupDriverNames(groups[hi])
+			moveableBI := -1
+			for bi, b := range groups[hi].Betreuende {
+				if !driverNames[strings.ToLower(strings.TrimSpace(b.Name))] {
+					moveableBI = bi
+					break
+				}
+			}
+			if moveableBI < 0 {
+				continue // only drivers remain – cannot donate
+			}
+
+			for lo := range groups {
+				if lo == hi {
+					continue
+				}
+				tnLo := len(groups[lo].Teilnehmende)
+				bLo := len(groups[lo].Betreuende)
+				if tnLo < 2 {
+					continue // lo would end up with 0 TN after giving one away
+				}
+				ratioLo := float64(bLo) / float64(tnLo)
+				if ratioHi <= ratioLo {
+					continue // no imbalance in this direction
+				}
+
+				// Compute ratios after the swap (1 B: hi→lo, 1 TN: lo→hi).
+				newRatioHi := float64(bHi-1) / float64(tnHi+1)
+				newRatioLo := float64(bLo+1) / float64(tnLo-1)
+				newMax := newRatioHi
+				if newRatioLo > newMax {
+					newMax = newRatioLo
+				}
+				gain := ratioHi - newMax // ratioHi is the current max (ratioHi > ratioLo)
+				if gain > bestGain {
+					bestGain = gain
+					bestHi = hi
+					bestLo = lo
+					bestBi = moveableBI
+				}
+			}
+		}
+
+		if bestHi < 0 || bestGain <= 1e-9 {
+			break
+		}
+
+		// Perform the swap.
+		b := groups[bestHi].Betreuende[bestBi]
+		tn := groups[bestLo].Teilnehmende[len(groups[bestLo].Teilnehmende)-1]
+
+		// Move Betreuende bestHi → bestLo.
+		groups[bestHi].Betreuende = append(
+			groups[bestHi].Betreuende[:bestBi],
+			groups[bestHi].Betreuende[bestBi+1:]...)
+		groups[bestLo].Betreuende = append(groups[bestLo].Betreuende, b)
+
+		// Move TN bestLo → bestHi.
+		tnIdx := len(groups[bestLo].Teilnehmende) - 1
+		groups[bestLo].Teilnehmende = groups[bestLo].Teilnehmende[:tnIdx]
+		groups[bestLo].Ortsverbands[tn.Ortsverband]--
+		groups[bestLo].Geschlechts[tn.Geschlecht]--
+		groups[bestLo].AlterSum -= tn.Alter
+		addTeilnehmendeToGroup(&groups[bestHi], tn)
+	}
 }

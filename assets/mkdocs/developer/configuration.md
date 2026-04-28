@@ -24,6 +24,9 @@ ort = "Singen am Hohentwiel"
 [gruppen]
 # Maximale Teilnehmendenzahl pro Gruppe
 max_groesse = 8
+# Minimale Teilnehmendenzahl pro Gruppe (Fahrzeug-Pfad):
+# Fahrzeuge mit weniger als min_groesse Passagierplätzen werden ausgeschlossen.
+min_groesse = 6
 # Namen der Gruppen (Reihenfolge: Gruppe 1, Gruppe 2, …)
 # Werden in Gruppen-Ansicht, Auswertung und auf Urkunden angezeigt.
 # Fehlt ein Name für eine Gruppe, wird "Gruppe N" als Fallback verwendet.
@@ -64,6 +67,7 @@ bilder_ordner = "pictures"
 | `veranstaltung.jahr` | integer | aktuelles Jahr | Jahr auf Urkunden |
 | `veranstaltung.ort` | string | `""` | Veranstaltungsort auf Urkunden |
 | `gruppen.max_groesse` | integer | `8` | Max. Teilnehmende pro Gruppe |
+| `gruppen.min_groesse` | integer | `6` | Min. Teilnehmende pro Gruppe (Fahrzeug-Pfad: Fahrzeuge mit weniger Passagierplätzen werden ausgeschlossen) |
 | `gruppen.gruppennamen` | string[] | `[]` | Benutzerdefinierte Gruppennamen (Fallback: „Gruppe N") |
 | `ergebnisse.min_punkte` | integer | `100` | Mindest-Punktzahl |
 | `ergebnisse.max_punkte` | integer | `1200` | Höchst-Punktzahl |

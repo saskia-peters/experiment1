@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-04-27
+
+### Added
+- Vehicle-first group distribution algorithm: when vehicles are present, groups are formed one-per-vehicle instead of by participant count alone.
+  - `min_groesse` config option (default 6): vehicles with fewer than `min_groesse` passenger seats are excluded; too-small or surplus vehicles are reported as informational warnings.
+  - `max_groesse` cap is applied per group using effective capacity (`vehicle seats − Betreuende count`) so that non-driver Betreuende do not silently reduce the number of available TN slots.
+- Phase ordering: drivers are assigned first, then Teilnehmende (using full seat capacity), then additional Betreuende — preventing non-driver Betreuende from consuming TN seats.
+- Overload relief (Phase 3c): after all people are placed, any group whose headcount exceeds its vehicle seat count has a Teilnehmende (or non-driver Betreuende as fallback) moved to the group with the most spare seats. Drivers are never moved.
+- Betreuende:TN ratio rebalancing (Phase 3d): a non-driver Betreuende is swapped with a Teilnehmende between the group with the highest and the group with the lowest Betreuende:TN ratio, repeating until no swap reduces the maximum ratio further. Total headcount per group is preserved, so seat capacity is unaffected.
+- Fallback driver assignment (Phase 3b): if a vehicle in a group has no resolved driver, the group's first licensed Betreuende is assigned as the vehicle's driver name.
+- `SaveGroupFahrzeuge` now persists any `FahrerName` changes made during distribution back to the `fahrzeuge` table, so fallback driver names are visible in generated PDFs.
+
+### Fixed
+- Groups smaller than `min_groesse` caused by too many vehicles: `numGroups` is now capped to `⌊TN count / min_groesse⌋`; excess eligible vehicles are reported as unused.
+
 ## [0.1.3] - 2026-04-14
 
 ### Added

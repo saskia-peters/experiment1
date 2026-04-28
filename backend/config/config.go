@@ -25,6 +25,7 @@ type VeranstaltungConfig struct {
 
 type GruppenConfig struct {
 	MaxGroesse   int      `toml:"max_groesse"`
+	MinGroesse   int      `toml:"min_groesse"`
 	Gruppennamen []string `toml:"gruppennamen"`
 }
 
@@ -71,6 +72,7 @@ func Default() Config {
 		},
 		Gruppen: GruppenConfig{
 			MaxGroesse:   8,
+			MinGroesse:   6,
 			Gruppennamen: DefaultGruppennamen,
 		},
 		Ergebnisse: ErgebnisseConfig{
@@ -119,6 +121,9 @@ ort = ""
 [gruppen]
 # Maximale Anzahl Teilnehmende pro Gruppe
 max_groesse = 8
+# Mindestanzahl Teilnehmende pro Gruppe (Fahrzeuge mit zu wenig Plätzen werden ausgeschlossen).
+# 0 = kein Mindest (alle Fahrzeuge werden verwendet).
+min_groesse = 6
 # Namen der Gruppen (in Reihenfolge: Gruppe 1, Gruppe 2, …)
 # Diese Namen werden in der Anwendung und auf Urkunden angezeigt.
 # Wenn weniger Namen als Gruppen vorhanden sind, wird "Gruppe N" als Fallback verwendet.
@@ -166,6 +171,9 @@ func ReadRaw() (string, error) {
 func (c Config) Validate() error {
 	if c.Gruppen.MaxGroesse < 1 {
 		return fmt.Errorf("max_groesse muss mindestens 1 sein (aktuell: %d)", c.Gruppen.MaxGroesse)
+	}
+	if c.Gruppen.MinGroesse < 0 {
+		return fmt.Errorf("min_groesse darf nicht negativ sein (aktuell: %d)", c.Gruppen.MinGroesse)
 	}
 	if c.Ergebnisse.MaxPunkte <= c.Ergebnisse.MinPunkte {
 		return fmt.Errorf("max_punkte (%d) muss größer als min_punkte (%d) sein", c.Ergebnisse.MaxPunkte, c.Ergebnisse.MinPunkte)

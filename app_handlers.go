@@ -101,7 +101,7 @@ func (a *App) HasScores() (bool, error) {
 }
 
 func (a *App) DistributeGroups() map[string]interface{} {
-	return handlers.DistributeGroups(a.db, a.cfg.Gruppen.MaxGroesse)
+	return handlers.DistributeGroups(a.db, a.cfg.Gruppen.MaxGroesse, a.cfg.Gruppen.MinGroesse)
 }
 
 // --- Queries ---

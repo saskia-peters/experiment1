@@ -6,6 +6,28 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.6] — 2026-04-28
+
+### Hinzugefügt
+
+- **Fahrzeug-zuerst-Algorithmus** für die Gruppenverteilung: Wenn Fahrzeuge importiert wurden, erhält jede Gruppe exakt ein Fahrzeug (1:1-Zuweisung sortiert nach OV → Bezeichnung). Gruppenanzahl richtet sich nach der Anzahl der geeigneten Fahrzeuge, nicht nach `max_groesse`.
+- **Phase 3c — Überlastungsausgleich**: Gruppen, die nach der TN-Verteilung mehr Personen als Sitzplätze haben, geben automatisch Teilnehmende (oder nicht-fahrende Betreuende) an Gruppen mit Reserveplätzen ab. Läuft still im Hintergrund.
+- **Phase 3d — Betreuenden:TN-Verhältnis-Ausgleich**: Tauscht eine Betreuende ↔ Teilnehmende zwischen der Gruppe mit dem höchsten und dem niedrigsten B:TN-Verhältnis, solange der Tausch eine Verbesserung bringt. Gesamtgröße der Gruppen bleibt konstant. Läuft still im Hintergrund.
+- **Phase 3b — Automatischer Fahrer-Fallback**: Wurde im Fahrzeug-Blatt kein Fahrer eingetragen oder ist der Name nicht in der Betreuenden-Liste, wird die erste lizenzierte Betreuende der Gruppe automatisch als Fahrerin gesetzt.
+- **`min_groesse`-Konfiguration** (`config.toml`, Abschnitt `[gruppen]`): Fahrzeuge, deren Passagierplätze (Sitzplätze − 1) kleiner als `min_groesse` sind, werden beim Verteilen ausgeschlossen. Standard: `6`.
+- **Kapazitätsprüfung** (Phase 4): Nach der Verteilung werden Warnungen ausgegeben, wenn die Gesamtzahl der Personen die Gesamtsitzplätze überschreitet oder eine einzelne Gruppe mehr Mitglieder als Sitze hat.
+
+### Behoben
+
+- **PDF-Fahrername fehlte**: `SaveGroupFahrzeuge` schrieb nur die Gruppe↔Fahrzeug-Verknüpfung, aber nicht den aktualisierten `FahrerName` in die `fahrzeuge`-Tabelle. Die Datenbank wird jetzt in derselben Transaktion aktualisiert, sodass der korrekte Fahrername auf den PDFs erscheint.
+
+### Geändert
+
+- **Excel-Import — Spalte `FahrerName`**: Die korrekte Spaltenbezeichnung im Tabellenblatt `Fahrzeuge` heißt `FahrerName` (nicht `Fahrer`). Dokumentation angepasst.
+- Umverteilungsmeldungen für Phase 3c und 3d werden nicht mehr als Benutzerwarnung angezeigt (laufen still).
+
+---
+
 ## [0.1.5] — 2026-04-20
 
 ### Hinzugefügt

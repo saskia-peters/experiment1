@@ -295,6 +295,8 @@ func InsertFahrzeuge(db *sql.DB, rows [][]string) error {
 }
 
 // SaveGroupFahrzeuge saves the vehicle-to-group assignments to the database
+// and persists any FahrerName changes that were made in memory during
+// distribution (e.g. the Phase 3b fallback driver assignment).
 func SaveGroupFahrzeuge(db *sql.DB, groups []models.Group) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -306,16 +308,25 @@ func SaveGroupFahrzeuge(db *sql.DB, groups []models.Group) error {
 		return fmt.Errorf("failed to clear gruppe_fahrzeuge: %w", err)
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO gruppe_fahrzeuge (group_id, fahrzeug_id) VALUES (?, ?)")
+	linkStmt, err := tx.Prepare("INSERT INTO gruppe_fahrzeuge (group_id, fahrzeug_id) VALUES (?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare gruppe_fahrzeuge statement: %w", err)
 	}
-	defer stmt.Close()
+	defer linkStmt.Close()
+
+	updateStmt, err := tx.Prepare("UPDATE fahrzeuge SET fahrer_name = ? WHERE id = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare fahrzeuge update statement: %w", err)
+	}
+	defer updateStmt.Close()
 
 	for _, group := range groups {
 		for _, f := range group.Fahrzeuge {
-			if _, err = stmt.Exec(group.GroupID, f.ID); err != nil {
+			if _, err = linkStmt.Exec(group.GroupID, f.ID); err != nil {
 				return fmt.Errorf("failed to insert gruppe_fahrzeuge: %w", err)
+			}
+			if _, err = updateStmt.Exec(f.FahrerName, f.ID); err != nil {
+				return fmt.Errorf("failed to update fahrer_name for fahrzeug %d: %w", f.ID, err)
 			}
 		}
 	}

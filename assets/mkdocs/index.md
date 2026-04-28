@@ -1,7 +1,7 @@
 # Jugendolympiade Verwaltung
 
 <div class="hero-banner" markdown>
-Eine plattformübergreifende Desktop-Anwendung für die Organisation von Jugendolympiaden — gebaut mit [Wails v2](https://wails.io/) (Go-Backend + Web-Frontend).
+Eine Desktop-Anwendung für die Organisation von Jugendolympiaden — gebaut mit [Wails v2](https://wails.io/) (Go-Backend + Web-Frontend).
 </div>
 
 ## Was die Anwendung leistet
@@ -12,7 +12,7 @@ Eine plattformübergreifende Desktop-Anwendung für die Organisation von Jugendo
 
     ---
 
-    Import von Teilnehmenden und Betreuenden aus Excel. Automatische Validierung sichert saubere Daten.
+    Import von Teilnehmenden, Betreuenden und Fahrzeugen aus Excel. Automatische Validierung sichert saubere Daten.
 
     [:octicons-arrow-right-24: Excel-Import](user-guide/excel-import.md)
 
@@ -20,7 +20,7 @@ Eine plattformübergreifende Desktop-Anwendung für die Organisation von Jugendo
 
     ---
 
-    Erstellt automatisch ausgewogene Gruppen nach Ortsverband, Alter und Geschlecht – mit Betreuenden-Zuweisung.
+    Fahrzeug-zuerst-Algorithmus: eine Gruppe pro Fahrzeug, Sitzplatzkapazität wird eingehalten, Betreuenden:TN-Verhältnis wird automatisch ausgeglichen.
 
     [:octicons-arrow-right-24: Gruppen](user-guide/groups.md)
 
@@ -44,11 +44,11 @@ Eine plattformübergreifende Desktop-Anwendung für die Organisation von Jugendo
 
 ## Schnellstart
 
-1. Excel-Datei vorbereiten (Blätter: `Teilnehmende`, `Betreuende`, `Stationen`)
+1. Excel-Datei vorbereiten (Blätter: `Teilnehmende`, `Betreuende`, `Fahrzeuge`, `Stationen`)
 2. `THW-JugendOlympiade.exe` starten
-3. **📝 Daten → "Excel einlesen"** — Datei auswählen
-4. **"Gruppen zusammenstellen"** klicken
-5. Ergebnisse über **"Ergebniseingabe"** erfassen
+3. **📝 Daten → „Excel einlesen"** — Datei auswählen
+4. **„Gruppen zusammenstellen"** klicken
+5. Ergebnisse über **„Ergebniseingabe"** erfassen
 6. PDFs über **📊 Ausgabe** erzeugen
 
 [:octicons-arrow-right-24: Vollständige Anleitung](getting-started.md)
@@ -57,9 +57,7 @@ Eine plattformübergreifende Desktop-Anwendung für die Organisation von Jugendo
 
 | Plattform | Status |
 |-----------|--------|
-| Windows | ✅ Vollständig unterstützt |
-| macOS | ✅ Vollständig unterstützt |
-| Linux | ✅ Vollständig unterstützt |
+| Windows 10 / 11 | ✅ Vollständig unterstützt |
 
 ## Tech Stack
 

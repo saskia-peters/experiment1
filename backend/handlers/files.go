@@ -281,14 +281,14 @@ func HasScores(db *sql.DB) (bool, error) {
 }
 
 // DistributeGroups creates balanced groups from the loaded participants.
-func DistributeGroups(db *sql.DB, maxGroupSize int) map[string]interface{} {
+func DistributeGroups(db *sql.DB, maxGroupSize int, minGroupSize int) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Bitte zuerst eine Excel-Datei laden.",
 		}
 	}
-	warning, err := services.CreateBalancedGroups(db, maxGroupSize)
+	warning, err := services.CreateBalancedGroups(db, maxGroupSize, minGroupSize)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",

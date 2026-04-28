@@ -38,3 +38,6 @@ main.py
 # MkDocs build output — never commit, CI deploys via GitHub Actions
 site/
 docs/
+nul
+excel_output.txt
+uv.lock

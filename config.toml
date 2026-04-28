@@ -13,6 +13,9 @@ ort = "Singen am Hohentwiel"
 [gruppen]
 # Maximale Anzahl Teilnehmende pro Gruppe
 max_groesse = 7
+# Mindestanzahl Teilnehmende pro Gruppe (Fahrzeuge mit zu wenig Plätzen werden ausgeschlossen).
+# 0 = kein Mindest (alle Fahrzeuge werden verwendet).
+min_groesse = 6
 # Namen der Gruppen (in Reihenfolge: Gruppe 1, Gruppe 2, …)
 # Diese Namen werden in der Anwendung und auf Urkunden angezeigt.
 # Wenn weniger Namen als Gruppen vorhanden sind, wird "Gruppe N" als Fallback verwendet.
