@@ -23,7 +23,6 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Geändert
 
-- **Excel-Import — Spalte `FahrerName`**: Die korrekte Spaltenbezeichnung im Tabellenblatt `Fahrzeuge` heißt `FahrerName` (nicht `Fahrer`). Dokumentation angepasst.
 - Umverteilungsmeldungen für Phase 3c und 3d werden nicht mehr als Benutzerwarnung angezeigt (laufen still).
 
 ---

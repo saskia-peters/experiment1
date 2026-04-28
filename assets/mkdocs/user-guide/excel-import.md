@@ -81,7 +81,7 @@ Fahrzeuge für den Transport der Gruppen. Die **erste Zeile ist die Kopfzeile**.
 | `Bezeichnung` | ✅ Ja | Name/Beschreibung des Fahrzeugs |
 | `Ortsverband` | ✅ Ja | Lokale Gliederung |
 | `Funkrufname` | ✅ Ja | Funkrufname des Fahrzeugs |
-| `FahrerName` | ⬜ Optional | Name des Fahrers — muss in der Betreuenden-Liste mit Fahrerlaubnis vorhanden sein. Bleibt das Feld leer, wird beim Verteilen automatisch die erste lizenzierte Betreuende der Gruppe als Fahrerin eingetragen. |
+| `Fahrer` | ⬜ Optional | Name des Fahrers — muss in der Betreuenden-Liste mit Fahrerlaubnis vorhanden sein. Bleibt das Feld leer, wird beim Verteilen automatisch die erste lizenzierte Betreuende der Gruppe als Fahrerin eingetragen. |
 | `Sitzplaetze` | ✅ Ja | Gesamtzahl Sitzplätze inkl. Fahrer (positive ganze Zahl) |
 
 !!! info "📸 Screenshot: `xlsx-sheet-fahrzeuge.png`"
@@ -92,8 +92,8 @@ Fahrzeuge für den Transport der Gruppen. Die **erste Zeile ist die Kopfzeile**.
 
 **Beispiel:**
 
-| Bezeichnung | Ortsverband | Funkrufname | FahrerName | Sitzplaetze |
-|-------------|-------------|-------------|------------|-------------|
+| Bezeichnung | Ortsverband | Funkrufname | Fahrer | Sitzplaetze |
+|-------------|-------------|-------------|--------|-------------|
 | THW-Transporter | Berlin-Mitte | BER-TH 1 | Klaus Bauer | 9 |
 | Mannschaftsbus | Hamburg-Nord | HH-TH 3 | Maria Koch | 16 |
 
