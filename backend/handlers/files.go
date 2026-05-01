@@ -263,10 +263,10 @@ func LoadFile(ctx context.Context, db **sql.DB) map[string]interface{} {
 
 	participantCount := len(rows) - 1
 	return map[string]interface{}{
-		"status":   "success",
-		"message":  fmt.Sprintf("Erfolgreich %d Teilnehmende geladen", participantCount),
-		"count":    participantCount,
-		"warning":  stationWarning,
+		"status":  "success",
+		"message": fmt.Sprintf("Erfolgreich %d Teilnehmende geladen", participantCount),
+		"count":   participantCount,
+		"warning": stationWarning,
 	}
 }
 

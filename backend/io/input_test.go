@@ -2,7 +2,6 @@ package io_test
 
 import (
 	"path/filepath"
-	"strings"
 	"testing"
 
 	backendio "THW-JugendOlympiade/backend/io"
