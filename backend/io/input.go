@@ -215,17 +215,34 @@ func ReadBetreuendeFromXLSX(filePath string) ([][]string, error) {
 	return rows, nil
 }
 
-// ReadStationsFromXLSX reads the stations from the Stationen sheet
-func ReadStationsFromXLSX(filePath string) ([][]string, error) {
+// defaultStationRows are used when no Stationen sheet is present in the XLSX.
+var defaultStationRows = [][]string{
+	{"Stationsname"},
+	{"Kübelspritze Zielschiessen"},
+	{"Magnetlabyrinth"},
+	{"Merkfähigkeit"},
+	{"Geräuschlabyrinth"},
+	{"Rittersport"},
+	{"Koordiniertes Nageln"},
+	{"Wurfknoten werfen"},
+	{"Polarexpedition"},
+}
+
+const defaultStationsWarning = "Kein 'Stationen'-Blatt in der Excel-Datei gefunden. Standard-Stationen wurden geladen."
+
+// ReadStationsFromXLSX reads the stations from the Stationen sheet.
+// If the sheet is absent or empty, default stations are returned together with
+// a non-empty warning string. Only real I/O errors cause a non-nil error return.
+func ReadStationsFromXLSX(filePath string) ([][]string, string, error) {
 	// Check if XLSX file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("XLSX file '%s' not found", filePath)
+		return nil, "", fmt.Errorf("XLSX file '%s' not found", filePath)
 	}
 
 	// Open XLSX file
 	f, err := excelize.OpenFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open XLSX file: %w", err)
+		return nil, "", fmt.Errorf("failed to open XLSX file: %w", err)
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -235,12 +252,9 @@ func ReadStationsFromXLSX(filePath string) ([][]string, error) {
 
 	// Read all rows from the "Stationen" sheet
 	rows, err := f.GetRows(models.StationsSheetName)
-	if err != nil {
-		return nil, fmt.Errorf("Keine Stationen vorhanden, bitte im XLSX einfügen.")
-	}
-
-	if len(rows) < 2 {
-		return nil, fmt.Errorf("Keine Stationen vorhanden, bitte im XLSX einfügen.")
+	if err != nil || len(rows) < 2 {
+		log.Printf("Stationen sheet absent or empty; using default stations")
+		return defaultStationRows, defaultStationsWarning, nil
 	}
 
 	validStationCount := 0
@@ -250,11 +264,12 @@ func ReadStationsFromXLSX(filePath string) ([][]string, error) {
 		}
 	}
 	if validStationCount == 0 {
-		return nil, fmt.Errorf("Keine Stationen vorhanden, bitte im XLSX einfügen.")
+		log.Printf("Stationen sheet has no valid rows; using default stations")
+		return defaultStationRows, defaultStationsWarning, nil
 	}
 
 	log.Printf("Successfully validated %d station rows", validStationCount)
-	return rows, nil
+	return rows, "", nil
 }
 
 // ReadFahrzeugeFromXLSX reads vehicles from the "Fahrzeuge" sheet.

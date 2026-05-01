@@ -38,6 +38,10 @@ export async function openFileDialog() {
             ausgabeDropdown.removeAttribute('open');
             output.textContent = `✔ ${uploadResult.count} Teilnehmende geladen.\n\nNächster Schritt:\n• Klicken Sie auf "Gruppen zusammenstellen" um ausgewogene Gruppen zu erstellen`;
             
+            if (uploadResult.warning) {
+                alert('⚠️ Warnung Stationen:\n\n' + uploadResult.warning);
+            }
+
             // Collapse Admin and expand Daten
             const adminDropdown = document.querySelector('.button-section:nth-child(1) .category-dropdown');
             const datenDropdown = document.querySelector('.button-section:nth-child(2) .category-dropdown');

@@ -177,7 +177,8 @@ func LoadFile(ctx context.Context, db **sql.DB) map[string]interface{} {
 
 	// Validate stations before touching the database so that a missing Stationen
 	// sheet is reported immediately without destroying the existing data.
-	stationRows, err := io.ReadStationsFromXLSX(filePath)
+	// When the sheet is absent, default stations are returned with a warning.
+	stationRows, stationWarning, err := io.ReadStationsFromXLSX(filePath)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",
@@ -262,9 +263,10 @@ func LoadFile(ctx context.Context, db **sql.DB) map[string]interface{} {
 
 	participantCount := len(rows) - 1
 	return map[string]interface{}{
-		"status":  "success",
-		"message": fmt.Sprintf("Erfolgreich %d Teilnehmende geladen", participantCount),
-		"count":   participantCount,
+		"status":   "success",
+		"message":  fmt.Sprintf("Erfolgreich %d Teilnehmende geladen", participantCount),
+		"count":    participantCount,
+		"warning":  stationWarning,
 	}
 }
 

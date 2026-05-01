@@ -423,7 +423,7 @@ func TestReadStationsFromXLSX_ReturnsRowsOnValidFile(t *testing.T) {
 		},
 	})
 
-	rows, err := backendio.ReadStationsFromXLSX(path)
+	rows, _, err := backendio.ReadStationsFromXLSX(path)
 	if err != nil {
 		t.Fatalf("ReadStationsFromXLSX: %v", err)
 	}
@@ -433,7 +433,7 @@ func TestReadStationsFromXLSX_ReturnsRowsOnValidFile(t *testing.T) {
 }
 
 func TestReadStationsFromXLSX_ErrorWhenFileAbsent(t *testing.T) {
-	_, err := backendio.ReadStationsFromXLSX(filepath.Join(t.TempDir(), "missing.xlsx"))
+	_, _, err := backendio.ReadStationsFromXLSX(filepath.Join(t.TempDir(), "missing.xlsx"))
 	if err == nil {
 		t.Fatal("expected error for missing file, got nil")
 	}
@@ -442,7 +442,7 @@ func TestReadStationsFromXLSX_ErrorWhenFileAbsent(t *testing.T) {
 func TestReadStationsFromXLSX_ReturnsEmptyWhenSheetAbsent(t *testing.T) {
 	dir := t.TempDir()
 	// File with only a Teilnehmende sheet — Stationen sheet is absent.
-	// Since stations are now required, this must return an error.
+	// Default stations and a warning should be returned (no error).
 	path := newXLSX(t, dir, "no_stationen", map[string][][]string{
 		models.SheetName: {
 			{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
@@ -450,11 +450,14 @@ func TestReadStationsFromXLSX_ReturnsEmptyWhenSheetAbsent(t *testing.T) {
 		},
 	})
 
-	_, err := backendio.ReadStationsFromXLSX(path)
-	if err == nil {
-		t.Fatal("expected error when Stationen sheet is absent, got nil")
+	rows, warning, err := backendio.ReadStationsFromXLSX(path)
+	if err != nil {
+		t.Fatalf("expected no error when Stationen sheet is absent, got: %v", err)
 	}
-	if !strings.Contains(err.Error(), "Keine Stationen") {
-		t.Errorf("expected error about missing stations, got: %v", err)
+	if warning == "" {
+		t.Error("expected a warning when default stations are loaded, got empty string")
+	}
+	if len(rows) < 2 {
+		t.Errorf("expected default station rows, got %d rows", len(rows))
 	}
 }

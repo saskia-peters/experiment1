@@ -421,7 +421,7 @@ func TestReadStationsFromXLSX_ValidFile(t *testing.T) {
 	}
 	defer os.Remove(filepath)
 
-	rows, err := io.ReadStationsFromXLSX(filepath)
+	rows, _, err := io.ReadStationsFromXLSX(filepath)
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
@@ -435,7 +435,7 @@ func TestReadStationsFromXLSX_ValidFile(t *testing.T) {
 	}
 }
 
-// TestReadStationsFromXLSX_NoStationsSheet tests that a missing stations sheet is rejected
+// TestReadStationsFromXLSX_NoStationsSheet tests that a missing stations sheet returns default stations with a warning
 func TestReadStationsFromXLSX_NoStationsSheet(t *testing.T) {
 	data := [][]string{
 		{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"},
@@ -445,13 +445,17 @@ func TestReadStationsFromXLSX_NoStationsSheet(t *testing.T) {
 	filepath := createTestExcelFile(t, "no_stations_test.xlsx", models.SheetName, data)
 	defer os.Remove(filepath)
 
-	_, err := io.ReadStationsFromXLSX(filepath)
-	if err == nil {
-		t.Fatal("Expected error (stations are required), got nil")
+	rows, warning, err := io.ReadStationsFromXLSX(filepath)
+	if err != nil {
+		t.Fatalf("Expected no error (default stations should load), got: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "Keine Stationen") {
-		t.Errorf("Expected error about missing stations, got: %v", err)
+	if warning == "" {
+		t.Error("Expected a warning when default stations are loaded, got empty string")
+	}
+
+	if len(rows) < 2 {
+		t.Errorf("Expected default station rows, got %d rows", len(rows))
 	}
 }
 
