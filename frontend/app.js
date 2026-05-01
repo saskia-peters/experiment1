@@ -2,6 +2,7 @@
 import { openFileDialog, handleBackupDatabase, handleRestoreDatabase, handleDistributeGroups, handleConvertMasterExcel } from './admin/file-handler.js';
 import { handleEditConfig } from './admin/config-editor.js';
 import { handleEditNames } from './admin/name-editor.js';
+import { handleEditStations } from './admin/station-editor.js';
 import { handleShowGroups } from './groups/groups.js';
 import { handleShowStations, handleShowStationsForGroup, handleShowInputOverview } from './stations/stations.js';
 import { handleGroupEvaluation, handleOrtsverbandEvaluation, toggleOVScores } from './evaluations/evaluations.js';
@@ -100,6 +101,7 @@ async function _handleStartupDBChoice(dbName) {
 window.openFileDialog = openFileDialog;
 window.handleConvertMasterExcel = handleConvertMasterExcel;
 window.handleEditNames = handleEditNames;
+window.handleEditStations = handleEditStations;
 window.handleBackupDatabase = handleBackupDatabase;
 window.handleRestoreDatabase = handleRestoreDatabase;
 window.handleDistributeGroups = handleDistributeGroups;

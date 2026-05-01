@@ -12,6 +12,7 @@ import (
 	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/io"
+	"THW-JugendOlympiade/backend/models"
 )
 
 const templateDir = "templates"
@@ -274,6 +275,63 @@ func UpdatePersonName(db *sql.DB, kind string, id int, newName string) map[strin
 	}
 	if err := database.UpdatePersonName(db, kind, id, newName); err != nil {
 		return map[string]interface{}{"status": "error", "message": fmt.Sprintf("Name konnte nicht gespeichert werden: %v", err)}
+	}
+	return map[string]interface{}{"status": "ok"}
+}
+
+// GetAllStations returns all stations (id + name) ordered alphabetically.
+func GetAllStations(db *sql.DB) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	stations, err := database.GetStationNamesOrdered(db)
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": fmt.Sprintf("Stationen konnten nicht geladen werden: %v", err)}
+	}
+	if stations == nil {
+		stations = []models.Station{}
+	}
+	return map[string]interface{}{"status": "ok", "stations": stations}
+}
+
+// UpdateStationName updates the name of a single station identified by id.
+func UpdateStationName(db *sql.DB, id int, newName string) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	newName = strings.TrimSpace(newName)
+	if newName == "" {
+		return map[string]interface{}{"status": "error", "message": "Stationsname darf nicht leer sein"}
+	}
+	if err := database.UpdateStationName(db, id, newName); err != nil {
+		return map[string]interface{}{"status": "error", "message": fmt.Sprintf("Stationsname konnte nicht gespeichert werden: %v", err)}
+	}
+	return map[string]interface{}{"status": "ok"}
+}
+
+// AddStation adds a new station and returns its generated id.
+func AddStation(db *sql.DB, name string) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return map[string]interface{}{"status": "error", "message": "Stationsname darf nicht leer sein"}
+	}
+	id, err := database.AddStation(db, name)
+	if err != nil {
+		return map[string]interface{}{"status": "error", "message": fmt.Sprintf("Station konnte nicht hinzugefügt werden: %v", err)}
+	}
+	return map[string]interface{}{"status": "ok", "id": id}
+}
+
+// DeleteStation removes a station (and its scores) by id.
+func DeleteStation(db *sql.DB, id int) map[string]interface{} {
+	if db == nil {
+		return map[string]interface{}{"status": "error", "message": "Keine Datenbank geöffnet"}
+	}
+	if err := database.DeleteStation(db, id); err != nil {
+		return map[string]interface{}{"status": "error", "message": fmt.Sprintf("Station konnte nicht gelöscht werden: %v", err)}
 	}
 	return map[string]interface{}{"status": "ok"}
 }

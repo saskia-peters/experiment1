@@ -96,6 +96,22 @@ func (a *App) UpdatePersonName(kind string, id int, newName string) map[string]i
 	return handlers.UpdatePersonName(a.db, kind, id, newName)
 }
 
+func (a *App) GetAllStations() map[string]interface{} {
+	return handlers.GetAllStations(a.db)
+}
+
+func (a *App) UpdateStationName(id int, newName string) map[string]interface{} {
+	return handlers.UpdateStationName(a.db, id, newName)
+}
+
+func (a *App) AddStation(name string) map[string]interface{} {
+	return handlers.AddStation(a.db, name)
+}
+
+func (a *App) DeleteStation(id int) map[string]interface{} {
+	return handlers.DeleteStation(a.db, id)
+}
+
 func (a *App) HasScores() (bool, error) {
 	return handlers.HasScores(a.db)
 }

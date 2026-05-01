@@ -382,3 +382,36 @@ func UpdatePersonName(db *sql.DB, kind string, id int, newName string) error {
 	_, err := db.Exec("UPDATE "+table+" SET name = ? WHERE id = ?", newName, id)
 	return err
 }
+
+// UpdateStationName updates the name of a single station identified by its ID.
+func UpdateStationName(db *sql.DB, id int, newName string) error {
+	_, err := db.Exec("UPDATE stations SET station_name = ? WHERE station_id = ?", newName, id)
+	return err
+}
+
+// AddStation inserts a new station and returns its generated ID.
+func AddStation(db *sql.DB, name string) (int, error) {
+	res, err := db.Exec("INSERT INTO stations (station_name) VALUES (?)", name)
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	return int(id), err
+}
+
+// DeleteStation removes a station by ID.
+// It also removes any scores that reference this station so FK constraints are satisfied.
+func DeleteStation(db *sql.DB, id int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec("DELETE FROM group_station_scores WHERE station_id = ?", id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec("DELETE FROM stations WHERE station_id = ?", id); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
