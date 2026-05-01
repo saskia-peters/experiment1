@@ -60,15 +60,28 @@ Alle Betreuungspersonen. Die **erste Zeile ist die Kopfzeile**.
 
 ---
 
-## Tabellenblatt 3: `Stationen` (Pflicht)
+## Tabellenblatt 3: `Stationen` (Optional)
 
 Stationsnamen für die Ergebniseingabe. Zeile 1 = Kopfzeile, ab Zeile 2 ein Stationsname pro Zeile.
 
 !!! info "📸 Screenshot: `xlsx-sheet-stationen.png`"
     _Tabellenblatt „Stationen" — Kopfzeile und Stationsnamen in Excel/LibreOffice_
 
-!!! warning "Stationen erforderlich"
-    Das Tabellenblatt `Stationen` **muss** mindestens einen Eintrag enthalten. Fehlt das Blatt oder ist es leer, wird der Import abgelehnt und eine Fehlermeldung angezeigt.
+!!! note "Standard-Stationen"
+    Fehlt das Tabellenblatt `Stationen` oder ist es leer, wird der Import **nicht** abgelehnt. Stattdessen werden automatisch folgende acht Standard-Stationen geladen und eine Warnmeldung angezeigt:
+
+    | Standard-Station |
+    |------------------|
+    | Kübelspritze Zielschiessen |
+    | Magnetlabyrinth |
+    | Merkfähigkeit |
+    | Geräuschlabyrinth |
+    | Rittersport |
+    | Koordiniertes Nageln |
+    | Wurfknoten werfen |
+    | Polarexpedition |
+
+    Die Stationen können anschließend über **Admin → „Stationen umbenennen"** angepasst werden.
 
 ---
 
@@ -136,6 +149,7 @@ Liegt die Teilnehmerliste in einem internen Quellformat vor (z. B. direkt aus de
 | `Alter` | Alter als ganze Zahl |
 | `Ortsverband` | Lokale Gliederung |
 | `Fahrerlaubnis` | Jeder nicht-leere Wert außer `"/"` gilt als gültige Fahrerlaubnis |
+| `Geschlecht` | `m`, `w` oder `d` — wird direkt in die Ziel-XLSX übernommen |
 
 **Tabellenblatt `Fahrzeuge`** (nur Jugend-Veranstaltung):
 
@@ -172,7 +186,7 @@ Liegt die Teilnehmerliste in einem internen Quellformat vor (z. B. direkt aus de
 |-------|--------------|
 | Name darf nicht leer sein | `row N: name is required` |
 | Alter muss eine Zahl sein | `row N: age must be a number` |
-| Alter muss 1–100 sein | `row N: age must be between 1 and 100` |
+| Alter muss 0–150 sein | `row N: age must be between 0 and 150` |
 | Fahrerlaubnis muss `ja`/`nein` sein | `row N: fahrerlaubnis must be 'ja' or 'nein'` |
 | PreGroup enthält ungültige Zeichen | `row N: pregroup contains invalid characters` |
 | PreGroup zu lang | `row N: pregroup exceeds 20 characters` |

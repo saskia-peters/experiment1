@@ -1,5 +1,25 @@
 # Ergebniseingabe
 
+## Stationen verwalten
+
+Bevor Ergebnisse eingetragen werden, können Stationen über **Admin → „Stationen umbenennen"** verwaltet werden.
+
+!!! info "📸 Screenshot: `station-editor-dialog.png`"
+    _Station-Editor-Dialog — Stationen hinzufügen, umbenennen, löschen_
+
+Der Dialog bietet folgende Funktionen:
+
+| Funktion | Beschreibung |
+|----------|-------------|
+| **Umbenennen** | Stationsname inline bearbeiten, dann „Alle speichern" klicken. Geänderte Felder werden orange hervorgehoben. |
+| **Hinzufügen** | Neuen Stationsnamen in das Eingabefeld unten eingeben und „+ Hinzufügen" klicken (oder `Enter`). Die neue Station erscheint sofort in der Liste. |
+| **Löschen** | „✕"-Schaltfläche neben einer Station klicken. Eine Bestätigung ist erforderlich. |
+
+!!! warning "Gesperrt nach erster Ergebniseingabe"
+    Sobald das erste Ergebnis gespeichert wurde, ist der Station-Editor schreibgeschützt. Die Stationsliste wird dann nur noch zur Ansicht angezeigt. Diese Einschränkung verhindert inkonsistente Auswertungen.
+
+---
+
 ## Eingabeformular öffnen
 
 **📝 Daten → "Ergebniseingabe"** öffnet die Scoring-Ansicht.

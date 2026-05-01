@@ -44,7 +44,7 @@ Eine Desktop-Anwendung für die Organisation von Jugendolympiaden — gebaut mit
 
 ## Schnellstart
 
-1. Excel-Datei vorbereiten (Blätter: `Teilnehmende`, `Betreuende`, `Fahrzeuge`, `Stationen`)
+1. Excel-Datei vorbereiten (Pflichtblätter: `Teilnehmende`, `Betreuende`, `Fahrzeuge`; optional: `Stationen` — fehlt es, werden 8 Standard-Stationen geladen)
 2. `THW-JugendOlympiade.exe` starten
 3. **📝 Daten → „Excel einlesen"** — Datei auswählen
 4. **„Gruppen zusammenstellen"** klicken

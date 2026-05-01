@@ -6,6 +6,24 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.7] — 2026-05-01
+
+### Hinzugefügt
+
+- **Admin → „Stationen umbenennen"**: Neuer Dialog zum Verwalten der Stationsliste direkt in der Anwendung — ohne erneuten Excel-Import.
+    - **Umbenennen**: Stationsnamen inline bearbeiten und mit „Alle speichern" übernehmen. Geänderte Felder werden orange hervorgehoben; je Zeile erscheint nach dem Speichern ein ✔ oder ✖.
+    - **Hinzufügen**: Neuen Stationsnamen eingeben und „+ Hinzufügen" klicken (oder `Enter`). Die Station erscheint sofort in der Liste.
+    - **Löschen**: „✕"-Schaltfläche neben einer Station klicken; Bestätigung erforderlich.
+    - **Schreibschutz**: Sobald das erste Ergebnis gespeichert wurde, ist der Dialog schreibgeschützt (nur Ansicht). Eine Warnmeldung erklärt die Einschränkung.
+- **Standard-Stationen beim Import**: Fehlt das Tabellenblatt `Stationen` in der XLSX-Datei oder ist es leer, wird der Import nicht mehr abgelehnt. Stattdessen werden acht Standard-Stationen geladen (`Kübelspritze Zielschiessen`, `Magnetlabyrinth`, `Merkfähigkeit`, `Geräuschlabyrinth`, `Rittersport`, `Koordiniertes Nageln`, `Wurfknoten werfen`, `Polarexpedition`) und eine Warnmeldung angezeigt.
+- **Master-Excel Konvertierung — Spalte `Geschlecht`**: Die Quell-Excel-Datei darf nun eine Spalte `Geschlecht` (Werte `m`/`w`/`d`) enthalten. Der Wert wird direkt in das Ziel-XLSX übernommen. Fehlt die Spalte, bleibt `Geschlecht` leer (kein Fehler).
+
+### Geändert
+
+- Excel-Import: Das Tabellenblatt `Stationen` ist jetzt **optional** (vorher Pflicht).
+
+---
+
 ## [0.1.6] — 2026-04-28
 
 ### Hinzugefügt
