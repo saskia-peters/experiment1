@@ -10,10 +10,60 @@ Alle erzeugten PDFs werden in `pdf_ordner` gespeichert (Standard: `pdfdocs/`).
 | PDF | Schaltfläche | Beschreibung |
 |-----|-------------|--------------|
 | Gruppenübersicht | **"Gruppen-PDF erstellen"** | Eine Seite je Gruppe mit Teilnehmenden + Betreuenden |
+| Stationslaufzettel | **"Gruppen-PDF erstellen"** | Leere Ergebnisblätter je Station für die manuelle Erfassung |
+| OV-Zuteilung | **"Gruppen-PDF erstellen"** | Eine Seite je Ortsverband mit Betreuenden- und Teilnehmendenzuteilung |
+| Teilnehmende-Karten | **"Gruppen-PDF erstellen"** | A4-Seiten mit je 4 A6-Karten zum Ausschneiden (Name, OV, Gruppe) |
 | Gruppenwertung | **"Gruppenwertung-PDF"** | Gruppen-Rankings mit Gesamtpunktzahl |
-| OV-Wertung | **"Ortsverwertung-PDF"** | Ortsverband-Rankings |
+| OV-Wertung | **"Ortsverband-Wertung-PDF"** | Ortsverband-Rankings |
 | Teilnehmer-Urkunden | **"Urkunden Teilnehmende"** | Eine Urkunde je Teilnehmenden |
 | OV-Urkunden | **"Urkunden OV"** | Eine Urkunde je Ortsverband |
+
+!!! info "Hinweis"
+    Die Schaltfläche **„Gruppen-PDF erstellen"** erzeugt alle vier oben markierten PDFs gleichzeitig: `Gruppeneinteilung.pdf`, `Stationslaufzettel.pdf`, `OV-Zuteilung.pdf` und `Teilnehmende-Karten.pdf`.
+
+---
+
+## OV-Zuteilung (`OV-Zuteilung.pdf`)
+
+Erzeugt eine Seite pro Ortsverband mit zwei Tabellen:
+
+**Tabelle 1 — Betreuende**
+
+| Spalte | Inhalt |
+|--------|--------|
+| Betreuende | Name der Person |
+| Gruppe | `Gruppe N - Gruppenname` |
+| Fahrzeug | Fahrzeugbezeichnung (Funkrufname) der zugeteilten Gruppe |
+| Fhr. | `X` wenn diese Person als Fahrerin/Fahrer eingetragen ist |
+
+**Tabelle 2 — Teilnehmende**
+
+| Spalte | Inhalt |
+|--------|--------|
+| Teilnehmende | Name der Person |
+| Gruppe | `Gruppe N - Gruppenname` |
+
+Die Seiten sind nach Ortsverband alphabetisch sortiert. Langer Text wird automatisch kleiner dargestellt, damit er in die Spalte passt.
+
+!!! info "📸 Screenshot: `ov-zuteilung-seite.png`"
+    _OV-Zuteilung — Beispielseite mit Betreuenden- und Teilnehmendentabelle_
+
+---
+
+## Teilnehmende-Karten (`Teilnehmende-Karten.pdf`)
+
+A4-Querformat-Seiten mit je vier A6-Karten (2 × 2 Raster). Nach dem Drucken werden die Seiten in vier Teile geschnitten — jede teilnehmende Person erhält eine Karte.
+
+Jede Karte enthält:
+
+- **Name** (groß, fett)
+- **Ortsverband** (mittelgroß, grau, direkt unter dem Namen)
+- **Gruppe** — `Gruppe N - Gruppenname` (groß, fett)
+
+Die Karten sind nach Ortsverband und dann nach Name sortiert, damit die Stapel für die Ausgabe leicht aufgeteilt werden können. Ein dünner Rahmen markiert die Schnittlinie.
+
+!!! info "📸 Screenshot: `tn-karten-seite.png`"
+    _Teilnehmende-Karten — A4-Seite mit vier A6-Karten zum Ausschneiden_
 
 ---
 

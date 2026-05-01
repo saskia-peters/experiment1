@@ -17,6 +17,8 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - **Schreibschutz**: Sobald das erste Ergebnis gespeichert wurde, ist der Dialog schreibgeschützt (nur Ansicht). Eine Warnmeldung erklärt die Einschränkung.
 - **Standard-Stationen beim Import**: Fehlt das Tabellenblatt `Stationen` in der XLSX-Datei oder ist es leer, wird der Import nicht mehr abgelehnt. Stattdessen werden acht Standard-Stationen geladen (`Kübelspritze Zielschiessen`, `Magnetlabyrinth`, `Merkfähigkeit`, `Geräuschlabyrinth`, `Rittersport`, `Koordiniertes Nageln`, `Wurfknoten werfen`, `Polarexpedition`) und eine Warnmeldung angezeigt.
 - **Master-Excel Konvertierung — Spalte `Geschlecht`**: Die Quell-Excel-Datei darf nun eine Spalte `Geschlecht` (Werte `m`/`w`/`d`) enthalten. Der Wert wird direkt in das Ziel-XLSX übernommen. Fehlt die Spalte, bleibt `Geschlecht` leer (kein Fehler).
+- **OV-Zuteilung PDF** (`OV-Zuteilung.pdf`): Neues PDF, das mit dem bestehenden „Gruppen-PDF erstellen"-Button erzeugt wird. Enthält eine Seite pro Ortsverband mit zwei Tabellen — Betreuende (mit Gruppe, Fahrzeug und Fahrerkennzeichnung) und Teilnehmende (mit Gruppe). Langer Text wird automatisch kleiner dargestellt.
+- **Teilnehmende-Karten PDF** (`Teilnehmende-Karten.pdf`): Neues PDF, ebenfalls über „Gruppen-PDF erstellen" erzeugt. A4-Querformat mit je vier A6-Karten (2 × 2) zum Ausschneiden. Jede Karte zeigt Name, Ortsverband und Gruppe (`Gruppe N - Gruppenname`). Karten sind nach OV und Name sortiert.
 
 ### Geändert
 

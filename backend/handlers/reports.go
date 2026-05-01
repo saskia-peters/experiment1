@@ -28,15 +28,31 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 			"message": fmt.Sprintf("Stationslaufzettel-PDF konnte nicht erstellt werden: %v", err),
 		}
 	}
+	if err := io.GenerateOVAssignmentsPDF(db, eventName, eventYear, groupNames); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("OV-Zuteilungs-PDF konnte nicht erstellt werden: %v", err),
+		}
+	}
+	if err := io.GenerateTeilnehmendeCardsPDF(db, eventName, eventYear, groupNames); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Teilnehmende-Karten-PDF konnte nicht erstellt werden: %v", err),
+		}
+	}
 	absPath, _ := os.Getwd()
 	sep := string(os.PathSeparator)
 	return map[string]interface{}{
 		"status":  "success",
-		"message": "Gruppen-PDF und Stationslaufzettel erfolgreich erstellt",
+		"message": "Gruppen-PDF, Stationslaufzettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt",
 		"file":    "Gruppeneinteilung.pdf",
 		"path":    absPath + sep + "pdfdocs" + sep + "Gruppeneinteilung.pdf",
 		"file2":   "Stationslaufzettel.pdf",
 		"path2":   absPath + sep + "pdfdocs" + sep + "Stationslaufzettel.pdf",
+		"file3":   "OV-Zuteilung.pdf",
+		"path3":   absPath + sep + "pdfdocs" + sep + "OV-Zuteilung.pdf",
+		"file4":   "Teilnehmende-Karten.pdf",
+		"path4":   absPath + sep + "pdfdocs" + sep + "Teilnehmende-Karten.pdf",
 	}
 }
 
