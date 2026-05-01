@@ -4,19 +4,22 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/io"
+	"THW-JugendOlympiade/backend/services"
 )
 
 // GeneratePDF generates the groups PDF report and the station recording sheets PDF.
-func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []string) map[string]interface{} {
+func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []string, cfg config.Config) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Bitte zuerst eine Excel-Datei laden.",
 		}
 	}
-	if err := io.GeneratePDFReport(db, eventName, eventYear); err != nil {
+	if err := io.GeneratePDFReport(db, eventName, eventYear, services.GetLastCarGroups()); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Gruppen-PDF konnte nicht erstellt werden: %v", err),
@@ -40,9 +43,11 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 			"message": fmt.Sprintf("Teilnehmende-Karten-PDF konnte nicht erstellt werden: %v", err),
 		}
 	}
+
+	// CarGroups PDF — only when FixGroupSize mode with cargroups = "ja".
 	absPath, _ := os.Getwd()
 	sep := string(os.PathSeparator)
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"status":  "success",
 		"message": "Gruppen-PDF, Stationslaufzettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt",
 		"file":    "Gruppeneinteilung.pdf",
@@ -54,6 +59,21 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 		"file4":   "Teilnehmende-Karten.pdf",
 		"path4":   absPath + sep + "pdfdocs" + sep + "Teilnehmende-Karten.pdf",
 	}
+	if cfg.Verteilung.Verteilungsmodus == "FixGroupSize" && strings.EqualFold(cfg.Verteilung.CarGroups, "ja") {
+		carGroups := services.GetLastCarGroups()
+		if len(carGroups) > 0 {
+			if err := io.GenerateCarGroupsPDF(carGroups, eventName, eventYear, groupNames, cfg); err != nil {
+				return map[string]interface{}{
+					"status":  "error",
+					"message": fmt.Sprintf("CarGroups-PDF konnte nicht erstellt werden: %v", err),
+				}
+			}
+			result["message"] = "Gruppen-PDF, Stationslaufzettel, OV-Zuteilung, Teilnehmende-Karten und CarGroups-PDF erfolgreich erstellt"
+			result["file5"] = "CarGroups.pdf"
+			result["path5"] = absPath + sep + "pdfdocs" + sep + "CarGroups.pdf"
+		}
+	}
+	return result
 }
 
 // GenerateGroupEvaluationPDF generates a PDF report for group rankings.

@@ -53,6 +53,15 @@ type Group struct {
 	AlterSum     int
 }
 
+// CarGroup is a transient in-memory structure that pools several participant
+// groups sharing a common set of vehicles. It is used only by the FixGroupSize
+// distribution mode when cargroups = "ja" and is never persisted to the database.
+type CarGroup struct {
+	ID     int
+	Groups []Group
+	Cars   []Fahrzeug
+}
+
 // GroupScore represents a group's score at a station
 type GroupScore struct {
 	GroupID int

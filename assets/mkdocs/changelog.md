@@ -6,6 +6,23 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.8] — 2026-05-02
+
+### Hinzugefügt
+
+- **CarGroups — Persistenz in der Datenbank**: Fahrzeugpool-Zuteilungen werden jetzt in zwei neuen Tabellen (`cargroup_groups`, `cargroup_fahrzeuge`) gespeichert. Nach einem Backup/Restore wird der vollständige Stand automatisch wiederhergestellt — ohne erneute Verteilung.
+- **CarGroups — Fahrer aus XLSX werden unverändert übernommen**: Phase 3 des Pool-Algorithmus überschreibt ab sofort keinen bereits eingetragenen Fahrer mehr. Spezialfahrer (z. B. für LKW-Führerschein-Fahrzeuge), die in der Betreuenden-Liste nicht vorkommen, bleiben erhalten. Nur Fahrzeuge **ohne** Fahrer erhalten einen Fallback aus der Betreuenden-Liste des Pools.
+- **Gruppenansicht zeigt Pool-Fahrzeuge**: Im CarGroups-Modus werden in der **„Gruppen anzeigen"**-Ansicht (UI) die Fahrzeuge des zugehörigen Pools angezeigt — nicht mehr die Meldung „Kein Fahrzeug!".
+- **Gruppeneinteilung.pdf — Pool-Abschnitt**: Im CarGroups-Modus zeigt jede Seite der `Gruppeneinteilung.pdf` jetzt einen **„Fahrzeugpool N"**-Abschnitt mit Poolnummer, Hinweis auf gemeinsam reisende Gruppen, Fahrzeugtabelle und Sitzplatz-Gesamtübersicht des Pools.
+
+### Geändert
+
+- **CarGroups-PDF — Spalte „Fahrzeug (OV)"**: Die getrennten Spalten „Fahrzeug" und „OV" wurden zu einer einzigen Spalte „Fahrzeug (OV)" zusammengeführt (`Bezeichnung (OV)` in einer Zelle).
+- **CarGroups-PDF — Fahrerspalte ohne Fahrer**: Leere Fahrerangaben werden jetzt als **„KEIN FAHRER bekannt!"** angezeigt (statt einem unlesbaren Sonderzeichen).
+- **Fahrer-Duplikat-Schutz (Fallback)**: Wird im CarGroups-Fallback ein Fahrer zugewiesen, wird diese Person global als „bereits eingeteilt" markiert — dasselbe Betreuende kann nicht für zwei Fahrzeuge gleichzeitig als Fallback-Fahrer eingetragen werden.
+
+---
+
 ## [0.1.7] — 2026-05-01
 
 ### Hinzugefügt

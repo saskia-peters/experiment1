@@ -7,17 +7,89 @@ import (
 	"sort"
 	"strings"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/models"
 )
 
 // CreateBalancedGroups creates groups with balanced distribution.
-// maxGroupSize controls the maximum number of participants per group.
-// minGroupSize controls the minimum: vehicles where seats-1 < minGroupSize are
-// excluded from distribution (0 = disabled).
-// Returns a non-empty warning string when distribution succeeded but the
-// Fahrerlaubnis or vehicle-capacity constraint could not be fully satisfied.
-func CreateBalancedGroups(db *sql.DB, maxGroupSize int, minGroupSize int) (string, error) {
+// The distribution strategy is controlled by cfg.Verteilung.Verteilungsmodus:
+//   - "Klassisch" (default): max_groesse-bounded groups, no vehicle assignment
+//   - "Fahrzeuge": one vehicle per group, vehicle-first algorithm
+//   - "FixGroupSize": fixed target group size with optional CarGroups vehicle pooling
+//
+// Returns a non-empty warning string when distribution succeeded but some
+// constraint could not be fully satisfied.
+func CreateBalancedGroups(db *sql.DB, cfg config.Config) (string, error) {
+	modus := cfg.Verteilung.Verteilungsmodus
+	switch modus {
+	case "FixGroupSize":
+		return createGroupsFixGroupSize(db, cfg)
+	case "Fahrzeuge":
+		return createGroupsFahrzeuge(db, cfg.Gruppen.MaxGroesse, cfg.Gruppen.MinGroesse)
+	default:
+		// "Klassisch" and any unrecognised value
+		return createGroupsKlassisch(db, cfg.Gruppen.MaxGroesse, cfg.Gruppen.MinGroesse)
+	}
+}
+
+// createGroupsKlassisch is the no-vehicle distribution path.
+// When vehicles are present in the database it automatically falls through to
+// createGroupsFahrzeuge, preserving the historical auto-detection behaviour.
+func createGroupsKlassisch(db *sql.DB, maxGroupSize int, minGroupSize int) (string, error) {
+	// Peek at vehicles — if any are loaded, delegate to the vehicle-first path.
+	fahrzeuge, err := database.GetAllFahrzeuge(db)
+	if err != nil {
+		return "", fmt.Errorf("failed to read fahrzeuge: %w", err)
+	}
+	if len(fahrzeuge) > 0 {
+		return createGroupsFahrzeuge(db, maxGroupSize, minGroupSize)
+	}
+
+	teilnehmende, err := database.GetAllTeilnehmende(db)
+	if err != nil {
+		return "", fmt.Errorf("failed to read teilnehmende: %w", err)
+	}
+	if len(teilnehmende) == 0 {
+		return "", nil
+	}
+	if err := validatePreGroups(teilnehmende, maxGroupSize); err != nil {
+		return "", err
+	}
+	betreuende, err := database.GetAllBetreuende(db)
+	if err != nil {
+		return "", fmt.Errorf("failed to read betreuende: %w", err)
+	}
+
+	groups := distributeIntoGroups(teilnehmende, maxGroupSize)
+
+	if err := database.SaveGroups(db, groups); err != nil {
+		return "", fmt.Errorf("failed to save groups: %w", err)
+	}
+
+	var warnings []string
+	if len(betreuende) > 0 {
+		w, err := distributeBetreuende(groups, betreuende)
+		if err != nil {
+			return "", err
+		}
+		if w != "" {
+			warnings = append(warnings, w)
+		}
+		if err := database.SaveGroupBetreuende(db, groups); err != nil {
+			return "", fmt.Errorf("failed to save group betreuende: %w", err)
+		}
+	}
+
+	fmt.Printf("Created %d groups with balanced distribution\n", len(groups))
+	for i, group := range groups {
+		fmt.Printf("  Group %d: %d participants\n", i+1, len(group.Teilnehmende))
+	}
+	return strings.Join(warnings, "\n"), nil
+}
+
+// createGroupsFahrzeuge is the vehicle-first distribution path.
+func createGroupsFahrzeuge(db *sql.DB, maxGroupSize int, minGroupSize int) (string, error) {
 	// Read all participants from database
 	teilnehmende, err := database.GetAllTeilnehmende(db)
 	if err != nil {
@@ -47,7 +119,6 @@ func CreateBalancedGroups(db *sql.DB, maxGroupSize int, minGroupSize int) (strin
 	var warnings []string
 
 	if len(fahrzeuge) == 0 {
-		// ── Original path (no vehicles) ────────────────────────────────────────────
 		if minGroupSize > 0 {
 			warnings = append(warnings, fmt.Sprintf(
 				"ℹ️ Keine Fahrzeuge vorhanden – min_groesse=%d wird ignoriert, Gruppen werden nach max_groesse=%d gebildet",
@@ -748,6 +819,60 @@ func findBestGroupWithCapacity(groups []models.Group, tn models.Teilnehmende, ma
 //  4. A non-empty warning string is returned when fewer licensed drivers are
 //     available than there are groups, or when a group still ends up with no
 //     Betreuende at all.
+// ovRoundRobinOrder reorders licensed Betreuende so that drivers are drawn from
+// each OV in turn before taking a second driver from any single OV.
+//
+// OVs are ordered by driver count descending (most drivers leads each round);
+// ties are broken alphabetically. Within each OV drivers are sorted by name.
+//
+// Example — OV-Alpha 3, OV-Gamma 2, OV-Beta 1:
+//
+//	Round 1: Alpha1, Gamma1, Beta1
+//	Round 2: Alpha2, Gamma2
+//	Round 3: Alpha3
+func ovRoundRobinOrder(licensed []models.Betreuende) []models.Betreuende {
+	if len(licensed) == 0 {
+		return licensed
+	}
+	// Group by OV, sort each OV's slice by name for determinism.
+	ovMap := make(map[string][]models.Betreuende)
+	for _, b := range licensed {
+		ovMap[b.Ortsverband] = append(ovMap[b.Ortsverband], b)
+	}
+	for ov := range ovMap {
+		sort.Slice(ovMap[ov], func(i, j int) bool {
+			return ovMap[ov][i].Name < ovMap[ov][j].Name
+		})
+	}
+	// Sort OVs: most-drivers first, then alphabetical.
+	ovs := make([]string, 0, len(ovMap))
+	for ov := range ovMap {
+		ovs = append(ovs, ov)
+	}
+	sort.Slice(ovs, func(i, j int) bool {
+		ci, cj := len(ovMap[ovs[i]]), len(ovMap[ovs[j]])
+		if ci != cj {
+			return ci > cj
+		}
+		return ovs[i] < ovs[j]
+	})
+	// Interleave: take index r from each OV in sorted order.
+	result := make([]models.Betreuende, 0, len(licensed))
+	for r := 0; ; r++ {
+		any := false
+		for _, ov := range ovs {
+			if r < len(ovMap[ov]) {
+				result = append(result, ovMap[ov][r])
+				any = true
+			}
+		}
+		if !any {
+			break
+		}
+	}
+	return result
+}
+
 func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende) (string, error) {
 	if len(groups) == 0 {
 		return "", nil
@@ -762,12 +887,10 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 			unlicensed = append(unlicensed, b)
 		}
 	}
-	sort.Slice(licensed, func(i, j int) bool {
-		if licensed[i].Ortsverband != licensed[j].Ortsverband {
-			return licensed[i].Ortsverband < licensed[j].Ortsverband
-		}
-		return licensed[i].Name < licensed[j].Name
-	})
+	// Sort licensed using OV round-robin so that each round of assignment draws
+	// one driver from each OV before taking a second from any OV. This prevents
+	// one OV from supplying all drivers while another contributes none.
+	licensed = ovRoundRobinOrder(licensed)
 	sort.Slice(unlicensed, func(i, j int) bool {
 		if unlicensed[i].Ortsverband != unlicensed[j].Ortsverband {
 			return unlicensed[i].Ortsverband < unlicensed[j].Ortsverband
@@ -807,6 +930,11 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 	// This prevents a group from accumulating 3+ Betreuende while another
 	// sits at 1. Only unlicensed members are moved so that Phase 1's
 	// one-licensed-driver-per-group guarantee is never disturbed.
+	//
+	// OV co-location preference: when choosing who to move, prefer a person
+	// whose OV still has ≥2 members in the source group (so the OV cluster is
+	// not fully broken). When choosing where to move, prefer a destination that
+	// already has a Betreuende from the same OV.
 	for i := 0; i < len(betreuende)+1; i++ {
 		maxIdx, minIdx := -1, -1
 		maxCount, minCount := 0, math.MaxInt64
@@ -825,11 +953,28 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 			break
 		}
 		// Find an unlicensed member to move from the most-loaded group.
+		// Prefer a person whose OV has ≥2 unlicensed members in this group
+		// (moving leaves the OV still represented here).
+		ovCount := make(map[string]int)
+		for _, b := range groups[maxIdx].Betreuende {
+			if !b.Fahrerlaubnis {
+				ovCount[b.Ortsverband]++
+			}
+		}
 		moveIdx := -1
 		for k, b := range groups[maxIdx].Betreuende {
-			if !b.Fahrerlaubnis {
+			if !b.Fahrerlaubnis && ovCount[b.Ortsverband] >= 2 {
 				moveIdx = k
 				break
+			}
+		}
+		if moveIdx < 0 {
+			// No preferred candidate; fall back to first unlicensed.
+			for k, b := range groups[maxIdx].Betreuende {
+				if !b.Fahrerlaubnis {
+					moveIdx = k
+					break
+				}
 			}
 		}
 		if moveIdx < 0 {
@@ -839,7 +984,25 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 		groups[maxIdx].Betreuende = append(
 			groups[maxIdx].Betreuende[:moveIdx],
 			groups[maxIdx].Betreuende[moveIdx+1:]...)
-		groups[minIdx].Betreuende = append(groups[minIdx].Betreuende, b)
+		// Prefer a destination that already has a Betreuende from the same OV.
+		destIdx := -1
+		for j, g := range groups {
+			if len(g.Betreuende) == minCount {
+				for _, existing := range g.Betreuende {
+					if existing.Ortsverband == b.Ortsverband {
+						destIdx = j
+						break
+					}
+				}
+				if destIdx >= 0 {
+					break
+				}
+			}
+		}
+		if destIdx < 0 {
+			destIdx = minIdx
+		}
+		groups[destIdx].Betreuende = append(groups[destIdx].Betreuende, b)
 	}
 
 	// --- Phase 3: Ensure every group has at least one Betreuende ---
@@ -864,13 +1027,33 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 		}
 		// Move an unlicensed member first (keep licensed driver in donor group
 		// if the donor group would end up without one after the move).
+		// OV co-location preference: prefer an unlicensed person whose OV still
+		// has ≥2 members in the donor (so the OV cluster is not fully broken).
 		donorHasMultipleLicensed := licCount[donorIdx] >= 2
-		moveIdx := -1
-		// Prefer unlicensed if donor keeps its licensed driver
-		for k, b := range groups[donorIdx].Betreuende {
+
+		// Count unlicensed-by-OV in donor for preference selection.
+		unlicOVCount := make(map[string]int)
+		for _, b := range groups[donorIdx].Betreuende {
 			if !b.Fahrerlaubnis {
+				unlicOVCount[b.Ortsverband]++
+			}
+		}
+
+		moveIdx := -1
+		// Prefer unlicensed whose OV has ≥2 unlicensed in donor.
+		for k, b := range groups[donorIdx].Betreuende {
+			if !b.Fahrerlaubnis && unlicOVCount[b.Ortsverband] >= 2 {
 				moveIdx = k
 				break
+			}
+		}
+		// Fall back to any unlicensed.
+		if moveIdx < 0 {
+			for k, b := range groups[donorIdx].Betreuende {
+				if !b.Fahrerlaubnis {
+					moveIdx = k
+					break
+				}
 			}
 		}
 		// Fall back to licensed if no unlicensed found, but only when donor

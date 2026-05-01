@@ -6,6 +6,8 @@ import (
 
 	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
+	"THW-JugendOlympiade/backend/services"
 )
 
 // ShowGroups retrieves and returns groups from the database.
@@ -29,8 +31,18 @@ func ShowGroups(db *sql.DB, groupNames []string) map[string]interface{} {
 			"message": "Keine Gruppen gefunden. Bitte zuerst eine Datei laden.",
 		}
 	}
+	// Build a map from GroupID → pool cars from in-memory CarGroups (if active).
+	// In CarGroups mode vehicles are not written to the DB, so we inject them here.
+	carGroupCars := buildCarGroupCarsMap(services.GetLastCarGroups())
+
 	for i := range groups {
 		groups[i].GroupName = config.GetGroupName(groups[i].GroupID, groupNames)
+		// Only inject if the group has no DB-assigned vehicles (CarGroups mode).
+		if len(groups[i].Fahrzeuge) == 0 {
+			if cars, ok := carGroupCars[groups[i].GroupID]; ok {
+				groups[i].Fahrzeuge = cars
+			}
+		}
 	}
 	return map[string]interface{}{
 		"status": "success",
@@ -172,14 +184,21 @@ func GetOrtsverbandEvaluations(db *sql.DB) map[string]interface{} {
 			"message": fmt.Sprintf("Ortsverband-Auswertungen konnten nicht abgerufen werden: %v", err),
 		}
 	}
-	if len(evaluations) == 0 {
-		return map[string]interface{}{
-			"status":  "error",
-			"message": "Keine Ortsverbände mit Ergebnissen gefunden.",
-		}
-	}
 	return map[string]interface{}{
 		"status":      "success",
 		"evaluations": evaluations,
 	}
+}
+
+// buildCarGroupCarsMap returns a map[GroupID][]Fahrzeug derived from the in-memory
+// CarGroups. Every group in a pool gets all of the pool's cars so the UI can show
+// them without requiring a database round-trip.
+func buildCarGroupCarsMap(carGroups []*models.CarGroup) map[int][]models.Fahrzeug {
+	result := make(map[int][]models.Fahrzeug)
+	for _, cg := range carGroups {
+		for _, g := range cg.Groups {
+			result[g.GroupID] = cg.Cars
+		}
+	}
+	return result
 }

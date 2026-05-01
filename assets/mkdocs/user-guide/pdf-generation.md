@@ -9,17 +9,18 @@ Alle erzeugten PDFs werden in `pdf_ordner` gespeichert (Standard: `pdfdocs/`).
 
 | PDF | Schaltfläche | Beschreibung |
 |-----|-------------|--------------|
-| Gruppenübersicht | **"Gruppen-PDF erstellen"** | Eine Seite je Gruppe mit Teilnehmenden + Betreuenden |
+| Gruppenübersicht | **"Gruppen-PDF erstellen"** | Eine Seite je Gruppe mit Teilnehmenden, Betreuenden und Fahrzeugzuweisung. Im CarGroups-Modus wird statt einzelner Fahrzeuge der Fahrzeugpool mit Poolnummer, Mitgruppen und Sitzplatzzusammenfassung angezeigt. |
 | Stationslaufzettel | **"Gruppen-PDF erstellen"** | Leere Ergebnisblätter je Station für die manuelle Erfassung |
 | OV-Zuteilung | **"Gruppen-PDF erstellen"** | Eine Seite je Ortsverband mit Betreuenden- und Teilnehmendenzuteilung |
 | Teilnehmende-Karten | **"Gruppen-PDF erstellen"** | A4-Seiten mit je 4 A6-Karten zum Ausschneiden (Name, OV, Gruppe) |
+| CarGroups | **"Gruppen-PDF erstellen"** | Eine Seite je Fahrzeugpool (nur bei `verteilungsmodus = "FixGroupSize"` und `cargroups = "ja"`). Spalten: **Fahrzeug (OV)**, Fahrer, Sitze. Kein bekannter Fahrer → „KEIN FAHRER bekannt!" |
 | Gruppenwertung | **"Gruppenwertung-PDF"** | Gruppen-Rankings mit Gesamtpunktzahl |
 | OV-Wertung | **"Ortsverband-Wertung-PDF"** | Ortsverband-Rankings |
 | Teilnehmer-Urkunden | **"Urkunden Teilnehmende"** | Eine Urkunde je Teilnehmenden |
 | OV-Urkunden | **"Urkunden OV"** | Eine Urkunde je Ortsverband |
 
 !!! info "Hinweis"
-    Die Schaltfläche **„Gruppen-PDF erstellen"** erzeugt alle vier oben markierten PDFs gleichzeitig: `Gruppeneinteilung.pdf`, `Stationslaufzettel.pdf`, `OV-Zuteilung.pdf` und `Teilnehmende-Karten.pdf`.
+    Die Schaltfläche **„Gruppen-PDF erstellen"** erzeugt alle markierten PDFs gleichzeitig: `Gruppeneinteilung.pdf`, `Stationslaufzettel.pdf`, `OV-Zuteilung.pdf` und `Teilnehmende-Karten.pdf`. Ist `verteilungsmodus = "FixGroupSize"` mit `cargroups = "ja"` aktiv, wird zusätzlich `CarGroups.pdf` erzeugt.
 
 ---
 

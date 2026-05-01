@@ -30,6 +30,24 @@ func OpenExistingDB() (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
+	// Migrate older databases that pre-date the cargroup persistence tables.
+	for _, ddl := range []string{
+		`CREATE TABLE IF NOT EXISTS cargroup_groups (
+			pool_id  INTEGER NOT NULL,
+			group_id INTEGER NOT NULL,
+			UNIQUE(group_id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS cargroup_fahrzeuge (
+			pool_id     INTEGER NOT NULL,
+			fahrzeug_id INTEGER NOT NULL,
+			UNIQUE(fahrzeug_id)
+		)`,
+	} {
+		if _, err = db.Exec(ddl); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("failed to migrate database schema: %w", err)
+		}
+	}
 	return db, nil
 }
 
@@ -121,7 +139,21 @@ func InitDatabase() (retDB *sql.DB, retErr error) {
 			FOREIGN KEY (fahrzeug_id) REFERENCES fahrzeuge(id),
 			UNIQUE(fahrzeug_id)
 		)`,
+		// CarGroups pool persistence: pool → groups and pool → vehicles.
+		// pool_id matches models.CarGroup.ID.
+		`CREATE TABLE IF NOT EXISTS cargroup_groups (
+			pool_id  INTEGER NOT NULL,
+			group_id INTEGER NOT NULL,
+			UNIQUE(group_id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS cargroup_fahrzeuge (
+			pool_id     INTEGER NOT NULL,
+			fahrzeug_id INTEGER NOT NULL,
+			UNIQUE(fahrzeug_id)
+		)`,
 		// --- wipe existing data ---
+		`DELETE FROM cargroup_fahrzeuge`,
+		`DELETE FROM cargroup_groups`,
 		`DELETE FROM gruppe_fahrzeuge`,
 		`DELETE FROM gruppe_betreuende`,
 		`DELETE FROM group_station_scores`,

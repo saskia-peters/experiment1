@@ -13,6 +13,7 @@ const ConfigFile = "config.toml"
 type Config struct {
 	Veranstaltung VeranstaltungConfig `toml:"veranstaltung"`
 	Gruppen       GruppenConfig       `toml:"gruppen"`
+	Verteilung    VerteilungConfig    `toml:"verteilung"`
 	Ergebnisse    ErgebnisseConfig    `toml:"ergebnisse"`
 	Ausgabe       AusgabeConfig       `toml:"ausgabe"`
 }
@@ -27,6 +28,18 @@ type GruppenConfig struct {
 	MaxGroesse   int      `toml:"max_groesse"`
 	MinGroesse   int      `toml:"min_groesse"`
 	Gruppennamen []string `toml:"gruppennamen"`
+}
+
+// VerteilungConfig controls which distribution strategy is used and its
+// strategy-specific parameters.
+type VerteilungConfig struct {
+	// Verteilungsmodus selects the algorithm: "Klassisch" | "Fahrzeuge" | "FixGroupSize".
+	// Defaults to "Klassisch" when the section is absent or the key is missing.
+	Verteilungsmodus string `toml:"verteilungsmodus"`
+	// FixGroupSize is the target number of participants per group (FixGroupSize mode only).
+	FixGroupSize int `toml:"fixgroupsize"`
+	// CarGroups enables the CarGroup algorithm ("ja") when using FixGroupSize mode.
+	CarGroups string `toml:"cargroups"`
 }
 
 // DefaultGruppennamen contains the standard list of group names used when no
@@ -74,6 +87,11 @@ func Default() Config {
 			MaxGroesse:   8,
 			MinGroesse:   6,
 			Gruppennamen: DefaultGruppennamen,
+		},
+		Verteilung: VerteilungConfig{
+			Verteilungsmodus: "FixGroupSize",
+			FixGroupSize:     8,
+			CarGroups:        "ja",
 		},
 		Ergebnisse: ErgebnisseConfig{
 			MinPunkte: 100,
@@ -140,6 +158,18 @@ gruppennamen = [
 min_punkte = 100
 # Groesstes erlaubtes Ergebnis pro Station
 max_punkte = 1200
+
+[verteilung]
+# Verteilungsstrategie: "Klassisch" | "Fahrzeuge" | "FixGroupSize"
+#   Klassisch:    Gruppen nach max_groesse, keine Fahrzeugzuweisung
+#   Fahrzeuge:    Ein Fahrzeug pro Gruppe (Fahrzeug-zuerst-Algorithmus)
+#   FixGroupSize: Feste Teilnehmendenzahl pro Gruppe (fixgroupsize)
+verteilungsmodus = "FixGroupSize"
+# Zielgröße pro Teilnehmendengruppe (nur für FixGroupSize)
+fixgroupsize = 8
+# Fahrzeugpools (CarGroups): "ja" = Fahrzeuge werden gruppenübergreifend gebündelt
+#                             "nein" = keine Fahrzeugzuweisung in diesem Modus
+cargroups = "ja"
 
 [ausgabe]
 # Unterordner, in dem erzeugte PDFs gespeichert werden

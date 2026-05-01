@@ -1,10 +1,11 @@
-package test
+﻿package test
 
 import (
 	"strings"
 	"testing"
 
 	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/services"
 )
 
@@ -13,13 +14,24 @@ import (
 // the operator changes their configuration.
 const testSvcGroupSize = 8
 
+// svcCfg builds a minimal config.Config for services tests.
+// The modus is always "Klassisch" so existing tests continue to exercise the
+// original no-vehicle and vehicle-first code paths unchanged.
+func svcCfg(maxGroupSize, minGroupSize int) config.Config {
+	cfg := config.Default()
+	cfg.Verteilung.Verteilungsmodus = "Klassisch"
+	cfg.Gruppen.MaxGroesse = maxGroupSize
+	cfg.Gruppen.MinGroesse = minGroupSize
+	return cfg
+}
+
 // TestCreateBalancedGroups_EmptyDB verifies that no groups are created when there
 // are no participants in the database.
 func TestCreateBalancedGroups_EmptyDB(t *testing.T) {
 	db := setupFullTestDB(t)
 	defer teardownTestDB(t, db)
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -60,7 +72,7 @@ func TestCreateBalancedGroups_GroupCountCorrect(t *testing.T) {
 				t.Fatalf("InsertData failed: %v", err)
 			}
 
-			if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+			if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 				t.Fatalf("CreateBalancedGroups failed: %v", err)
 			}
 
@@ -93,7 +105,7 @@ func TestCreateBalancedGroups_NoGroupExceedsMaxSize(t *testing.T) {
 		t.Fatalf("InsertData failed: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups failed: %v", err)
 	}
 
@@ -128,7 +140,7 @@ func TestCreateBalancedGroups_PreGroupMembersStayTogether(t *testing.T) {
 		t.Fatalf("InsertData failed: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups failed: %v", err)
 	}
 
@@ -207,7 +219,7 @@ func TestCreateBalancedGroups_WithBetreuende(t *testing.T) {
 		t.Fatalf("InsertBetreuende failed: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups failed: %v", err)
 	}
 
@@ -236,7 +248,7 @@ func TestCreateBalancedGroups_ReroutingClearsOldGroups(t *testing.T) {
 	}
 
 	// First run
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("first CreateBalancedGroups failed: %v", err)
 	}
 
@@ -246,7 +258,7 @@ func TestCreateBalancedGroups_ReroutingClearsOldGroups(t *testing.T) {
 	}
 
 	// Second run — should replace, not accumulate
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("second CreateBalancedGroups failed: %v", err)
 	}
 
@@ -277,7 +289,7 @@ func TestCreateBalancedGroups_PreGroupExceedsMaxSize_ReturnsError(t *testing.T) 
 		t.Fatalf("InsertData failed: %v", err)
 	}
 
-	_, err := services.CreateBalancedGroups(db, 2, 0)
+	_, err := services.CreateBalancedGroups(db, svcCfg(2, 0))
 	if err == nil {
 		t.Fatal("expected error when PreGroup size exceeds maxGroupSize, got nil")
 	}
@@ -298,7 +310,7 @@ func TestCreateBalancedGroups_AllParticipantsAssigned(t *testing.T) {
 		t.Fatalf("InsertData failed: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups failed: %v", err)
 	}
 
@@ -338,7 +350,7 @@ func TestCreateBalancedGroups_FewerLicensedDriversThanGroups_ReturnsWarning(t *t
 		t.Fatalf("InsertBetreuende failed: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups failed: %v", err)
 	}
@@ -382,7 +394,7 @@ func TestCreateBalancedGroups_DriverAppearsInBetreuendeNotDoubled(t *testing.T) 
 		t.Fatalf("InsertFahrzeuge failed: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups failed: %v", err)
 	}
 
@@ -449,7 +461,7 @@ func TestCreateBalancedGroups_VehicleFirst_GroupCountEqualsVehicleCount(t *testi
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
 
@@ -494,7 +506,7 @@ func TestCreateBalancedGroups_VehicleFirst_UnusedVehiclesReported(t *testing.T) 
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -539,7 +551,7 @@ func TestCreateBalancedGroups_VehicleFirst_AllTNFit_NoWarning(t *testing.T) {
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -590,7 +602,7 @@ func TestCreateBalancedGroups_VehicleFirst_VehicleCapDominatesOverMaxGroupSize(t
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, 8, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(8, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -641,7 +653,7 @@ func TestCreateBalancedGroups_VehicleFirst_PlusOneApplies_VehicleHasHeadroom(t *
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, 6, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(6, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -694,7 +706,7 @@ func TestCreateBalancedGroups_VehicleFirst_PlusOneNotApplicable_VehicleIsConstra
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, 8, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(8, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -739,7 +751,7 @@ func TestCreateBalancedGroups_VehicleFirst_MultiplePreGroupsSameVehicle(t *testi
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	_, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	_, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -792,7 +804,7 @@ func TestCreateBalancedGroups_VehicleFirst_PreGroupTooLargeForAnyVehicle(t *test
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	_, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	_, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err == nil {
 		t.Fatal("expected error for PreGroup that cannot fit in any vehicle, got nil")
 	}
@@ -828,7 +840,7 @@ func TestCreateBalancedGroups_VehicleFirst_InsufficientTotalCapacity(t *testing.
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -861,7 +873,7 @@ func TestCreateBalancedGroups_VehicleFirst_MinGroupSize_SmallVehicleExcluded(t *
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize, 5)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 5))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -906,7 +918,7 @@ func TestCreateBalancedGroups_VehicleFirst_MinGroupSize_AllExcluded(t *testing.T
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	_, err := services.CreateBalancedGroups(db, testSvcGroupSize, 5)
+	_, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 5))
 	if err == nil {
 		t.Fatal("expected error when all vehicles are excluded, got nil")
 	}
@@ -937,7 +949,7 @@ func TestCreateBalancedGroups_VehicleFirst_MinGroupSize_Disabled(t *testing.T) {
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	warning, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0)
+	warning, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -992,7 +1004,7 @@ func TestCreateBalancedGroups_NoBetreuendeAssignedTwice_SameGroup(t *testing.T) 
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
 
@@ -1043,7 +1055,7 @@ func TestCreateBalancedGroups_NoBetreuendeAssignedToMultipleGroups(t *testing.T)
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, testSvcGroupSize, 0); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(testSvcGroupSize, 0)); err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
 
@@ -1106,7 +1118,7 @@ func TestCreateBalancedGroups_ReliefMovesPersonFromOverloadedGroup(t *testing.T)
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	_, err := services.CreateBalancedGroups(db, 7, 0)
+	_, err := services.CreateBalancedGroups(db, svcCfg(7, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
@@ -1174,7 +1186,7 @@ func TestCreateBalancedGroups_NonDriverBetreuendeDoNotReduceTNCapacity(t *testin
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	if _, err := services.CreateBalancedGroups(db, 7, 6); err != nil {
+	if _, err := services.CreateBalancedGroups(db, svcCfg(7, 6)); err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}
 
@@ -1242,7 +1254,7 @@ func TestCreateBalancedGroups_RebalanceBetreuendeTNRatio(t *testing.T) {
 		t.Fatalf("InsertFahrzeuge: %v", err)
 	}
 
-	_, err := services.CreateBalancedGroups(db, 10, 0)
+	_, err := services.CreateBalancedGroups(db, svcCfg(10, 0))
 	if err != nil {
 		t.Fatalf("CreateBalancedGroups: %v", err)
 	}

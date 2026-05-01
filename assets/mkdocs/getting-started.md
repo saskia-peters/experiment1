@@ -20,8 +20,7 @@ Aktuelle Version von der GitHub-Releases-Seite herunterladen:
     - **„Weiterarbeiten"** — öffnet die vorhandene Datenbank.
     - **„Neu starten"** — sichert die alte Datenbank und beginnt neu.
 
-!!! info "📸 Screenshot: `startup-dialog.png`"
-    _Startdialog — „Weiterarbeiten" oder „Neu starten"_
+![Startdialog — Weiterarbeiten oder Neu starten](screenshots/startup-dialog.png)
 
 3. Das Anwendungsfenster öffnet sich. Der Ausgabeordner (`pdfdocs/`) und Beispieldaten werden automatisch angelegt.
 
@@ -38,8 +37,7 @@ flowchart TD
     G --> H[PDFs & Urkunden erzeugen]
 ```
 
-!!! info "📸 Screenshot: `main-window.png`"
-    _Hauptfenster der Anwendung nach dem Start_
+![Hauptfenster der Anwendung nach dem Start](screenshots/main-window.png)
 
 ### Schritt 1 — Excel-Datei vorbereiten
 
@@ -53,9 +51,9 @@ Siehe [Excel-Import](user-guide/excel-import.md) für die erforderliche Tabellen
 
 ### Schritt 3 — Gruppen erstellen
 
-**„Gruppen zusammenstellen"** klicken. Sind Fahrzeuge importiert, läuft der **Fahrzeug-zuerst-Algorithmus**: jede Gruppe erhält genau ein Fahrzeug, Betreuende werden danach zugeteilt und das Betreuenden:TN-Verhältnis wird automatisch ausgeglichen. Ohne Fahrzeuge verteilt der klassische Algorithmus nach `max_groesse`.
+**„Gruppen zusammenstellen"** klicken. Der aktive Verteilungsmodus wird durch `verteilungsmodus` in `config.toml` gesteuert. Standard ist **FixGroupSize** mit `cargroups = "ja"`: Gruppen erhalten eine gleichmäßige Zielgröße (`fixgroupsize = 8`) und Fahrzeuge werden gruppenübergreifend optimal gebündelt (CarGroups).
 
-Siehe [Gruppenverteilung](user-guide/groups.md) für eine vollständige Beschreibung des Algorithmus.
+Siehe [Gruppenverteilung](user-guide/groups.md) für eine vollständige Beschreibung aller drei Algorithmen.
 
 !!! warning "Ergebnis-Sperre"
     Sobald das erste Ergebnis gespeichert wurde, ist **„Gruppen zusammenstellen"** gesperrt. Gruppen vor der Ergebniseingabe konfigurieren.

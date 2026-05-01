@@ -33,6 +33,18 @@ min_punkte = 100
 # Groesstes erlaubtes Ergebnis pro Station
 max_punkte = 1200
 
+[verteilung]
+# Verteilungsstrategie: "Klassisch" | "Fahrzeuge" | "FixGroupSize"
+#   Klassisch:    Gruppen nach max_groesse, keine Fahrzeugzuweisung
+#   Fahrzeuge:    Ein Fahrzeug pro Gruppe (Fahrzeug-zuerst-Algorithmus)
+#   FixGroupSize: Feste Teilnehmendenzahl pro Gruppe (fixgroupsize)
+verteilungsmodus = "FixGroupSize"
+# Zielgröße pro Teilnehmendengruppe (nur für FixGroupSize)
+fixgroupsize = 8
+# Fahrzeugpools (CarGroups): "ja" = Fahrzeuge werden gruppenübergreifend gebündelt
+#                             "nein" = keine Fahrzeugzuweisung in diesem Modus
+cargroups = "ja"
+
 [ausgabe]
 # Unterordner, in dem erzeugte PDFs gespeichert werden
 pdf_ordner = "pdfdocs"

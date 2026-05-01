@@ -2,13 +2,38 @@
 
 Nach erfolgreichem Excel-Import **„Gruppen zusammenstellen"** klicken.
 
-## Verteilungsalgorithmus
+## Verteilungsmodus wählen
+
+Die gewünschte Strategie wird in `config.toml` unter `[verteilung]` eingestellt:
+
+```toml
+[verteilung]
+# "Klassisch" | "Fahrzeuge" | "FixGroupSize"
+verteilungsmodus = "FixGroupSize"
+fixgroupsize = 8      # Zielgröße (nur FixGroupSize)
+cargroups = "ja"      # Fahrzeugpools (nur FixGroupSize)
+```
+
+| Modus | Wann verwenden | Fahrzeuge erforderlich |
+|-------|---------------|----------------------|
+| **Klassisch** | Keine Fahrzeuge; Gruppen nach `max_groesse` | Nein |
+| **Fahrzeuge** | Jede Gruppe bekommt genau ein Fahrzeug | Ja |
+| **FixGroupSize** | Feste Zielgröße; Fahrzeuge optional als Pools | Optional |
+
+!!! tip "Empfehlung"
+    Der Standard-Modus **FixGroupSize** mit `cargroups = "ja"` ist für die meisten Veranstaltungen die beste Wahl: Gruppen haben gleichmäßige Größe und Fahrzeuge werden gruppenübergreifend optimal gebündelt.
+
+---
+
+## Verteilungsalgorithmen
+
+### Modus: Klassisch
 
 Das Verhalten unterscheidet sich je nachdem, ob Fahrzeuge importiert wurden.
 
 ---
 
-### Ohne Fahrzeuge (klassischer Pfad)
+#### Ohne Fahrzeuge
 
 1. **Pre-Groups werden zuerst platziert** — Teilnehmende mit demselben `PreGroup`-Code kommen in eine dedizierte Gruppe.
 2. **Gruppenanzahl** = `anzahlPreGroups + ceil(übrigenTeilnehmende / max_groesse)`.
@@ -27,7 +52,7 @@ Das Verhalten unterscheidet sich je nachdem, ob Fahrzeuge importiert wurden.
 
 ---
 
-### Mit Fahrzeugen (Fahrzeug-zuerst-Pfad)
+### Modus: Fahrzeuge (Fahrzeug-zuerst-Pfad)
 
 Wenn Fahrzeuge importiert wurden, startet ein mehrstufiger Algorithmus, der sicherstellt, dass jede Gruppe **genau in ihr Fahrzeug passt**.
 
@@ -120,6 +145,55 @@ flowchart TD
 
 ---
 
+### Modus: FixGroupSize
+
+Verteilt **N** Teilnehmende in Gruppen mit einer festen Zielgröße (`fixgroupsize`).
+
+**Gruppenanzahl** = `round(N / fixgroupsize)`, mindestens 1.  
+Innerhalb dieser Anzahl werden die Teilnehmenden gleichmäßig auf ±1 aufgeteilt:
+
+| Beispiel | N | fixgroupsize | Gruppen | Größen |
+|----------|---|-------------|---------|--------|
+| — | 20 | 8 | 3 | 7, 7, 6 |
+| — | 24 | 8 | 3 | 8, 8, 8 |
+| — | 25 | 8 | 3 | 9, 8, 8 |
+| — | 15 | 6 | 3 (round(2,5)=3) | 5, 5, 5 |
+
+Pre-Groups werden wie im klassischen Pfad zuerst platziert.
+
+#### Fahrzeugzuweisung (cargroups)
+
+Das Verhalten für Fahrzeuge wird durch `cargroups` gesteuert:
+
+=== "cargroups = \"nein\""
+    **1:1-Zuweisung** — Gruppen nach Personenzahl absteigend, Fahrzeuge nach Sitzplätzen absteigend. Jede Gruppe bekommt genau ein Fahrzeug (sofern vorhanden).
+
+=== "cargroups = \"ja\" (Standard)"
+    **Fahrzeugpools (CarGroups)** — Fahrzeuge werden gruppenübergreifend gebündelt. Mehrere Gruppen teilen sich einen Pool von Fahrzeugen.
+
+    **Algorithmus (DFS + Knapsack-DP, alle Fahrzeuge werden verwendet):**
+
+    1. Fahrzeuge nach Sitzplätzen absteigend sortieren.
+    2. **Phase 1 – Optimale Poolbildung (DFS + Backtracking):**
+        - Tiefensuche versucht, Gruppen zu kleinen Pools (1–3 Gruppen, 1–5 Fahrzeuge) zusammenzufassen.
+        - Für jeden Pool wird via 0/1-Knapsack-DP das Fahrzeug-Subset mit minimalen leeren Sitzen gesucht (Toleranz: 0–3 freie Sitze je Pool).
+        - Schlägt die Suche fehl, greift ein Fallback: eine Gruppe pro Pool, Fahrzeuge sequenziell zuweisen.
+    3. **Phase 2 – Restfahrzeuge verteilen:** Übrige Fahrzeuge werden dem Pool mit der geringsten freien Kapazität zugeteilt. Kein Fahrzeug bleibt unbenutzt.
+    4. **Phase 3 – Fahrer zuweisen:**
+        - Fahrzeuge mit bereits eingetragenem Fahrer (aus der XLSX-Datei) werden **unverändert übernommen** — auch wenn dieser Fahrer nicht in der Betreuenden-Liste erscheint (z. B. LKW-Führerschein-Inhaber).
+        - Fahrzeuge **ohne** Fahrer erhalten als Fallback die erste verfügbare lizenzierte Betreuende aus dem Pool. Jede Betreuende kann nur einmal als Fahrer eingeteilt werden.
+
+    Das Ergebnis ist ein **CarGroups-PDF** (`CarGroups.pdf`) mit einer Seite je Fahrzeugpool.
+    Die Pool-Zuteilung wird in der Datenbank gespeichert und nach einem Backup/Restore automatisch wiederhergestellt.
+
+    | Spalte | Inhalt |
+    |--------|--------|
+    | Gruppen-Tabelle | Gruppenname, Anzahl TN, Anzahl Betreuende, Gesamt |
+    | Fahrzeug-Tabelle | Fahrzeug (OV), Fahrer, Sitzplätze |
+    | Fußzeile | Gesamtsitze und freie Plätze je Pool |
+
+---
+
 ### Betreuende-Verteilung (vier Phasen)
 
 Gilt für beide Pfade (klassisch und Fahrzeug-zuerst). Im Fahrzeug-Pfad werden bereits als Fahrer eingetragene Betreuende übersprungen.
@@ -135,7 +209,7 @@ Nach der Verteilung erscheinen Warnungen für:
 
 - Gruppen **ohne jede Betreuungsperson**.
 - Gruppen **ohne Person mit Fahrerlaubnis**.
-- Fahrzeuge, deren **Fahrer nicht in der Betreuenden-Liste** gefunden wurde.
+- Fahrzeuge im Pool **ohne zugewiesenen Fahrer** (Fallback-Zuweisung nicht möglich).
 - Fahrzeuge, die wegen `min_groesse` **ausgeschlossen** wurden.
 - Fahrzeuge, die wegen **zu wenig Teilnehmenden** nicht genutzt werden konnten.
 - Überschreitung der **Gesamtsitzplatzkapazität**.
@@ -152,7 +226,7 @@ Die Verteilung wird trotzdem gespeichert. Durch Anpassen der Excel-Datei und ern
 
 - Teilnehmende mit Alter, Geschlecht, Ortsverband
 - Betreuende mit Fahrerlaubnis-Status (Fahrer eines Fahrzeugs erscheinen hier ebenfalls)
-- Fahrzeuge mit Fahrer, Sitzplätzen und Kapazitätsanzeige; bei fehlender Fahrzeugzuweisung: **„Kein Fahrzeug!"** (roter Hinweis)
+- **Fahrzeuge / Fahrzeugpool**: Im normalen Modus die direkt zugewiesenen Fahrzeuge; im CarGroups-Modus die Fahrzeuge des gemeinsamen Pools mit Poolnummer und Hinweis auf gemeinsam reisende Gruppen. Bei fehlender Fahrzeugzuweisung: **„Kein Fahrzeug!"** (roter Hinweis)
 - Gruppenstatistik (Anzahl, Geschlechterverteilung, OV-Verteilung)
 
 !!! info "📸 Screenshot: `groups-view.png`"
@@ -165,14 +239,19 @@ Die Verteilung wird trotzdem gespeichert. Durch Anpassen der Excel-Datei und ern
 !!! info "📸 Screenshot: `eingabe-uebersicht.png`"
     _Eingabeübersicht — Gruppen × Stationen Matrix mit ✓/✗ Status_
 
-## Gruppengrößen konfigurieren
+## Gruppengrößen & Verteilung konfigurieren
 
 In `config.toml` anpassen, danach **„Gruppen zusammenstellen"** erneut klicken:
 
 ```toml
 [gruppen]
-max_groesse = 8   # Maximal-TN pro Gruppe
+max_groesse = 8   # Maximal-TN pro Gruppe (Klassisch / Fahrzeuge)
 min_groesse = 6   # Minimal-TN pro Gruppe (Fahrzeug-Pfad)
+
+[verteilung]
+verteilungsmodus = "FixGroupSize"  # "Klassisch" | "Fahrzeuge" | "FixGroupSize"
+fixgroupsize = 8                   # Zielgröße (FixGroupSize)
+cargroups = "ja"                   # Fahrzeugpools (FixGroupSize)
 ```
 
 ## Gruppennamen anpassen

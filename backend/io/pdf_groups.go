@@ -6,12 +6,15 @@ import (
 	"path/filepath"
 
 	"THW-JugendOlympiade/backend/database"
+	"THW-JugendOlympiade/backend/models"
 
 	"github.com/go-pdf/fpdf"
 )
 
 // GeneratePDFReport creates a PDF report with one group per page.
-func GeneratePDFReport(db *sql.DB, eventName string, eventYear int) error {
+// Pass the in-memory CarGroups slice when running in CarGroups mode so each
+// group page can show its pool information instead of an empty vehicle section.
+func GeneratePDFReport(db *sql.DB, eventName string, eventYear int, carGroups []*models.CarGroup) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
 	}
@@ -22,6 +25,34 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int) error {
 	}
 	if len(groups) == 0 {
 		return fmt.Errorf("no groups found to generate report")
+	}
+
+	// Build a lookup: GroupID → *CarGroup so the vehicle section can reference
+	// the pool this group belongs to.
+	type carGroupInfo struct {
+		poolID int
+		cars   []models.Fahrzeug
+		peers  []int // GroupIDs of the other groups sharing this pool
+	}
+	cgByGroup := make(map[int]carGroupInfo)
+	for _, cg := range carGroups {
+		groupIDs := make([]int, 0, len(cg.Groups))
+		for _, g := range cg.Groups {
+			groupIDs = append(groupIDs, g.GroupID)
+		}
+		for _, g := range cg.Groups {
+			peers := make([]int, 0, len(groupIDs)-1)
+			for _, id := range groupIDs {
+				if id != g.GroupID {
+					peers = append(peers, id)
+				}
+			}
+			cgByGroup[g.GroupID] = carGroupInfo{
+				poolID: cg.ID,
+				cars:   cg.Cars,
+				peers:  peers,
+			}
+		}
 	}
 
 	theme := DefaultTheme
@@ -141,8 +172,81 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int) error {
 			}
 		}
 
-		// Fahrzeuge section
-		if len(group.Fahrzeuge) > 0 {
+		// Fahrzeuge / Fahrzeugpool section
+		if cgInfo, inPool := cgByGroup[group.GroupID]; inPool {
+			// ── CarGroups mode: show pool heading + shared vehicles ──────────────
+			pdf.Ln(6)
+			theme.Font(pdf, "B", theme.SizeTableHeader)
+			theme.TextColor(pdf, theme.ColorText)
+			pdf.CellFormat(0, 9, enc(fmt.Sprintf("Fahrzeugpool %d", cgInfo.poolID)), "", 1, "L", false, 0, "")
+			if len(cgInfo.peers) > 0 {
+				peerStr := "Gemeinsam mit:"
+				for _, pid := range cgInfo.peers {
+					peerStr += fmt.Sprintf(" Gruppe %d", pid)
+				}
+				theme.Font(pdf, "", theme.SizeSmall)
+				theme.TextColor(pdf, theme.ColorSubtext)
+				pdf.CellFormat(0, 6, enc(peerStr), "", 1, "L", false, 0, "")
+			}
+			pdf.Ln(2)
+
+			theme.Font(pdf, "B", theme.SizeTableHeader)
+			theme.FillColor(pdf, theme.ColorTableHeader)
+			theme.TextColor(pdf, theme.ColorText)
+			pdf.CellFormat(100, 10, enc("Fahrzeug (OV)"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(55, 10, enc("Fahrer"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(25, 10, enc("Sitze"), "1", 0, "C", true, 0, "")
+			pdf.Ln(-1)
+
+			theme.Font(pdf, "", theme.SizeBody)
+			totalSeats := 0
+			for i, f := range cgInfo.cars {
+				fill := i%2 == 0
+				theme.FillColor(pdf, theme.ColorTableRowAlt)
+				fahrzeugLabel := f.Bezeichnung
+				if f.Ortsverband != "" {
+					fahrzeugLabel += " (" + f.Ortsverband + ")"
+				}
+				fahrer := f.FahrerName
+				if fahrer == "" {
+					fahrer = "KEIN FAHRER bekannt!"
+				}
+				pdf.CellFormat(100, 9, enc(fahrzeugLabel), "1", 0, "L", fill, 0, "")
+				pdf.CellFormat(55, 9, enc(fahrer), "1", 0, "L", fill, 0, "")
+				pdf.CellFormat(25, 9, fmt.Sprintf("%d", f.Sitzplaetze), "1", 0, "C", fill, 0, "")
+				pdf.Ln(-1)
+				totalSeats += f.Sitzplaetze
+			}
+
+			// Seat summary counts all people in the pool, not just this group.
+			poolPeople := 0
+			for _, cg := range carGroups {
+				if cg.ID == cgInfo.poolID {
+					for _, g := range cg.Groups {
+						poolPeople += len(g.Teilnehmende) + len(g.Betreuende)
+					}
+					break
+				}
+			}
+			pdf.Ln(3)
+			if poolPeople > totalSeats {
+				theme.Font(pdf, "B", theme.SizeBody)
+				pdf.SetTextColor(200, 0, 0)
+				pdf.CellFormat(0, 8, enc(fmt.Sprintf(
+					"Pool: %d Personen, nur %d Sitzpl\u00e4tze",
+					poolPeople, totalSeats,
+				)), "", 1, "L", false, 0, "")
+				theme.TextColor(pdf, theme.ColorText)
+			} else {
+				theme.Font(pdf, "", theme.SizeSmall)
+				theme.TextColor(pdf, theme.ColorSubtext)
+				pdf.CellFormat(0, 6, enc(fmt.Sprintf(
+					"Pool gesamt: %d Personen, %d Sitzpl\u00e4tze (%d frei)",
+					poolPeople, totalSeats, totalSeats-poolPeople,
+				)), "", 1, "L", false, 0, "")
+			}
+		} else if len(group.Fahrzeuge) > 0 {
+			// ── Normal mode: direct vehicle assignment ────────────────────────────
 			pdf.Ln(6)
 			theme.Font(pdf, "B", theme.SizeTableHeader)
 			theme.TextColor(pdf, theme.ColorText)

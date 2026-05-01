@@ -117,7 +117,7 @@ func (a *App) HasScores() (bool, error) {
 }
 
 func (a *App) DistributeGroups() map[string]interface{} {
-	return handlers.DistributeGroups(a.db, a.cfg.Gruppen.MaxGroesse, a.cfg.Gruppen.MinGroesse)
+	return handlers.DistributeGroups(a.db, a.cfg)
 }
 
 // --- Queries ---
@@ -149,7 +149,7 @@ func (a *App) GetOrtsverbandEvaluations() map[string]interface{} {
 // --- Reports ---
 
 func (a *App) GeneratePDF() map[string]interface{} {
-	return handlers.GeneratePDF(a.db, a.cfg.Veranstaltung.Name, a.cfg.Veranstaltung.Jahr, a.cfg.Gruppen.Gruppennamen)
+	return handlers.GeneratePDF(a.db, a.cfg.Veranstaltung.Name, a.cfg.Veranstaltung.Jahr, a.cfg.Gruppen.Gruppennamen, a.cfg)
 }
 
 func (a *App) GenerateGroupEvaluationPDF() map[string]interface{} {

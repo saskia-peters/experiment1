@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/io"
 	"THW-JugendOlympiade/backend/models"
@@ -47,6 +48,12 @@ func UseExistingDB(db **sql.DB) map[string]interface{} {
 			"status":  "error",
 			"message": fmt.Sprintf("Teilnehmerzahl konnte nicht gelesen werden: %v", err),
 		}
+	}
+	// Restore in-memory CarGroups from the database (populated by a previous
+	// distribution run). This ensures a backup/restore cycle preserves the
+	// full picture without requiring a redistribution.
+	if cgs, err := database.LoadCarGroups(*db); err == nil && len(cgs) > 0 {
+		services.SetLastCarGroups(cgs)
 	}
 	return map[string]interface{}{
 		"status": "ok",
@@ -283,14 +290,14 @@ func HasScores(db *sql.DB) (bool, error) {
 }
 
 // DistributeGroups creates balanced groups from the loaded participants.
-func DistributeGroups(db *sql.DB, maxGroupSize int, minGroupSize int) map[string]interface{} {
+func DistributeGroups(db *sql.DB, cfg config.Config) map[string]interface{} {
 	if db == nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": "Bitte zuerst eine Excel-Datei laden.",
 		}
 	}
-	warning, err := services.CreateBalancedGroups(db, maxGroupSize, minGroupSize)
+	warning, err := services.CreateBalancedGroups(db, cfg)
 	if err != nil {
 		return map[string]interface{}{
 			"status":  "error",

@@ -415,3 +415,115 @@ func DeleteStation(db *sql.DB, id int) error {
 	}
 	return tx.Commit()
 }
+
+// LoadCarGroups reconstructs the in-memory []*models.CarGroup from the two
+// persistence tables written by SaveCarGroups. Returns nil, nil when no
+// cargroup data is present (tables empty or absent — e.g. fresh DB or a
+// database from before this feature existed).
+func LoadCarGroups(db *sql.DB) ([]*models.CarGroup, error) {
+	// Check both tables exist (pre-migration databases won't have them).
+	var tcount int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('cargroup_groups','cargroup_fahrzeuge')`).Scan(&tcount)
+	if err != nil || tcount < 2 {
+		return nil, nil
+	}
+
+	// pool_id → []group_id
+	rows, err := db.Query("SELECT pool_id, group_id FROM cargroup_groups ORDER BY pool_id, group_id")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query cargroup_groups: %w", err)
+	}
+	defer rows.Close()
+	poolGroups := make(map[int][]int)
+	var poolOrder []int
+	seenPools := make(map[int]bool)
+	for rows.Next() {
+		var poolID, groupID int
+		if err := rows.Scan(&poolID, &groupID); err != nil {
+			return nil, err
+		}
+		poolGroups[poolID] = append(poolGroups[poolID], groupID)
+		if !seenPools[poolID] {
+			seenPools[poolID] = true
+			poolOrder = append(poolOrder, poolID)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(poolOrder) == 0 {
+		return nil, nil // no data stored
+	}
+
+	// pool_id → []fahrzeug_id
+	fRows, err := db.Query("SELECT pool_id, fahrzeug_id FROM cargroup_fahrzeuge ORDER BY pool_id, fahrzeug_id")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query cargroup_fahrzeuge: %w", err)
+	}
+	defer fRows.Close()
+	poolCars := make(map[int][]int)
+	for fRows.Next() {
+		var poolID, fahrzeugID int
+		if err := fRows.Scan(&poolID, &fahrzeugID); err != nil {
+			return nil, err
+		}
+		poolCars[poolID] = append(poolCars[poolID], fahrzeugID)
+	}
+	if err := fRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Full group objects (Teilnehmende + Betreuende) keyed by GroupID.
+	allGroups, err := GetGroupsForReport(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load groups for CarGroups restore: %w", err)
+	}
+	groupByID := make(map[int]models.Group, len(allGroups))
+	for _, g := range allGroups {
+		groupByID[g.GroupID] = g
+	}
+
+	// Full vehicle objects keyed by ID.
+	fahrzeugByID, err := getFahrzeugeByID(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load fahrzeuge for CarGroups restore: %w", err)
+	}
+
+	// Assemble.
+	result := make([]*models.CarGroup, 0, len(poolOrder))
+	for _, poolID := range poolOrder {
+		cg := &models.CarGroup{ID: poolID}
+		for _, gid := range poolGroups[poolID] {
+			if g, ok := groupByID[gid]; ok {
+				cg.Groups = append(cg.Groups, g)
+			}
+		}
+		for _, fid := range poolCars[poolID] {
+			if f, ok := fahrzeugByID[fid]; ok {
+				cg.Cars = append(cg.Cars, f)
+			}
+		}
+		result = append(result, cg)
+	}
+	return result, nil
+}
+
+// getFahrzeugeByID returns all vehicles from the database indexed by their ID.
+func getFahrzeugeByID(db *sql.DB) (map[int]models.Fahrzeug, error) {
+	rows, err := db.Query(
+		"SELECT id, bezeichnung, ortsverband, funkrufname, fahrer_name, sitzplaetze FROM fahrzeuge ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[int]models.Fahrzeug)
+	for rows.Next() {
+		var f models.Fahrzeug
+		if err := rows.Scan(&f.ID, &f.Bezeichnung, &f.Ortsverband, &f.Funkrufname, &f.FahrerName, &f.Sitzplaetze); err != nil {
+			return nil, err
+		}
+		result[f.ID] = f
+	}
+	return result, rows.Err()
+}

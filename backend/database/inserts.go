@@ -333,3 +333,66 @@ func SaveGroupFahrzeuge(db *sql.DB, groups []models.Group) error {
 
 	return tx.Commit()
 }
+
+// SaveCarGroups persists the in-memory CarGroup pool assignments so that a
+// backup/restore cycle can fully reconstruct the distribution result.
+//
+// It writes two junction tables:
+//   - cargroup_groups    (pool_id, group_id)   — which participant group is in which pool
+//   - cargroup_fahrzeuge (pool_id, fahrzeug_id) — which vehicle belongs to which pool
+//
+// It also updates fahrer_name in the fahrzeuge table to reflect any driver
+// assigned by Phase 3 of the pool algorithm.
+func SaveCarGroups(db *sql.DB, carGroups []*models.CarGroup) error {
+	if len(carGroups) == 0 {
+		return nil
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec("DELETE FROM cargroup_fahrzeuge"); err != nil {
+		return fmt.Errorf("failed to clear cargroup_fahrzeuge: %w", err)
+	}
+	if _, err = tx.Exec("DELETE FROM cargroup_groups"); err != nil {
+		return fmt.Errorf("failed to clear cargroup_groups: %w", err)
+	}
+
+	groupStmt, err := tx.Prepare("INSERT INTO cargroup_groups (pool_id, group_id) VALUES (?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare cargroup_groups statement: %w", err)
+	}
+	defer groupStmt.Close()
+
+	carStmt, err := tx.Prepare("INSERT INTO cargroup_fahrzeuge (pool_id, fahrzeug_id) VALUES (?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare cargroup_fahrzeuge statement: %w", err)
+	}
+	defer carStmt.Close()
+
+	updateStmt2, err := tx.Prepare("UPDATE fahrzeuge SET fahrer_name = ? WHERE id = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare fahrzeuge update statement: %w", err)
+	}
+	defer updateStmt2.Close()
+
+	for _, cg := range carGroups {
+		for _, g := range cg.Groups {
+			if _, err = groupStmt.Exec(cg.ID, g.GroupID); err != nil {
+				return fmt.Errorf("failed to insert cargroup_groups: %w", err)
+			}
+		}
+		for _, f := range cg.Cars {
+			if _, err = carStmt.Exec(cg.ID, f.ID); err != nil {
+				return fmt.Errorf("failed to insert cargroup_fahrzeuge: %w", err)
+			}
+			if _, err = updateStmt2.Exec(f.FahrerName, f.ID); err != nil {
+				return fmt.Errorf("failed to update fahrer_name for fahrzeug %d: %w", f.ID, err)
+			}
+		}
+	}
+
+	return tx.Commit()
+}
