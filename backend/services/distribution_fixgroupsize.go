@@ -547,15 +547,15 @@ func solvePoolCover(
 // assignCarGroups assigns participant groups to car pools, minimising empty
 // seats per pool (tolerance 0..3 empty seats, max 3 groups and 5 cars per pool).
 //
-//   Phase 1 – solve: depth-first search finds the optimal (group, car-subset)
-//              assignment. Each pool has 1–3 groups and 1–5 cars. Empty seats
-//              per pool are minimised; backtracking resolves dead ends.
-//   Phase 2 – remaining cars: any car not assigned in Phase 1 is added to the
-//              pool with the least spare capacity (tightest pool first).
-//   Phase 3 – driver resolution: xlsx-provided FahrerName is kept as-is (cars
-//              may have specialist drivers such as truck licence holders that are
-//              not in the Betreuende list). Only cars without a pre-assigned
-//              driver receive a fallback from the licensed Betreuende in the pool.
+//	Phase 1 – solve: depth-first search finds the optimal (group, car-subset)
+//	           assignment. Each pool has 1–3 groups and 1–5 cars. Empty seats
+//	           per pool are minimised; backtracking resolves dead ends.
+//	Phase 2 – remaining cars: any car not assigned in Phase 1 is added to the
+//	           pool with the least spare capacity (tightest pool first).
+//	Phase 3 – driver resolution: xlsx-provided FahrerName is kept as-is (cars
+//	           may have specialist drivers such as truck licence holders that are
+//	           not in the Betreuende list). Only cars without a pre-assigned
+//	           driver receive a fallback from the licensed Betreuende in the pool.
 //
 // Returns a warning string for capacity or driver issues.
 func assignCarGroups(groups []models.Group, fahrzeuge []models.Fahrzeug, betreuende []models.Betreuende) string {
@@ -708,7 +708,6 @@ func assignCarGroups(groups []models.Group, fahrzeuge []models.Fahrzeug, betreue
 	lastCarGroups = carGroups
 	return strings.Join(warnParts, "\n")
 }
-
 
 // GetLastCarGroups returns the CarGroups computed by the most recent
 // FixGroupSize distribution run with cargroups="ja".

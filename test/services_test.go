@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/config"
+	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/services"
 )
 

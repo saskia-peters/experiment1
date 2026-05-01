@@ -819,6 +819,7 @@ func findBestGroupWithCapacity(groups []models.Group, tn models.Teilnehmende, ma
 //  4. A non-empty warning string is returned when fewer licensed drivers are
 //     available than there are groups, or when a group still ends up with no
 //     Betreuende at all.
+//
 // ovRoundRobinOrder reorders licensed Betreuende so that drivers are drawn from
 // each OV in turn before taking a second driver from any single OV.
 //
