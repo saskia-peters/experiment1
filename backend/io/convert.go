@@ -134,7 +134,7 @@ func ReadMasterExcel(filePath string) (*MasterExcelData, error) {
 // Source layout:
 //
 //	Sheet "Teilnehmende": Vorname | Name | Betreuende | JuHe | Mini |
-//	                       Alter | Ortsverband | Fahrerlaubnis
+//	                       Alter | Ortsverband | Fahrerlaubnis | Geschlecht
 //	Sheet "Fahrzeuge":    Fahrzeug | Ortsverband | Funkrufname | Fahrer |
 //	                       Anzahl Plätze incl. Fahrende
 func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedData {
@@ -178,6 +178,8 @@ func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedDat
 			fahrVal := getCol(row, idx, "Fahrerlaubnis")
 			fahrerlaubnis := fahrVal != "" && fahrVal != "/"
 
+			geschlecht := getCol(row, idx, "Geschlecht")
+
 			switch event {
 			case EventJugend:
 				// Betreuende: marked as Betreuende and NOT Mini
@@ -194,7 +196,7 @@ func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedDat
 						Name:        fullName,
 						Ortsverband: ortsverband,
 						Alter:       alter,
-						Geschlecht:  "",
+						Geschlecht:  geschlecht,
 						PreGroup:    "",
 					})
 				}
@@ -213,7 +215,7 @@ func TransformMasterExcel(src *MasterExcelData, event MasterEvent) *ConvertedDat
 						Name:        fullName,
 						Ortsverband: ortsverband,
 						Alter:       alter,
-						Geschlecht:  "",
+						Geschlecht:  geschlecht,
 						PreGroup:    "",
 					})
 				}
