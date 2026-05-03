@@ -494,7 +494,6 @@ func combineGroups(items []int, anchor, size int) [][]int {
 	return out
 }
 
-
 // approximately cfg.Verteilung.FixGroupSize, then optionally assigns vehicles
 // via the CarGroups algorithm (cargroups = "ja") or 1:1 assignment (cargroups = "nein").
 func createGroupsFixGroupSize(db *sql.DB, cfg config.Config) (string, error) {
