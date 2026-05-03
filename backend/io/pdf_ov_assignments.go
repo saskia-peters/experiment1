@@ -193,11 +193,11 @@ func GenerateOVAssignmentsPDF(db *sql.DB, eventName string, eventYear int, group
 
 	// Layout constants (mm), A4 with 15 mm top/bottom margins → 267 mm usable.
 	const (
-		pageBottom  = 297.0 - 15.0 // Y of the bottom margin from the top of the page
-		ovFirstH    = 16.0          // OV heading first page: CellFormat(h=12) + Ln(4)
-		ovContH     = 14.0          // OV heading continuation: CellFormat(h=10) + Ln(4)
-		tblHdrH     = 10.0          // table column-header row
-		gapBetween  = 6.0           // vertical gap between Betreuende and Teilnehmende
+		pageBottom = 297.0 - 15.0 // Y of the bottom margin from the top of the page
+		ovFirstH   = 16.0         // OV heading first page: CellFormat(h=12) + Ln(4)
+		ovContH    = 14.0         // OV heading continuation: CellFormat(h=10) + Ln(4)
+		tblHdrH    = 10.0         // table column-header row
+		gapBetween = 6.0          // vertical gap between Betreuende and Teilnehmende
 	)
 
 	evtH := 0.0

@@ -36,11 +36,11 @@ func GenerateOverviewPDF(db *sql.DB, eventName string, eventYear int, carGroups 
 	// ── Build aggregate data ──────────────────────────────────────────────────
 
 	type ovRow struct {
-		OV          string
-		TN          int
-		BetMitFaL   int // Betreuende with Fahrerlaubnis
-		BetOhneFaL  int // Betreuende without Fahrerlaubnis
-		BetTotal    int
+		OV         string
+		TN         int
+		BetMitFaL  int // Betreuende with Fahrerlaubnis
+		BetOhneFaL int // Betreuende without Fahrerlaubnis
+		BetTotal   int
 	}
 
 	ovMap := make(map[string]*ovRow)
@@ -50,8 +50,8 @@ func GenerateOverviewPDF(db *sql.DB, eventName string, eventYear int, carGroups 
 	totalBetOhne := 0
 
 	// Integrity tracking
-	tnSeen := make(map[int][]int)   // TeilnehmendeID → group IDs
-	betSeen := make(map[int][]int)  // Betreuende.ID → group IDs
+	tnSeen := make(map[int][]int)        // TeilnehmendeID → group IDs
+	betSeen := make(map[int][]int)       // Betreuende.ID → group IDs
 	driverSeen := make(map[string][]int) // lower-cased driver name → group IDs
 
 	for _, g := range groups {
@@ -143,7 +143,7 @@ func GenerateOverviewPDF(db *sql.DB, eventName string, eventYear int, carGroups 
 
 	// ── Carpool data ──────────────────────────────────────────────────────────
 	type poolRow struct {
-		ID        int
+		ID         int
 		TotalSeats int
 		UsedSeats  int
 	}
