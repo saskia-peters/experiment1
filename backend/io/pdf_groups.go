@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"THW-JugendOlympiade/backend/config"
 	"THW-JugendOlympiade/backend/database"
 	"THW-JugendOlympiade/backend/models"
 
@@ -14,7 +15,7 @@ import (
 // GeneratePDFReport creates a PDF report with one group per page.
 // Pass the in-memory CarGroups slice when running in CarGroups mode so each
 // group page can show its pool information instead of an empty vehicle section.
-func GeneratePDFReport(db *sql.DB, eventName string, eventYear int, carGroups []*models.CarGroup) error {
+func GeneratePDFReport(db *sql.DB, eventName string, eventYear int, carGroups []*models.CarGroup, groupNames []string) error {
 	if err := ensurePDFDirectory(); err != nil {
 		return err
 	}
@@ -81,7 +82,11 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int, carGroups []
 		// Title
 		theme.Font(pdf, "B", theme.SizeTitle)
 		theme.TextColor(pdf, theme.ColorText)
-		pdf.CellFormat(0, 15, fmt.Sprintf("Gruppe %d", group.GroupID), "", 1, "C", false, 0, "")
+		groupTitle := fmt.Sprintf("Gruppe %d", group.GroupID)
+		if name := config.GetGroupName(group.GroupID, groupNames); name != fmt.Sprintf("Gruppe %d", group.GroupID) {
+			groupTitle = fmt.Sprintf("Gruppe %d - %s", group.GroupID, name)
+		}
+		pdf.CellFormat(0, 15, enc(groupTitle), "", 1, "C", false, 0, "")
 		pdf.Ln(5)
 
 		// Participant count

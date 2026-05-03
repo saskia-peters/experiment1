@@ -19,7 +19,7 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 			"message": "Bitte zuerst eine Excel-Datei laden.",
 		}
 	}
-	if err := io.GeneratePDFReport(db, eventName, eventYear, services.GetLastCarGroups()); err != nil {
+	if err := io.GeneratePDFReport(db, eventName, eventYear, services.GetLastCarGroups(), groupNames); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
 			"message": fmt.Sprintf("Gruppen-PDF konnte nicht erstellt werden: %v", err),
@@ -43,13 +43,19 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 			"message": fmt.Sprintf("Teilnehmende-Karten-PDF konnte nicht erstellt werden: %v", err),
 		}
 	}
+	if err := io.GenerateOverviewPDF(db, eventName, eventYear, services.GetLastCarGroups()); err != nil {
+		return map[string]interface{}{
+			"status":  "error",
+			"message": fmt.Sprintf("Übersichts-PDF konnte nicht erstellt werden: %v", err),
+		}
+	}
 
 	// CarGroups PDF — only when FixGroupSize mode with cargroups = "ja".
 	absPath, _ := os.Getwd()
 	sep := string(os.PathSeparator)
 	result := map[string]interface{}{
 		"status":  "success",
-		"message": "Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt",
+		"message": "Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung, Teilnehmende-Karten und Übersicht erfolgreich erstellt",
 		"file":    "Gruppeneinteilung.pdf",
 		"path":    absPath + sep + "pdfdocs" + sep + "Gruppeneinteilung.pdf",
 		"file2":   "Stationsbewertungszettel.pdf",
@@ -58,6 +64,8 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 		"path3":   absPath + sep + "pdfdocs" + sep + "OV-Zuteilung.pdf",
 		"file4":   "Teilnehmende-Karten.pdf",
 		"path4":   absPath + sep + "pdfdocs" + sep + "Teilnehmende-Karten.pdf",
+		"file5":   "Uebersicht.pdf",
+		"path5":   absPath + sep + "pdfdocs" + sep + "Uebersicht.pdf",
 	}
 	if cfg.Verteilung.Verteilungsmodus == "FixGroupSize" && strings.EqualFold(cfg.Verteilung.CarGroups, "ja") {
 		carGroups := services.GetLastCarGroups()
@@ -68,9 +76,9 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 					"message": fmt.Sprintf("CarGroups-PDF konnte nicht erstellt werden: %v", err),
 				}
 			}
-			result["message"] = "Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung, Teilnehmende-Karten und CarGroups-PDF erfolgreich erstellt"
-			result["file5"] = "CarGroups.pdf"
-			result["path5"] = absPath + sep + "pdfdocs" + sep + "CarGroups.pdf"
+			result["message"] = "Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung, Teilnehmende-Karten, Übersicht und CarGroups-PDF erfolgreich erstellt"
+			result["file6"] = "CarGroups.pdf"
+			result["path6"] = absPath + sep + "pdfdocs" + sep + "CarGroups.pdf"
 		}
 	}
 	return result
