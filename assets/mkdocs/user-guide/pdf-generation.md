@@ -9,10 +9,11 @@ Alle erzeugten PDFs werden in `pdf_ordner` gespeichert (Standard: `pdfdocs/`).
 
 | PDF | Schaltfläche | Beschreibung |
 |-----|-------------|--------------|
-| Gruppenübersicht | **"Gruppen-PDF erstellen"** | Eine Seite je Gruppe mit Teilnehmenden, Betreuenden und Fahrzeugzuweisung. Im CarGroups-Modus wird statt einzelner Fahrzeuge der Fahrzeugpool mit Poolnummer, Mitgruppen und Sitzplatzzusammenfassung angezeigt. |
+| Gruppenübersicht | **"Gruppen-PDF erstellen"** | Eine Seite je Gruppe mit Teilnehmenden, Betreuenden und Fahrzeugzuweisung. Seitentitel: `Gruppe N - Gruppenname`. Im CarGroups-Modus wird der Fahrzeugpool mit Poolnummer, Mitgruppen und Sitzplatzzusammenfassung angezeigt. |
 | Stationslaufzettel | **"Gruppen-PDF erstellen"** | Leere Ergebnisblätter je Station für die manuelle Erfassung |
-| OV-Zuteilung | **"Gruppen-PDF erstellen"** | Eine Seite je Ortsverband mit Betreuenden- und Teilnehmendenzuteilung |
+| OV-Zuteilung | **"Gruppen-PDF erstellen"** | Eine Seite je Ortsverband mit Betreuenden- und Teilnehmendenzuteilung. Fahrzeugspalten werden nur bei Fahrzeug-Modus angezeigt. |
 | Teilnehmende-Karten | **"Gruppen-PDF erstellen"** | A4-Seiten mit je 4 A6-Karten zum Ausschneiden (Name, OV, Gruppe) |
+| Übersicht | **"Gruppen-PDF erstellen"** | Zweiseitige Zusammenfassung: Gesamtzahlen, OV-Aufschlüsselung, Integritätsprüfung und Fahrzeugkapazität |
 | CarGroups | **"Gruppen-PDF erstellen"** | Eine Seite je Fahrzeugpool (nur bei `verteilungsmodus = "FixGroupSize"` und `cargroups = "ja"`). Spalten: **Fahrzeug (OV)**, Fahrer, Sitze. Kein bekannter Fahrer → „KEIN FAHRER bekannt!" |
 | Gruppenwertung | **"Gruppenwertung-PDF"** | Gruppen-Rankings mit Gesamtpunktzahl |
 | OV-Wertung | **"Ortsverband-Wertung-PDF"** | Ortsverband-Rankings |
@@ -20,7 +21,52 @@ Alle erzeugten PDFs werden in `pdf_ordner` gespeichert (Standard: `pdfdocs/`).
 | OV-Urkunden | **"Urkunden OV"** | Eine Urkunde je Ortsverband |
 
 !!! info "Hinweis"
-    Die Schaltfläche **„Gruppen-PDF erstellen"** erzeugt alle markierten PDFs gleichzeitig: `Gruppeneinteilung.pdf`, `Stationslaufzettel.pdf`, `OV-Zuteilung.pdf` und `Teilnehmende-Karten.pdf`. Ist `verteilungsmodus = "FixGroupSize"` mit `cargroups = "ja"` aktiv, wird zusätzlich `CarGroups.pdf` erzeugt.
+    Die Schaltfläche **„Gruppen-PDF erstellen"** erzeugt alle PDFs gleichzeitig: `Gruppeneinteilung.pdf`, `Stationslaufzettel.pdf`, `OV-Zuteilung.pdf`, `Teilnehmende-Karten.pdf` und `Uebersicht.pdf`. Ist `verteilungsmodus = "FixGroupSize"` mit `cargroups = "ja"` aktiv, wird zusätzlich `CarGroups.pdf` erzeugt.
+
+---
+
+## Übersicht (`Uebersicht.pdf`)
+
+Zweiseitige Zusammenfassung der aktuellen Verteilung.
+
+**Seite 1 — Gesamtübersicht**
+
+| Kennzahl | Inhalt |
+|----------|--------|
+| Anzahl Gruppen | Anzahl der erstellten Gruppen |
+| TN gesamt | Gesamtzahl der Teilnehmenden |
+| Betreuende mit FaL | Betreuende mit Fahrerlaubnis |
+| Betreuende ohne FaL | Betreuende ohne Fahrerlaubnis |
+| Personen gesamt | TN + alle Betreuenden |
+
+**Seite 1 — Aufschlüsselung nach Ortsverband**
+
+Tabelle mit einer Zeile je OV:
+
+| Spalte | Inhalt |
+|--------|--------|
+| OV | Name des Ortsverbands |
+| TN | Anzahl Teilnehmende |
+| Bet. m. FaL | Betreuende mit Fahrerlaubnis |
+| Bet. o. FaL | Betreuende ohne Fahrerlaubnis |
+| Bet. gesamt | Gesamtanzahl Betreuende |
+
+**Seite 2 — Integritätsprüfung**
+
+Prüft, ob Personen in mehreren Gruppen gleichzeitig eingeteilt sind. Gibt es keine Dopplungen, erscheint `[OK]` in Grün. Bei Dopplungen wird `[!!]` in Rot mit Personenname und betroffenen Gruppen-IDs angezeigt.
+
+**Seite 2 — Fahrzeugpool-Kapazität** _(nur wenn Fahrzeuge vorhanden)_
+
+Tabelle je Pool:
+
+| Spalte | Inhalt |
+|--------|--------|
+| Pool | Pool-ID oder Einzelgruppen-ID |
+| Sitzplätze gesamt | Summe aller Fahrzeugsitzplätze im Pool |
+| Personen (belegt) | TN + Betreuende im Pool |
+| Freie Plätze | Differenz (negativ = Überbuchung, rot hervorgehoben) |
+
+Abschließend: Gesamtzeile (`Ges.`) und ein farbiger Hinweis (`[OK]` grün / `[!!]` rot), ob alle Personen in die Fahrzeuge passen.
 
 ---
 
@@ -34,8 +80,8 @@ Erzeugt eine Seite pro Ortsverband mit zwei Tabellen:
 |--------|--------|
 | Betreuende | Name der Person |
 | Gruppe | `Gruppe N - Gruppenname` |
-| Fahrzeug | Fahrzeugbezeichnung (Funkrufname) der zugeteilten Gruppe |
-| Fhr. | `X` wenn diese Person als Fahrerin/Fahrer eingetragen ist |
+| Fahrzeug | Fahrzeugbezeichnung (Funkrufname) der zugeteilten Gruppe — _nur bei Fahrzeug-Modus_ |
+| Fhr. | `X` wenn diese Person als Fahrerin/Fahrer eingetragen ist — _nur bei Fahrzeug-Modus_ |
 
 **Tabelle 2 — Teilnehmende**
 

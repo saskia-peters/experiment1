@@ -194,7 +194,7 @@ Das Verhalten für Fahrzeuge wird durch `cargroups` gesteuert:
 
 ---
 
-### Betreuende-Verteilung (vier Phasen)
+### Betreuende-Verteilung (vier Phasen + globaler Ausgleich)
 
 Gilt für alle drei Verteilungsmodi (Klassisch, Fahrzeuge, FixGroupSize).  
 Im Fahrzeug-zuerst-Pfad werden Betreuende, die bereits als Fahrzeugfahrer eingetragen wurden, bei der Verteilung übersprungen — sie sind bereits in ihrer Gruppe.
@@ -205,7 +205,7 @@ Im Fahrzeug-zuerst-Pfad werden Betreuende, die bereits als Fahrzeugfahrer einget
 
 Das Ziel der Verteilung ist:
 
-1. **Jede Gruppe bekommt mindestens eine Betreuende** und — wenn möglich — mindestens eine Person mit Fahrerlaubnis.
+1. **Jede Gruppe bekommt mindestens zwei Betreuende** und — wenn möglich — mindestens eine Person mit Fahrerlaubnis.
 2. **Betreuende aus demselben Ortsverband bleiben möglichst zusammen.** Ein OV-Cluster darf nur aufgeteilt werden, wenn es die Gleichmäßigkeit der Verteilung erfordert.
 3. **Gleichmäßige Aufteilung:** Die Anzahl Betreuender pro Gruppe soll um maximal 1 differieren.
 
@@ -257,7 +257,27 @@ Gruppen, die nach den vorigen Phasen **keine einzige Betreuende** haben, bekomme
 
 - Bevorzugt wird eine **unlizenzierte** Person verschoben, damit die Spendergruppe ihren Fahrer behält.
 - Wieder gilt OV-Präferenz: bevorzugt jemand, dessen OV noch ≥ 2 unlizenzierte Mitglieder in der Spendergruppe hat.
-- Gibt es nur noch eine einzige Betreuende in allen Gruppen, kann nicht mehr spendet werden — die fehlende Zuweisung wird als Warnung ausgegeben.
+- Gibt es nur noch eine einzige Betreuende in allen Gruppen, kann nicht mehr gespendet werden — die fehlende Zuweisung wird als Warnung ausgegeben.
+
+---
+
+#### Phase 3e — Globaler Betreuenden-Ausgleich
+
+Dieser abschließende Schritt läuft nach den anderen Phasen und gilt für **alle drei Verteilungsmodi**. Er erzwingt zwei Garantien:
+
+**Pass A — Mindestens 2 Betreuende pro Gruppe:**  
+Gruppen mit weniger als 2 Betreuenden bekommen Personen aus Spendergruppen (≥ 3). Die Auswahl folgt derselben Priorität wie Phase 3: unlizenzierte mit großem OV-Cluster zuerst, dann beliebige unlizenzierte, dann lizenzierte.
+
+**Pass B — Maximaler Unterschied ≤ 1:**  
+Die Gruppe mit den meisten und die mit den wenigsten Betreuenden dürfen sich um höchstens 1 unterscheiden. Ist der Unterschied größer, wird so lange von der größten zur kleinsten Gruppe verschoben, bis die Bedingung erfüllt ist.
+
+**Einschränkungen beim Verschieben:**
+
+| Regel | Erklärung |
+|-------|-----------|
+| Fahrzeugfahrer nur im eigenen Pool | Betreuende, die als Fahrzeugfahrer eingeteilt sind, dürfen nur in Gruppen desselben Fahrzeugpools verschoben werden. |
+| Externe Fahrer nie verschieben | Personen, die in der XLSX-Datei als Fahrer stehen, aber nicht in der Betreuenden-Liste aufgeführt sind (z. B. LKW-Führerschein-Inhaber), werden nie verschoben. |
+| Lizenzierte behalten ≥ 1 Lizenzierten | Eine lizenzierte Betreuende wird nur dann verschoben, wenn die Quellgruppe danach noch mindestens eine lizenzierte Person behält. |
 
 ---
 
@@ -271,6 +291,7 @@ Obwohl der Algorithmus aktiv versucht, OV-Cluster zusammenzuhalten, gibt es Kons
 | **Mehr Gruppen als OV-Mitglieder** | Hat ein OV 2 Betreuende, aber es gibt 5 Gruppen, können maximal 2 Gruppen eine OV-Betreuende erhalten. Die übrigen Gruppen bekommen jemanden aus einem anderen OV zugewiesen. |
 | **Rebalancing erzwingt Trennung** | Phase 2b verschiebt unlizenzierte Personen aus der größten in die kleinste Gruppe. Wenn die OV-Präferenz (≥ 2 unlizenzierte im Quellcluster) nicht erfüllt ist, wird trotzdem verschoben — der OV-Cluster kann dabei auf 1 Person in einer Gruppe schrumpfen. |
 | **Sicherheitsnetz Phase 3** | Muss eine komplett leere Gruppe versorgt werden, wird aus dem nächstbesten Spender genommen, unabhängig vom OV. |
+| **Globaler Ausgleich Phase 3e** | Kann die min-2-Garantie oder der max−min-≤1-Ausgleich nur durch eine Trennung eines OV-Clusters erreicht werden, hat Gleichmäßigkeit Vorrang vor OV-Kohäsion. |
 | **Ungünstiges Zahlenverhältnis** | Sind z. B. 3 Betreuende eines OV vorhanden und 4 Gruppen, muss mindestens einer alleine in einer Gruppe sein — egal wie der Algorithmus vorgeht. |
 
 !!! tip "Hinweis für Veranstalter"

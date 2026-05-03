@@ -6,6 +6,24 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.9] — 2026-05-03
+
+### Hinzugefügt
+
+- **Übersichts-PDF** (`Uebersicht.pdf`): Neues PDF, das zusammen mit den anderen Gruppen-PDFs erzeugt wird. Enthält vier Abschnitte auf zwei Seiten:
+    - **Seite 1 — Gesamtübersicht**: Anzahl Gruppen, Teilnehmende gesamt, Betreuende mit/ohne Fahrerlaubnis, Personen gesamt.
+    - **Seite 1 — Aufschlüsselung nach Ortsverband**: Tabelle mit TN, Bet. m. FaL, Bet. o. FaL und Gesamtanzahl je OV.
+    - **Seite 2 — Integritätsprüfung**: Prüft auf Personen, die mehrfach in verschiedenen Gruppen eingeteilt wurden (getrennt für Teilnehmende und Betreuende). Ergebnis: `[OK]` (grün) oder `[!!]` (rot) mit betroffenen Personen und Gruppen-IDs.
+    - **Seite 2 — Fahrzeugpool-Kapazität** (nur wenn Fahrzeuge vorhanden): Tabelle mit Sitzplätzen, belegten Plätzen und freien Plätzen je Pool sowie Gesamtzeile (`Ges.`). Abschließend farbiger Hinweis, ob alle Personen in die Fahrzeuge passen.
+
+### Geändert
+
+- **Betreuenden-Ausgleich für alle Verteilungsmodi (Phase 3e)**: Nach dem primären Verteilungsalgorithmus läuft jetzt in allen drei Modi (Klassisch, Fahrzeuge, FixGroupSize) ein globaler Ausgleichsschritt. Er erzwingt zwei Garantien: (1) **Mindestens 2 Betreuende pro Gruppe** — Gruppen mit weniger als 2 bekommen Betreuende aus Gruppen mit ≥ 3; (2) **Maximaler Unterschied ≤ 1** — die Gruppe mit den meisten und die mit den wenigsten Betreuenden differieren um höchstens 1. Fahrzeugfahrer können dabei nur innerhalb ihres eigenen Fahrzeugpools verschoben werden; externe Fahrer (z. B. LKW-Führerschein-Inhaber, die nicht in der Betreuenden-Liste stehen) werden nie verschoben.
+- **Gruppeneinteilung.pdf — Gruppenüberschrift**: Der Seitentitel zeigt jetzt `Gruppe N - Gruppenname` (statt nur `Gruppe N`). Ist kein Name konfiguriert, bleibt die Anzeige unverändert (`Gruppe N`).
+- **OV-Zuteilung PDF — Fahrzeugspalten**: Die Spalten **Fahrzeug** und **Fhr.** in der Betreuenden-Tabelle werden nur noch angezeigt, wenn dem Verteilungsergebnis tatsächlich Fahrzeuge zugewiesen wurden. Im Klassisch-Modus (keine Fahrzeuge) zeigt die Tabelle stattdessen zwei gleichbreite Spalten (Name und Gruppe) — ohne leere Felder.
+
+---
+
 ## [0.1.8] — 2026-05-02
 
 ### Hinzugefügt
