@@ -114,7 +114,8 @@ func validateAndMapDrivers(
 //
 //   - Phase 2a: assign the first numGroups drivers (OV round-robin order) as
 //     anchors, 1 per B-group; their car(s) follow.
-//   - Phase 2b: assign extra drivers to B-groups preferring same-OV clusters.
+//   - Phase 2b: assign extra drivers to B-groups: fewest-drivers-first, then
+//     same-OV preference (spreads drivers evenly before doubling up).
 //   - Phase 2c: ensure every B-group with only 1 betreuende gets a non-driver,
 //     preferring same-OV non-drivers.
 //   - Phase 2d: distribute all remaining non-drivers evenly, preferring same-OV.
@@ -158,21 +159,31 @@ func formBetreuendeGroups(
 		bgroups[i].fahrzeuge = carsByDriverID[drv.ID]
 	}
 
-	// ── Phase 2b: assign extra drivers to B-groups (same-OV preference) ───────
+	// ── Phase 2b: assign extra drivers to B-groups ───────────────────────────
+	// Primary criterion: fewest existing drivers (spread evenly before doubling up).
+	// Secondary: most same-OV members. Tertiary: fewest betreuende total.
 	for _, drv := range ordered[numGroups:] {
 		bestIdx := 0
+		bestDriverCount := math.MaxInt32
 		bestOVCount := -1
 		bestBetCount := math.MaxInt32
 		for i, bg := range bgroups {
-			// Count how many drivers in this B-group share drv's OV.
+			driverCount := 0
 			ovCount := 0
 			for _, b := range bg.betreuende {
+				if driverSet[b.ID] {
+					driverCount++
+				}
 				if b.Ortsverband == drv.Ortsverband {
 					ovCount++
 				}
 			}
 			betCount := len(bg.betreuende)
-			if ovCount > bestOVCount || (ovCount == bestOVCount && betCount < bestBetCount) {
+			better := driverCount < bestDriverCount ||
+				(driverCount == bestDriverCount && ovCount > bestOVCount) ||
+				(driverCount == bestDriverCount && ovCount == bestOVCount && betCount < bestBetCount)
+			if better {
+				bestDriverCount = driverCount
 				bestOVCount = ovCount
 				bestBetCount = betCount
 				bestIdx = i
