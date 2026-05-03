@@ -196,12 +196,85 @@ Das Verhalten für Fahrzeuge wird durch `cargroups` gesteuert:
 
 ### Betreuende-Verteilung (vier Phasen)
 
-Gilt für beide Pfade (klassisch und Fahrzeug-zuerst). Im Fahrzeug-Pfad werden bereits als Fahrer eingetragene Betreuende übersprungen.
+Gilt für alle drei Verteilungsmodi (Klassisch, Fahrzeuge, FixGroupSize).  
+Im Fahrzeug-zuerst-Pfad werden Betreuende, die bereits als Fahrzeugfahrer eingetragen wurden, bei der Verteilung übersprungen — sie sind bereits in ihrer Gruppe.
 
-1. **Phase 1** — Personen mit Fahrerlaubnis gleichmäßig verteilen: eine Person pro Gruppe in Prioritätsreihenfolge.
-2. **Phase 2** — Personen ohne Fahrerlaubnis folgen ihrem Ortsverband: bevorzugt die Gruppe mit einer lizenzierten Person aus demselben OV.
-3. **Phase 2b** — Neuausgleich: Personen ohne FL von der größten in die kleinste Gruppe verschieben, bis der Unterschied ≤ 1 ist.
-4. **Phase 3 (Sicherheitsnetz)** — Gruppen ohne Betreuende erhalten eine Person aus der größten Gruppe.
+---
+
+#### Ziel
+
+Das Ziel der Verteilung ist:
+
+1. **Jede Gruppe bekommt mindestens eine Betreuende** und — wenn möglich — mindestens eine Person mit Fahrerlaubnis.
+2. **Betreuende aus demselben Ortsverband bleiben möglichst zusammen.** Ein OV-Cluster darf nur aufgeteilt werden, wenn es die Gleichmäßigkeit der Verteilung erfordert.
+3. **Gleichmäßige Aufteilung:** Die Anzahl Betreuender pro Gruppe soll um maximal 1 differieren.
+
+---
+
+#### Phase 1 — Lizenzierte Betreuende (Fahrerlaubnis = ja) verteilen
+
+Alle Betreuenden mit Fahrerlaubnis werden zuerst in einer **OV-Round-Robin-Reihenfolge** sortiert: bevor ein OV eine zweite lizenzierte Person platziert, bekommt jeder andere OV erst einmal eine. Dies verhindert, dass ein einzelner OV alle Fahrerpositionen belegt.
+
+Anschließend wird jede lizenzierte Person einzeln zugewiesen:
+
+- **Primär:** die Gruppe mit den wenigsten lizenzierten Betreuenden (Ziel: eine pro Gruppe, bevor jemand eine zweite bekommt).
+- **Gleichstand-Tiebreaker:** die Gruppe, in der bereits die meisten Teilnehmenden aus demselben OV sind (die Betreuende soll bei „ihren" TN landen).
+
+> **Beispiel:** OV Berlin schickt 3 lizenzierte Betreuende (A, B, C). Phase 1 verteilt sie in drei verschiedene Gruppen — nicht alle drei in eine.
+
+---
+
+#### Phase 2 — Unlizenzierte Betreuende verteilen
+
+Jede unlizenzierte Betreuende wird der Gruppe zugewiesen, die ihrem OV am nächsten ist. Es wird dabei in dieser Prioritätsreihenfolge gesucht:
+
+| Priorität | Bedingung |
+|-----------|-----------|
+| 1 | Eine Gruppe, die bereits eine **lizenzierte** Betreuende aus **demselben OV** enthält — bevorzugt die Gruppe mit den wenigsten OV-Mitgliedern (um die Seiten des OV-Clusters auszubalancieren, falls der OV mehrere lizenzierte Personen hat) |
+| 2 | Eine Gruppe, die bereits eine **beliebige** Betreuende aus demselben OV enthält |
+| 3 | Die Gruppe mit den wenigsten Betreuenden insgesamt |
+
+> **Ziel:** Eine unlizenzierte Betreuende „folgt" ihrer lizenzierten OV-Kollegin in dieselbe Gruppe.
+
+---
+
+#### Phase 2b — Neuausgleich (Rebalancing)
+
+Wenn nach Phase 2 die Gruppe mit den meisten Betreuenden und die mit den wenigsten um mehr als 1 differieren, werden unlizenzierte Personen von der größten in die kleinste Gruppe verschoben — so lange, bis der Unterschied ≤ 1 ist.
+
+**OV-Präferenz beim Verschieben:**
+
+- *Aus der Quellgruppe heraus* wird bevorzugt jemand gewählt, dessen OV in der Quellgruppe noch **≥ 2 unlizenzierte Mitglieder** hat — die Verschiebung zerstört dann den OV-Cluster nicht vollständig.
+- *In die Zielgruppe hinein* wird bevorzugt eine Gruppe gewählt, die bereits eine Betreuende aus **demselben OV** hat.
+
+Sind diese Präferenzen nicht erfüllbar, wird trotzdem verschoben (Gleichmäßigkeit geht vor OV-Kohäsion).
+
+---
+
+#### Phase 3 — Sicherheitsnetz
+
+Gruppen, die nach den vorigen Phasen **keine einzige Betreuende** haben, bekommen jemanden aus der Gruppe mit den meisten Betreuenden (Spender muss ≥ 2 haben). Dabei gilt:
+
+- Bevorzugt wird eine **unlizenzierte** Person verschoben, damit die Spendergruppe ihren Fahrer behält.
+- Wieder gilt OV-Präferenz: bevorzugt jemand, dessen OV noch ≥ 2 unlizenzierte Mitglieder in der Spendergruppe hat.
+- Gibt es nur noch eine einzige Betreuende in allen Gruppen, kann nicht mehr spendet werden — die fehlende Zuweisung wird als Warnung ausgegeben.
+
+---
+
+#### Warum Betreuende trotzdem getrennt werden können
+
+Obwohl der Algorithmus aktiv versucht, OV-Cluster zusammenzuhalten, gibt es Konstellationen, in denen eine Trennung unvermeidbar ist:
+
+| Ursache | Erklärung |
+|---------|-----------|
+| **Mehrere lizenzierte Personen pro OV** | Phase 1 verteilt sie auf verschiedene Gruppen (Round-Robin). Die unlizenzierten OV-Mitglieder können nur einem von ihnen folgen — der Rest der lizenzierten Fahrer ist schon weg. |
+| **Mehr Gruppen als OV-Mitglieder** | Hat ein OV 2 Betreuende, aber es gibt 5 Gruppen, können maximal 2 Gruppen eine OV-Betreuende erhalten. Die übrigen Gruppen bekommen jemanden aus einem anderen OV zugewiesen. |
+| **Rebalancing erzwingt Trennung** | Phase 2b verschiebt unlizenzierte Personen aus der größten in die kleinste Gruppe. Wenn die OV-Präferenz (≥ 2 unlizenzierte im Quellcluster) nicht erfüllt ist, wird trotzdem verschoben — der OV-Cluster kann dabei auf 1 Person in einer Gruppe schrumpfen. |
+| **Sicherheitsnetz Phase 3** | Muss eine komplett leere Gruppe versorgt werden, wird aus dem nächstbesten Spender genommen, unabhängig vom OV. |
+| **Ungünstiges Zahlenverhältnis** | Sind z. B. 3 Betreuende eines OV vorhanden und 4 Gruppen, muss mindestens einer alleine in einer Gruppe sein — egal wie der Algorithmus vorgeht. |
+
+!!! tip "Hinweis für Veranstalter"
+    Soll ein OV möglichst vollständig zusammenbleiben, empfiehlt es sich, die Anzahl der Betreuenden eines OV als Vielfaches der Gruppenanzahl zu wählen, oder das `PreGroup`-Feld in der Excel-Datei zu nutzen, um Gruppen explizit vorab zu definieren. PreGroups werden **vor** der Betreuenden-Verteilung festgelegt und bleiben garantiert intakt.
 
 ### Warnmeldungen
 
@@ -227,7 +300,6 @@ Die Verteilung wird trotzdem gespeichert. Durch Anpassen der Excel-Datei und ern
 - Teilnehmende mit Alter, Geschlecht, Ortsverband
 - Betreuende mit Fahrerlaubnis-Status (Fahrer eines Fahrzeugs erscheinen hier ebenfalls)
 - **Fahrzeuge / Fahrzeugpool**: Im normalen Modus die direkt zugewiesenen Fahrzeuge; im CarGroups-Modus die Fahrzeuge des gemeinsamen Pools mit Poolnummer und Hinweis auf gemeinsam reisende Gruppen. Bei fehlender Fahrzeugzuweisung: **„Kein Fahrzeug!"** (roter Hinweis)
-- Gruppenstatistik (Anzahl, Geschlechterverteilung, OV-Verteilung)
 
 !!! info "📸 Screenshot: `groups-view.png`"
     _Gruppenansicht — Tabs mit Teilnehmenden, Betreuenden und Fahrzeugen_

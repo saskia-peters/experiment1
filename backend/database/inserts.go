@@ -193,6 +193,10 @@ func SaveGroupBetreuende(db *sql.DB, groups []models.Group) error {
 
 	for _, group := range groups {
 		for _, b := range group.Betreuende {
+			if b.ID == 0 {
+				// Skip synthetic entries (external drivers not in the Betreuende DB table).
+				continue
+			}
 			if _, err = stmt.Exec(group.GroupID, b.ID); err != nil {
 				return fmt.Errorf("failed to insert gruppe_betreuende: %w", err)
 			}

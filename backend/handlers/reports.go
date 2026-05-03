@@ -28,7 +28,7 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 	if err := io.GenerateStationSheetsPDF(db, eventName, eventYear, groupNames); err != nil {
 		return map[string]interface{}{
 			"status":  "error",
-			"message": fmt.Sprintf("Stationslaufzettel-PDF konnte nicht erstellt werden: %v", err),
+			"message": fmt.Sprintf("Stationsbewertungszettel-PDF konnte nicht erstellt werden: %v", err),
 		}
 	}
 	if err := io.GenerateOVAssignmentsPDF(db, eventName, eventYear, groupNames); err != nil {
@@ -49,11 +49,11 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 	sep := string(os.PathSeparator)
 	result := map[string]interface{}{
 		"status":  "success",
-		"message": "Gruppen-PDF, Stationslaufzettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt",
+		"message": "Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt",
 		"file":    "Gruppeneinteilung.pdf",
 		"path":    absPath + sep + "pdfdocs" + sep + "Gruppeneinteilung.pdf",
-		"file2":   "Stationslaufzettel.pdf",
-		"path2":   absPath + sep + "pdfdocs" + sep + "Stationslaufzettel.pdf",
+		"file2":   "Stationsbewertungszettel.pdf",
+		"path2":   absPath + sep + "pdfdocs" + sep + "Stationsbewertungszettel.pdf",
 		"file3":   "OV-Zuteilung.pdf",
 		"path3":   absPath + sep + "pdfdocs" + sep + "OV-Zuteilung.pdf",
 		"file4":   "Teilnehmende-Karten.pdf",
@@ -68,7 +68,7 @@ func GeneratePDF(db *sql.DB, eventName string, eventYear int, groupNames []strin
 					"message": fmt.Sprintf("CarGroups-PDF konnte nicht erstellt werden: %v", err),
 				}
 			}
-			result["message"] = "Gruppen-PDF, Stationslaufzettel, OV-Zuteilung, Teilnehmende-Karten und CarGroups-PDF erfolgreich erstellt"
+			result["message"] = "Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung, Teilnehmende-Karten und CarGroups-PDF erfolgreich erstellt"
 			result["file5"] = "CarGroups.pdf"
 			result["path5"] = absPath + sep + "pdfdocs" + sep + "CarGroups.pdf"
 		}

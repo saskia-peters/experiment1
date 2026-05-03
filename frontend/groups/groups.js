@@ -96,7 +96,8 @@ function formatGroupContent(group) {
             html += '<tr class="betreuende-row">';
             html += '<td>' + escapeHtml(b.Name) + '</td>';
             html += '<td>' + escapeHtml(b.Ortsverband) + '</td>';
-            html += '<td>' + (b.Fahrerlaubnis ? '✓' : '–') + '</td>';
+            const fahrLabel = b.IsExternalDriver ? '✓ (extern)' : (b.Fahrerlaubnis ? '✓' : '–');
+            html += '<td>' + fahrLabel + '</td>';
             html += '</tr>';
         });
         html += '</tbody></table>';

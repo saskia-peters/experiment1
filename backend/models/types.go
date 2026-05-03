@@ -25,10 +25,11 @@ type Teilnehmende struct {
 
 // Betreuende represents a caretaker/driver for a group
 type Betreuende struct {
-	ID            int
-	Name          string
-	Ortsverband   string
-	Fahrerlaubnis bool // true = "ja" in the Excel sheet
+	ID               int
+	Name             string
+	Ortsverband      string
+	Fahrerlaubnis    bool // true = "ja" in the Excel sheet
+	IsExternalDriver bool // true = synthetic entry for xlsx driver not in Betreuende list
 }
 
 // Fahrzeug represents a vehicle used to transport a group

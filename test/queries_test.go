@@ -52,6 +52,22 @@ func setupFullTestDB(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to create gruppe_fahrzeuge table: %v", err)
 	}
 
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS cargroup_groups (
+		pool_id  INTEGER NOT NULL,
+		group_id INTEGER NOT NULL,
+		UNIQUE(group_id)
+	)`); err != nil {
+		t.Fatalf("Failed to create cargroup_groups table: %v", err)
+	}
+
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS cargroup_fahrzeuge (
+		pool_id     INTEGER NOT NULL,
+		fahrzeug_id INTEGER NOT NULL,
+		UNIQUE(fahrzeug_id)
+	)`); err != nil {
+		t.Fatalf("Failed to create cargroup_fahrzeuge table: %v", err)
+	}
+
 	return db
 }
 

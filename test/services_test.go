@@ -1,6 +1,7 @@
 ﻿package test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -1307,5 +1308,261 @@ func TestCreateBalancedGroups_RebalanceBetreuendeTNRatio(t *testing.T) {
 	}
 	if !has1 || !has2 {
 		t.Errorf("expected one group with 1 Betreuende and one with 2, got %v", bCounts)
+	}
+}
+
+// ─── FixGroupSize hard-maximum tests ──────────────────────────────────────────
+
+// fixSizeCfg builds a minimal Config for FixGroupSize mode (no vehicles, no CarGroups).
+func fixSizeCfg(fixSize int) config.Config {
+	cfg := config.Default()
+	cfg.Verteilung.Verteilungsmodus = "FixGroupSize"
+	cfg.Verteilung.FixGroupSize = fixSize
+	cfg.Verteilung.CarGroups = "nein"
+	return cfg
+}
+
+// TestFixGroupSize_NeverExceedsFixSize verifies that no group ever exceeds
+// fixgroupsize, covering the cases where math.Round would have rounded down and
+// produced a group of fixSize+1.
+func TestFixGroupSize_NeverExceedsFixSize(t *testing.T) {
+	cases := []struct {
+		n       int
+		fixSize int
+	}{
+		{105, 8}, // was: round(13.125)=13 → 1 group of 9
+		{17, 8},  // was: round(2.125)=2   → 1 group of 9
+		{25, 8},  // was: round(3.125)=3   → 1 group of 9
+		{9, 8},   // was: round(1.125)=1   → 1 group of 9
+		{104, 8}, // exact: 13×8 — unchanged
+		{16, 8},  // exact: 2×8  — unchanged
+		{1, 8},   // edge: 1 TN  — unchanged
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(fmt.Sprintf("N=%d_fixSize=%d", tc.n, tc.fixSize), func(t *testing.T) {
+			db := setupFullTestDB(t)
+			defer teardownTestDB(t, db)
+
+			rows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+			for i := 1; i <= tc.n; i++ {
+				rows = append(rows, []string{"P", "Berlin", "20", "M", ""})
+			}
+			if err := database.InsertData(db, rows); err != nil {
+				t.Fatalf("InsertData: %v", err)
+			}
+
+			if _, err := services.CreateBalancedGroups(db, fixSizeCfg(tc.fixSize)); err != nil {
+				t.Fatalf("CreateBalancedGroups: %v", err)
+			}
+
+			groups, err := database.GetGroupsForReport(db)
+			if err != nil {
+				t.Fatalf("GetGroupsForReport: %v", err)
+			}
+
+			for _, g := range groups {
+				if len(g.Teilnehmende) > tc.fixSize {
+					t.Errorf("group %d has %d TN, exceeds fixSize=%d",
+						g.GroupID, len(g.Teilnehmende), tc.fixSize)
+				}
+			}
+
+			// All participants must be assigned.
+			total := 0
+			for _, g := range groups {
+				total += len(g.Teilnehmende)
+			}
+			if total != tc.n {
+				t.Errorf("expected all %d TN assigned, got %d", tc.n, total)
+			}
+		})
+	}
+}
+
+// TestFixGroupSize_GroupCount verifies the expected group count produced by
+// ceiling division.
+func TestFixGroupSize_GroupCount(t *testing.T) {
+	cases := []struct {
+		n          int
+		fixSize    int
+		wantGroups int
+	}{
+		{105, 8, 14}, // ceil(13.125) = 14
+		{104, 8, 13}, // ceil(13.0)   = 13
+		{17, 8, 3},   // ceil(2.125)  = 3
+		{16, 8, 2},   // ceil(2.0)    = 2
+		{25, 8, 4},   // ceil(3.125)  = 4
+		{9, 8, 2},    // ceil(1.125)  = 2
+		{1, 8, 1},    // ceil(0.125)  = 1
+		{8, 8, 1},    // ceil(1.0)    = 1
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(fmt.Sprintf("N=%d_fixSize=%d_want=%d", tc.n, tc.fixSize, tc.wantGroups), func(t *testing.T) {
+			db := setupFullTestDB(t)
+			defer teardownTestDB(t, db)
+
+			rows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+			for i := 1; i <= tc.n; i++ {
+				rows = append(rows, []string{"P", "Berlin", "20", "M", ""})
+			}
+			if err := database.InsertData(db, rows); err != nil {
+				t.Fatalf("InsertData: %v", err)
+			}
+
+			if _, err := services.CreateBalancedGroups(db, fixSizeCfg(tc.fixSize)); err != nil {
+				t.Fatalf("CreateBalancedGroups: %v", err)
+			}
+
+			ids, err := database.GetAllGroupIDs(db)
+			if err != nil {
+				t.Fatalf("GetAllGroupIDs: %v", err)
+			}
+			if len(ids) != tc.wantGroups {
+				t.Errorf("expected %d groups, got %d", tc.wantGroups, len(ids))
+			}
+		})
+	}
+}
+
+// TestFixGroupSize_SmallGroupWarning verifies that a warning is emitted when
+// the smallest group would be below fixSize-2.
+func TestFixGroupSize_SmallGroupWarning(t *testing.T) {
+	// N=3, fixSize=8: ceil(3/8)=1 → 1 group of 3. base=3 < fixSize-2=6 → warning.
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	rows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+	for i := 1; i <= 3; i++ {
+		rows = append(rows, []string{"P", "Berlin", "20", "M", ""})
+	}
+	if err := database.InsertData(db, rows); err != nil {
+		t.Fatalf("InsertData: %v", err)
+	}
+
+	warning, err := services.CreateBalancedGroups(db, fixSizeCfg(8))
+	if err != nil {
+		t.Fatalf("CreateBalancedGroups: %v", err)
+	}
+	if warning == "" {
+		t.Error("expected warning when smallest group < fixSize-2, got none")
+	}
+}
+
+// TestFixGroupSize_NoWarningWhenGroupsWellSized verifies that no sparse-group
+// warning is emitted when all groups are within fixSize-2 of the target.
+func TestFixGroupSize_NoWarningWhenGroupsWellSized(t *testing.T) {
+	// N=105, fixSize=8: groups of 8 and 7. base=7 == fixSize-1 → no warning.
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	rows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+	for i := 1; i <= 105; i++ {
+		rows = append(rows, []string{"P", "Berlin", "20", "M", ""})
+	}
+	if err := database.InsertData(db, rows); err != nil {
+		t.Fatalf("InsertData: %v", err)
+	}
+
+	warning, err := services.CreateBalancedGroups(db, fixSizeCfg(8))
+	if err != nil {
+		t.Fatalf("CreateBalancedGroups: %v", err)
+	}
+	if warning != "" {
+		t.Errorf("expected no warning for well-sized groups, got: %q", warning)
+	}
+}
+
+// fixSizeCfgCarGroups builds a Config for FixGroupSize mode with CarGroups enabled.
+func fixSizeCfgCarGroups(fixSize int) config.Config {
+	cfg := config.Default()
+	cfg.Verteilung.Verteilungsmodus = "FixGroupSize"
+	cfg.Verteilung.FixGroupSize = fixSize
+	cfg.Verteilung.CarGroups = "ja"
+	return cfg
+}
+
+// TestFixGroupSize_BetreuendeBalanced_WithDrivers verifies that after vehicle
+// assignment in FixGroupSize+CarGroups mode each group has at least 2 Betreuende
+// and the max-min difference across groups is ≤ 1.
+//
+// Regression test for the bug where named-driver Betreuende from the same OV
+// were concentrated into one pool and caused one group to receive 4 Betreuende
+// while others had only 1.
+func TestFixGroupSize_BetreuendeBalanced_WithDrivers(t *testing.T) {
+	db := setupFullTestDB(t)
+	defer teardownTestDB(t, db)
+
+	// 40 TN → ceiling(40/8)=5 groups.
+	tnRows := [][]string{{"Name", "Ortsverband", "Alter", "Geschlecht", "PreGroup"}}
+	for i := 1; i <= 40; i++ {
+		ov := []string{"Alpha", "Beta", "Gamma", "Delta", "Epsilon"}[i%5]
+		tnRows = append(tnRows, []string{fmt.Sprintf("P%d", i), ov, "14", "M", ""})
+	}
+	if err := database.InsertData(db, tnRows); err != nil {
+		t.Fatalf("InsertData: %v", err)
+	}
+
+	// 10 Betreuende: 5 licensed (one per group, Alpha1–Alpha5 as drivers),
+	// plus 5 non-drivers distributed across OVs so each group reaches ≥2.
+	betRows := [][]string{{"Name", "Ortsverband", "Fahrerlaubnis"}}
+	for i := 1; i <= 5; i++ {
+		betRows = append(betRows, []string{fmt.Sprintf("Alpha%d", i), "Alpha", "ja"})
+	}
+	betRows = append(betRows, []string{"Beta1", "Beta", "nein"})
+	betRows = append(betRows, []string{"Gamma1", "Gamma", "nein"})
+	betRows = append(betRows, []string{"Delta1", "Delta", "nein"})
+	betRows = append(betRows, []string{"Epsilon1", "Epsilon", "nein"})
+	betRows = append(betRows, []string{"Alpha6", "Alpha", "nein"})
+	if err := database.InsertBetreuende(db, betRows); err != nil {
+		t.Fatalf("InsertBetreuende: %v", err)
+	}
+
+	// 5 cars (one per group) with named drivers Alpha1–Alpha5.
+	carRows := [][]string{{"Bezeichnung", "Ortsverband", "Funkrufname", "FahrerName", "Sitzplaetze"}}
+	for i := 1; i <= 5; i++ {
+		carRows = append(carRows, []string{
+			fmt.Sprintf("AlphaBus%d", i), "Alpha", "", fmt.Sprintf("Alpha%d", i), "9",
+		})
+	}
+	if err := database.InsertFahrzeuge(db, carRows); err != nil {
+		t.Fatalf("InsertFahrzeuge: %v", err)
+	}
+
+	_, err := services.CreateBalancedGroups(db, fixSizeCfgCarGroups(8))
+	if err != nil {
+		t.Fatalf("CreateBalancedGroups: %v", err)
+	}
+
+	groups, err := database.GetGroupsForReport(db)
+	if err != nil {
+		t.Fatalf("GetGroupsForReport: %v", err)
+	}
+
+	maxBet, minBet := 0, int(^uint(0)>>1) // MaxInt
+	for _, g := range groups {
+		if len(g.Betreuende) > maxBet {
+			maxBet = len(g.Betreuende)
+		}
+		if len(g.Betreuende) < minBet {
+			minBet = len(g.Betreuende)
+		}
+	}
+	if maxBet-minBet > 1 {
+		var dist []string
+		for _, g := range groups {
+			dist = append(dist, fmt.Sprintf("G%d=%d", g.GroupID, len(g.Betreuende)))
+		}
+		t.Errorf("Betreuende imbalance too large: max=%d min=%d (diff=%d), distribution: %v",
+			maxBet, minBet, maxBet-minBet, dist)
+	}
+	// Every group must have at least 2 Betreuende (guaranteed by formBetreuendeGroups).
+	for _, g := range groups {
+		if len(g.Betreuende) < 2 {
+			t.Errorf("Group %d has only %d Betreuende (minimum 2)", g.GroupID, len(g.Betreuende))
+		}
 	}
 }

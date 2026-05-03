@@ -76,6 +76,15 @@ func createGroupsKlassisch(db *sql.DB, maxGroupSize int, minGroupSize int) (stri
 		if w != "" {
 			warnings = append(warnings, w)
 		}
+		// Enforce min ≥ 2 and max−min ≤ 1. No vehicles → no car drivers, all
+		// groups are their own "pool" (trivially no cross-pool constraint).
+		poolByGroupID := make(map[int]int, len(groups))
+		for _, g := range groups {
+			poolByGroupID[g.GroupID] = g.GroupID
+		}
+		if rw := rebalanceBetreuendeGlobal(groups, nil, poolByGroupID); rw != "" {
+			warnings = append(warnings, rw)
+		}
 		if err := database.SaveGroupBetreuende(db, groups); err != nil {
 			return "", fmt.Errorf("failed to save group betreuende: %w", err)
 		}
@@ -268,6 +277,25 @@ func createGroupsFahrzeuge(db *sql.DB, maxGroupSize int, minGroupSize int) (stri
 		// Total headcount per group is preserved, so seat capacity is unaffected.
 		// Result is silent — no user-facing warning.
 		rebalanceBetreuendeTNRatio(groups)
+
+		// Phase 3e: enforce min ≥ 2 Betreuende per group and max−min ≤ 1.
+		// In Fahrzeuge mode each group has its own car; named vehicle drivers are
+		// pinned to their group (pool = group). Cat-B/C Betreuende move freely.
+		{
+			carDriverNames := make(map[string]bool)
+			for _, g := range groups {
+				for name := range groupDriverNames(g) {
+					carDriverNames[name] = true
+				}
+			}
+			poolByGroupID := make(map[int]int, len(groups))
+			for _, g := range groups {
+				poolByGroupID[g.GroupID] = g.GroupID
+			}
+			if rw := rebalanceBetreuendeGlobal(groups, carDriverNames, poolByGroupID); rw != "" {
+				warnings = append(warnings, rw)
+			}
+		}
 
 		// Phase 4: capacity checks (run after all people are placed).
 		totalSeats := 0
@@ -979,7 +1007,20 @@ func distributeBetreuende(groups []models.Group, betreuende []models.Betreuende)
 			}
 		}
 		if moveIdx < 0 {
-			break // only licensed members remain in the max group; cannot rebalance further
+			// No unlicensed candidate at all; try licensed members that are NOT
+			// pinned as vehicle drivers in this group.  In FixGroupSize mode
+			// groups have no vehicles yet, so all licensed are moveable.
+			// In Klassisch/Fahrzeuge mode we protect designated drivers.
+			driverNamesMax := groupDriverNames(groups[maxIdx])
+			for k, b := range groups[maxIdx].Betreuende {
+				if b.Fahrerlaubnis && !driverNamesMax[strings.ToLower(strings.TrimSpace(b.Name))] {
+					moveIdx = k
+					break
+				}
+			}
+		}
+		if moveIdx < 0 {
+			break // all members are pinned vehicle drivers; cannot rebalance further
 		}
 		b := groups[maxIdx].Betreuende[moveIdx]
 		groups[maxIdx].Betreuende = append(
@@ -1271,6 +1312,209 @@ func relieveOverloadedGroups(groups []models.Group) {
 			}
 		}
 	}
+}
+
+// rebalanceBetreuendeGlobal enforces two balance guarantees across all groups:
+//
+//  1. Pass A (hard): every group ends up with ≥ 2 Betreuende.
+//     Betreuende are moved from donors (≥ 3) to starved groups (< 2), preferring
+//     same-pool donors and unlicensed candidates.
+//
+//  2. Pass B (soft): the spread of Betreuende counts across groups is ≤ 1
+//     (same max−min ≤ 1 goal as the old rebalanceBetreuendeAfterDrivers).
+//
+// carDriverNames is the set of lowercased-and-trimmed names of named car drivers.
+// These people may only be moved to a group within the same pool; if both source
+// and destination pools differ they are skipped as candidates.
+// To express "never move this driver" (1:1 / Fahrzeuge modes where each group is
+// its own pool), set poolByGroupID[g.GroupID] = g.GroupID — a unique pool per
+// group ensures canMove always fails for cross-"pool" destinations.
+//
+// External drivers (IsExternalDriver=true) are never moved regardless of pool.
+//
+// Each source group must retain ≥ 1 licensed Betreuende after a move; a
+// licensed candidate is therefore skipped when it would be the last licensed
+// member in its group.
+//
+// Returns a non-empty warning if min ≥ 2 could not be achieved for some group.
+func rebalanceBetreuendeGlobal(
+	groups []models.Group,
+	carDriverNames map[string]bool,
+	poolByGroupID map[int]int,
+) string {
+	if len(groups) == 0 {
+		return ""
+	}
+
+	normalise := func(name string) string {
+		return strings.ToLower(strings.TrimSpace(name))
+	}
+
+	licCountOf := func(idx int) int {
+		n := 0
+		for _, b := range groups[idx].Betreuende {
+			if b.Fahrerlaubnis {
+				n++
+			}
+		}
+		return n
+	}
+
+	isCarDriver := func(b models.Betreuende) bool {
+		return !b.IsExternalDriver && carDriverNames[normalise(b.Name)]
+	}
+
+	// canMove returns true if b (in groups[srcIdx]) may be moved to groups[dstIdx].
+	canMove := func(srcIdx, dstIdx int, b models.Betreuende) bool {
+		if srcIdx == dstIdx {
+			return false
+		}
+		// External drivers are never moved.
+		if b.IsExternalDriver {
+			return false
+		}
+		srcPool := poolByGroupID[groups[srcIdx].GroupID]
+		dstPool := poolByGroupID[groups[dstIdx].GroupID]
+		// Named internal car driver: only within-pool moves.
+		if isCarDriver(b) && srcPool != dstPool {
+			return false
+		}
+		// Source group must retain ≥ 1 licensed driver after removal.
+		if b.Fahrerlaubnis && licCountOf(srcIdx) <= 1 {
+			return false
+		}
+		return true
+	}
+
+	// pickCandidate selects the best betreuende to move from groups[srcIdx] to
+	// groups[dstIdx]. Returns (index in Betreuende slice, ok).
+	// Priority: unlicensed whose OV has ≥2 in src → any unlicensed → licensed.
+	pickCandidate := func(srcIdx, dstIdx int) (int, bool) {
+		src := groups[srcIdx].Betreuende
+		// Count OV occurrences of unlicensed in src for co-location preference.
+		unlicOVCount := make(map[string]int)
+		for _, b := range src {
+			if !b.Fahrerlaubnis {
+				unlicOVCount[b.Ortsverband]++
+			}
+		}
+		// Pass 1: unlicensed with OV count ≥ 2.
+		for k, b := range src {
+			if !b.Fahrerlaubnis && unlicOVCount[b.Ortsverband] >= 2 && canMove(srcIdx, dstIdx, b) {
+				return k, true
+			}
+		}
+		// Pass 2: any unlicensed.
+		for k, b := range src {
+			if !b.Fahrerlaubnis && canMove(srcIdx, dstIdx, b) {
+				return k, true
+			}
+		}
+		// Pass 3: licensed (canMove already ensures src retains ≥ 1 licensed).
+		for k, b := range src {
+			if b.Fahrerlaubnis && canMove(srcIdx, dstIdx, b) {
+				return k, true
+			}
+		}
+		return -1, false
+	}
+
+	moveBet := func(srcIdx, dstIdx, betIdx int) {
+		b := groups[srcIdx].Betreuende[betIdx]
+		groups[srcIdx].Betreuende = append(
+			groups[srcIdx].Betreuende[:betIdx],
+			groups[srcIdx].Betreuende[betIdx+1:]...)
+		groups[dstIdx].Betreuende = append(groups[dstIdx].Betreuende, b)
+	}
+
+	// ── Pass A: enforce min ≥ 2 ───────────────────────────────────────────────
+	maxIterA := len(groups)*len(groups) + 4*len(groups) + 1
+	for iter := 0; iter < maxIterA; iter++ {
+		// Find the most-starved group (< 2 betreuende).
+		starvedIdx := -1
+		starvedMin := 2
+		for i, g := range groups {
+			n := len(g.Betreuende)
+			if n < starvedMin {
+				starvedMin = n
+				starvedIdx = i
+			}
+		}
+		if starvedIdx < 0 {
+			break // all groups have ≥ 2
+		}
+		dstPool := poolByGroupID[groups[starvedIdx].GroupID]
+
+		moved := false
+		// Pass 0: same-pool donors; pass 1: any-pool donors.
+		for pass := 0; pass < 2 && !moved; pass++ {
+			// Pick donor with most betreuende (≥ 3).
+			donorIdx := -1
+			donorCount := 2 // threshold: donor must have > 2 to remain ≥ 2 after giving
+			for i, g := range groups {
+				if i == starvedIdx {
+					continue
+				}
+				srcPool := poolByGroupID[g.GroupID]
+				if pass == 0 && srcPool != dstPool {
+					continue
+				}
+				if len(g.Betreuende) > donorCount {
+					donorCount = len(g.Betreuende)
+					donorIdx = i
+				}
+			}
+			if donorIdx < 0 {
+				continue
+			}
+			if k, ok := pickCandidate(donorIdx, starvedIdx); ok {
+				moveBet(donorIdx, starvedIdx, k)
+				moved = true
+			}
+		}
+		if !moved {
+			break // no suitable donor; remaining starvation is unavoidable
+		}
+	}
+
+	// Collect groups still below 2 for the warning.
+	var stillStarved []string
+	for _, g := range groups {
+		if len(g.Betreuende) < 2 {
+			stillStarved = append(stillStarved, fmt.Sprintf("Gruppe %d (%d Betreuende)", g.GroupID, len(g.Betreuende)))
+		}
+	}
+	var warnings []string
+	if len(stillStarved) > 0 {
+		sort.Strings(stillStarved)
+		warnings = append(warnings, fmt.Sprintf(
+			"⚠️ Folgende Gruppen haben weniger als 2 Betreuende (bitte mindestens %d Betreuende importieren): %s",
+			2*len(groups), strings.Join(stillStarved, ", ")))
+	}
+
+	// ── Pass B: max − min ≤ 1 ─────────────────────────────────────────────────
+	maxIterB := len(groups)*len(groups) + 4*len(groups) + 1
+	for iter := 0; iter < maxIterB; iter++ {
+		maxIdx, minIdx := 0, 0
+		for i := range groups {
+			if len(groups[i].Betreuende) > len(groups[maxIdx].Betreuende) {
+				maxIdx = i
+			}
+			if len(groups[i].Betreuende) < len(groups[minIdx].Betreuende) {
+				minIdx = i
+			}
+		}
+		if len(groups[maxIdx].Betreuende)-len(groups[minIdx].Betreuende) <= 1 {
+			break
+		}
+		k, ok := pickCandidate(maxIdx, minIdx)
+		if !ok {
+			break
+		}
+		moveBet(maxIdx, minIdx, k)
+	}
+
+	return strings.Join(warnings, "\n")
 }
 
 // rebalanceBetreuendeTNRatio swaps a non-driver Betreuende from the group with

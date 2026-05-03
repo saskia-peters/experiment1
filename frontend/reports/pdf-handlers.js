@@ -10,7 +10,7 @@ export async function handleGeneratePDF() {
         if (result.status === 'error') {
             setStatus('FEHLER: ' + result.message, 'error');
         } else {
-            setStatus('✅ Gruppen-PDF, Stationslaufzettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt!', 'success');
+            setStatus('✅ Gruppen-PDF, Stationsbewertungszettel, OV-Zuteilung und Teilnehmende-Karten erfolgreich erstellt!', 'success');
         }
     } catch (err) {
         setStatus('FEHLER: ' + err, 'error');

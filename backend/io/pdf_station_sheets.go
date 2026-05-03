@@ -12,14 +12,14 @@ import (
 )
 
 const (
-	stationColWidthGruppe   = 100.0
-	stationColWidthErgebnis = 45.0
-	stationColWidthUhrzeit  = 35.0
-	stationRowHeight        = 12.0
+	stationColWidthGruppe    = 100.0
+	stationColWidthErgebnis  = 45.0
+	stationColWidthPunktzahl = 35.0
+	stationRowHeight         = 12.0
 )
 
 // GenerateStationSheetsPDF creates a PDF with one recording sheet per station.
-// Each sheet lists all groups with blank "Ergebnis" and "Uhrzeit" columns for
+// Each sheet lists all groups with blank "Ergebnis" and "Punktzahl" columns for
 // manual entry during the event. Stations with many groups automatically
 // continue on extra pages with a repeated station header and column headers.
 func GenerateStationSheetsPDF(db *sql.DB, eventName string, eventYear int, groupNames []string) error {
@@ -60,7 +60,7 @@ func GenerateStationSheetsPDF(db *sql.DB, eventName string, eventYear int, group
 		theme.TextColor(pdf, theme.ColorText)
 		pdf.CellFormat(stationColWidthGruppe, 9, enc("Gruppe"), "1", 0, "C", true, 0, "")
 		pdf.CellFormat(stationColWidthErgebnis, 9, enc("Ergebnis"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(stationColWidthUhrzeit, 9, enc("Uhrzeit"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(stationColWidthPunktzahl, 9, enc("Punktzahl"), "1", 0, "C", true, 0, "")
 		pdf.Ln(-1)
 	}
 
@@ -91,7 +91,7 @@ func GenerateStationSheetsPDF(db *sql.DB, eventName string, eventYear int, group
 		// Subtitle
 		theme.Font(pdf, "", theme.SizeSmall)
 		theme.TextColor(pdf, theme.ColorSubtext)
-		pdf.CellFormat(0, 6, enc("Stationslaufzettel"), "", 1, "C", false, 0, "")
+		pdf.CellFormat(0, 6, enc("Stationsbewertungszettel"), "", 1, "C", false, 0, "")
 		pdf.Ln(4)
 
 		// Table column headers
@@ -124,10 +124,10 @@ func GenerateStationSheetsPDF(db *sql.DB, eventName string, eventYear int, group
 			theme.TextColor(pdf, theme.ColorText)
 			pdf.CellFormat(stationColWidthGruppe, stationRowHeight, enc(groupLabel), "1", 0, "L", fill, 0, "")
 			pdf.CellFormat(stationColWidthErgebnis, stationRowHeight, "", "1", 0, "C", fill, 0, "")
-			pdf.CellFormat(stationColWidthUhrzeit, stationRowHeight, "", "1", 0, "C", fill, 0, "")
+			pdf.CellFormat(stationColWidthPunktzahl, stationRowHeight, "", "1", 0, "C", fill, 0, "")
 			pdf.Ln(-1)
 		}
 	}
 
-	return pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Stationslaufzettel.pdf"))
+	return pdf.OutputFileAndClose(filepath.Join(pdfOutputDir, "Stationsbewertungszettel.pdf"))
 }

@@ -113,39 +113,6 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int, carGroups []
 			pdf.Ln(-1)
 		}
 
-		// Group statistics footer
-		pdf.Ln(8)
-		theme.Font(pdf, "I", theme.SizeBody)
-		theme.TextColor(pdf, theme.ColorSubtext)
-
-		ortsverbandStats := make(map[string]int)
-		alterSum, alterCount := 0, 0
-		for _, t := range group.Teilnehmende {
-			ortsverbandStats[t.Ortsverband]++
-			if t.Alter > 0 {
-				alterSum += t.Alter
-				alterCount++
-			}
-		}
-
-		pdf.CellFormat(0, 6, "Gruppenstatistik:", "", 1, "L", false, 0, "")
-		theme.Font(pdf, "", theme.SizeSmall)
-
-		ovStr := "Ortsverband: "
-		first := true
-		for ov, count := range ortsverbandStats {
-			if !first {
-				ovStr += ", "
-			}
-			ovStr += fmt.Sprintf("%s (%d)", ov, count)
-			first = false
-		}
-		pdf.CellFormat(0, 5, enc(ovStr), "", 1, "L", false, 0, "")
-
-		if alterCount > 0 {
-			pdf.CellFormat(0, 5, fmt.Sprintf("Durchschnittsalter: %.1f Jahre", float64(alterSum)/float64(alterCount)), "", 1, "L", false, 0, "")
-		}
-
 		// Betreuende section
 		if len(group.Betreuende) > 0 {
 			pdf.Ln(6)
@@ -164,6 +131,9 @@ func GeneratePDFReport(db *sql.DB, eventName string, eventYear int, carGroups []
 				fahrerlaubnisStr := "nein"
 				if b.Fahrerlaubnis {
 					fahrerlaubnisStr = "ja"
+				}
+				if b.IsExternalDriver {
+					fahrerlaubnisStr = "extern"
 				}
 				pdf.CellFormat(80, 9, enc(b.Name), "1", 0, "L", fill, 0, "")
 				pdf.CellFormat(70, 9, enc(b.Ortsverband), "1", 0, "L", fill, 0, "")
